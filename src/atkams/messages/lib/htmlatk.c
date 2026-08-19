@@ -69,6 +69,7 @@
 #include <class.h>
 #include <text.ih>
 #include <envrment.ih>
+#include <environ.ih>
 #include <style.ih>
 #include <fontdesc.ih>
 #include <dataobj.ih>
@@ -863,6 +864,53 @@ static void SuppressStderrEnd(int savedFd)
     if (savedFd >= 0) { dup2(savedFd, 2); close(savedFd); }
 }
 
+/* Best-effort, preference-gated tracking-pixel detector, checked
+   BEFORE the resolver is ever called -- not after the bytes come
+   back. The fetch itself is the tracking signal (a sender's server
+   logs the request whether or not the image is ever actually drawn),
+   so deciding to hide a beacon only after downloading it is already
+   too late; this has to keep the request from happening at all.
+   Two independent signals, either one is enough: an explicit 0x0 or
+   1x1 declared size (real content photos/icons essentially never
+   declare that), or a giveaway keyword in the URL. Both are common,
+   neither is reliable alone -- a beacon that declares real dimensions
+   or lives at an unremarkable URL still gets through, and a handful
+   of legitimately tiny real icons (e.g. a 1px spacer used for layout,
+   not tracking) could get caught. That's an accepted tradeoff, not a
+   bug: see the "ams.blockbeaconimages" option text (options.c) for
+   the same caveat stated for the user. */
+static boolean LooksLikeBeacon(const struct htmlnode *n, const char *src)
+{
+    static const char *keywords[] = {
+        "beacon", "pixel", "/track", "tracking", "open.aspx",
+        "openrate", "spacer.gif", "1x1", "/o.gif",
+    };
+    const char *w = htmlpart_GetAttr(n, "width");
+    const char *h = htmlpart_GetAttr(n, "height");
+    size_t i;
+
+    if (w && h) {
+        long wi = strtol(w, NULL, 10);
+        long hi = strtol(h, NULL, 10);
+        if ((wi == 0 || wi == 1) && (hi == 0 || hi == 1)) return TRUE;
+    }
+
+    if (src) {
+        char lower[512];
+        size_t li = 0;
+        while (src[li] && li + 1 < sizeof(lower)) {
+            lower[li] = (char) tolower((unsigned char) src[li]);
+            ++li;
+        }
+        lower[li] = '\0';
+        for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i) {
+            if (strstr(lower, keywords[i])) return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 /* Top-level (non-table-cell) <img> handling: try a real embed via the
    resolver; on any failure (no resolver, resolver declines, format
    unsupported) fall back to the inline text placeholder. If the
@@ -882,9 +930,14 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
     struct dataobject *dob = NULL;
     boolean ok = FALSE;
     const char *placeholderHint = NULL;
+    boolean beaconBlocked = FALSE;
 
     if (src && st->resolver) {
-        resolved = (*st->resolver)(st->resolverRock, src, &bytes, &len, &mimetype);
+        if (environ_GetProfileSwitch("ams.blockbeaconimages", TRUE) && LooksLikeBeacon(n, src)) {
+            beaconBlocked = TRUE;
+        } else {
+            resolved = (*st->resolver)(st->resolverRock, src, &bytes, &len, &mimetype);
+        }
     }
 
     TraceDecode("DECODE ENTER src=%s resolved=%d bytes=%p len=%ld mimetype=%s\n",
@@ -924,6 +977,27 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
             return;
         }
         if (dob) dataobject_Destroy(dob);
+    }
+    if (beaconBlocked) {
+        /* Deliberately silent -- no placeholder text at all, unlike
+           the generic undecodable-image case below. A beacon is
+           supposed to be invisible on the original page (that's the
+           whole design of a 1x1 or off-screen tracking pixel), so
+           rendering nothing is actually more faithful to the source
+           than any visible marker would be. It also sidesteps a real
+           layout bug a visible placeholder caused in practice: this
+           renderer maps HTML tables onto lset/lpair, which sizes
+           columns from cell content, and a wide text run standing in
+           for what the original page sized as 1x1 blew out a column
+           width and shifted the rest of a real message (National
+           Grid's open-tracking pixel, first element in the document)
+           sideways. See the "ams.blockbeaconimages" option text
+           (options.c) -- it documents that a blocked image simply
+           vanishes rather than describing what it says here, so this
+           behavior is the one users are told to expect. */
+        free(bytes);
+        free(mimetype);
+        return;
     }
     /* placeholderHint (when non-NULL here) is the best-known real
        format for a resolved-but-undecodable image -- the sniffed
