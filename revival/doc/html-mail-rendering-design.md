@@ -107,16 +107,59 @@ posture, and worth stating outright rather than defaulting to "just
 `popen` a fetch," which every image in every marketing email would
 trigger silently otherwise. `cid:` (inline MIME-attached images,
 already decoded by `mimepart.c`) are not "remote" and always render.
-**Status:** this policy is decided but not implemented — today,
-`htmlatk_Render()`'s resolver argument is always `NULL` (`text822.c`),
-so no image, remote or `cid:`, is ever actually resolved to real
-bytes; every `<img>` renders its text placeholder unconditionally.
-Two separate prerequisites, not one: (a) `cid:` resolution needs a
-Content-ID lookup `mimepart.c` doesn't parse or expose at all yet (it
-only tracks Content-Type/Content-Disposition) — that's the more
-foundational gap, since even opt-in remote fetching is only half the
-picture without it; (b) the remote-fetch opt-in setting itself doesn't
-exist anywhere yet. See Planned next work below.
+**Status (2026-08-19): remote http(s):// fetching is implemented.**
+`httpimg.c`/`httpimg.h` (new, `src/atkams/messages/lib/`) is a
+blocking, curl-backed `htmlatk_ImageResolver` — no shell (argv-exec,
+not `popen`/`system`, so a hostile `src` can't inject anything), no
+new library dependency (shells out to the system `curl`, already
+TLS-capable). `text822.c`'s `RenderHtmlPart()` wires it in only when
+`environ_GetProfileSwitch("ams.loadremoteimages", FALSE)` is true (new
+Options-panel entry, `options.c`, default off — the anti-tracking-pixel
+posture above, now actually enforced, not just described) **or**
+`Mode`'s new `MODE822_LOADIMAGES` bit is set for this one message
+(`This Message → Load Remote Images`, `messages.c`'s
+`BSM_LoadRemoteImages`, one-shot the same way `MODE822_HTMLPLAINTEXT`
+already is — falls out of `captions__DisplayNewBody()`'s existing
+`MODE822_NORMAL` reset on navigating to a different message, no new
+plumbing needed for that part). A `struct httpimg_budget` bounds one
+render pass to a fixed fetch count and wall-clock deadline (currently
+24 fetches / 25s, sized against a real 14-image newsletter with
+headroom, not a guess — see `HTTPIMG_LOADIMAGES_MAXFETCHES`'s own
+comment in `text822.c` for the measurement), with a per-render-pass
+cache (`HTTPIMG_CACHE_SIZE`, `httpimg.h`) so a URL repeated across a
+message (chrome icons re-referenced once per table row in real
+newsletters) costs one fetch, not one per occurrence. `cid:` resolution
+remains unimplemented — `mimepart.c` still doesn't parse Content-ID —
+so that half of "resolve an image" is still open; see Open questions.
+
+Two hazards found and fixed while building this, worth keeping in
+mind for anything else that forks a subprocess from inside ATK's event
+loop: (1) `im.c`'s `cleanUpZombies` (on by default for every ATK app)
+wildcard-reaps *any* exited child via `waitpid(-1, WNOHANG)`, racing a
+resolver's own `waitpid(pid, ...)` for its own child and silently
+losing images to `ECHILD` when `im`'s sweep wins first — worked around
+by bracketing the resolver-bearing `htmlatk_Render()` call with
+`im_SetCleanUpZombies(FALSE)`/`(TRUE)`, not a change to `im.c` itself.
+(2) A synchronous per-image network fetch is fundamentally incompatible
+with `RenderHtmlPart()`'s existing `HTML_RENDER_TIME_BUDGET` (sized for
+local CPU work, ~20ms observed) treating "took too long" as "discard
+everything, fall back to plain text" — a separate, larger
+`HTML_RENDER_TIME_BUDGET_WITH_IMAGES` is used only when the resolver is
+actually live, so turning images on doesn't make the renderer throw
+away a render that just finished successfully.
+
+Servers lie about `Content-Type` more than expected in practice, not
+in theory: real mail from `media.shelf-awareness.com` serves genuine
+JPEG book-cover bytes under `.gif` URLs with a server-sent
+`Content-Type: image/gif`. `RenderImageInline()` (`htmlatk.c`) now
+retries once against `SniffImageMimetype()` (checks the fetched
+bytes' own magic number) when the declared type's decoder fails,
+before falling back to a placeholder — confirmed against the actual
+mislabeled bytes, not synthesized ones. Placeholders themselves also
+improved: `[image]` became `[img.png: alt text]` / `[img.jpg]`
+(`ImgFormatLabel`), preferring the real fetched Content-Type (or the
+sniffed one, if a sniff was attempted) over a guess from the URL's
+extension, so a still-unrenderable image at least says what it is.
 
 **No fixed size caps.** Earlier drafts of this doc proposed hard
 size/depth thresholds (reject-and-fall-back beyond ~2MB of markup, a
@@ -401,8 +444,10 @@ bitmap-plus-run-length-compression format AUIS already decodes — PNG
 is architecturally the same idea (bitmap + compressed encoding) with
 color instead of `raster`'s monochrome RLE and a different (DEFLATE)
 compression scheme. Still a separate, scoped task from this renderer
-work (touches `image.c`/a new `png.ch`, not the HTML parser/renderer),
-but no longer an open question — just not yet started.
+work (touches `image.c`/a new `png.ch`, not the HTML parser/renderer)
+— **in progress as of 2026-08-19** (separate session/instance;
+`RenderImageInline`'s `ImageClassForMimetype` routes `image/png` to
+`"raster"`, which can't decode it, until this lands).
 
 Rendering plan: `<img>` → attempt `image_New` + `ReadOtherFormat`
 against the resolved bytes (either `cid:`-referenced MIME part, or
@@ -595,20 +640,16 @@ down, these aren't undecided, just not yet done.
    actual message view was never written. Needs figuring out where
    `text822.c`'s displayed content handles mouse clicks today (or
    whether a wrapper view needs adding) before the override can go in.
-3. **Remote image fetching isn't implemented at all.** See the Images
-   section above — the anti-tracking-pixel opt-in *policy* was decided
-   at this doc's outset, but nothing resolves images yet, `cid:` or
-   remote (`text822.c` passes a `NULL` resolver unconditionally). Two
-   prerequisites stack here: `cid:` resolution needs Content-ID
-   parsing `mimepart.c` doesn't have, and only after that does the
-   remote-fetch opt-in setting itself (still undesigned — global vs.
-   per-message vs. per-sender, where it lives) become buildable.
-   Deliberately last: real user-facing privacy/security tradeoffs,
-   wants explicit sign-off on the setting's shape before writing code.
+3. ~~**Remote image fetching isn't implemented at all.**~~ **Done
+   (2026-08-19)**, http(s):// only — see the Images section above for
+   the full implementation (`httpimg.c`, the `ams.loadremoteimages`
+   preference + per-message override, the `im.c` SIGCHLD fix, the
+   content-sniffing fallback). `cid:` resolution is still the open
+   half: needs Content-ID parsing `mimepart.c` doesn't have yet.
 
 Agreed order: (1) first — small, self-contained, no open design
-questions. (2) second — bigger, but nothing left to decide. (3) last —
-blocked on design decisions above, not on effort.
+questions. (2) second — bigger, but nothing left to decide. (3) done,
+`cid:` half still open.
 
 ## Open questions
 
