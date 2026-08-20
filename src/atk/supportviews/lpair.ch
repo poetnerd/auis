@@ -63,6 +63,17 @@
    movable truthiness, unchanged from before this bit existed). */
 #define lpair_NOBAR		2
 
+/* A third bit on the same "moveable" parameter/field, same packing
+   rationale as lpair_NOBAR just above (do NOT give this its own data
+   field -- see that comment). Added 2026-08-20 for htmlatk.c's HTML
+   table rendering: a real browser's default table-cell vertical-align
+   is "middle", not "top", so any row pairing a short cell with a tall
+   one (an icon beside wrapped text, a thin divider line beside a row
+   of social icons) needs its shorter child centered in the shared row
+   height rather than pinned to the top. lpair_ResetDimensions
+   (lpair.c) is the only place that reads this bit. */
+#define lpair_VCENTER		4
+
 /* values for lpair.sizeform */
 #define lpair_PERCENTAGE		0
 #define lpair_FIXED			1 /* Compatibility is the mother of hacks... */

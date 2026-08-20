@@ -147,12 +147,12 @@ static int initkids(struct lsetview *self, struct lset *ls)
 	v1 = lsetview_Create(self->level+1,(struct lset *) ls->left,(struct view *)self);
 	v2 = lsetview_Create(self->level+1,(struct lset *)ls->right,(struct view *)self);
 	{
-	/* lpair_NOBAR (lpair.ch) is a bit on the same moveable
-	   parameter, not a separate flag -- see its comment there for
-	   why (a real extra struct field rippled sizeof(struct lpair)
-	   through frame.ch's embedding and every descendant, and blew
-	   up live as a version-mismatch segfault). */
-	int mv = TRUE | (ls->nobar ? lpair_NOBAR : 0);
+	/* lpair_NOBAR and lpair_VCENTER (lpair.ch) are bits on the same
+	   moveable parameter, not separate flags -- see lpair_NOBAR's
+	   comment there for why (a real extra struct field rippled
+	   sizeof(struct lpair) through frame.ch's embedding and every
+	   descendant, and blew up live as a version-mismatch segfault). */
+	int mv = TRUE | (ls->nobar ? lpair_NOBAR : 0) | (ls->vcenter ? lpair_VCENTER : 0);
 	if(ls->type == lsetview_MakeHorz)
 	    lsetview_HSplit(self,v1,v2,ls->pct,mv);
 	else if(ls->type == lsetview_MakeHorzFixed) {
