@@ -2718,8 +2718,12 @@ placement issues, followed the same day by one more core-ATK bug
 (n., `image__Zoom` pixel-count truncation), a new `lset`/`lpair`
 capability (o., suppressing the divider bar), and a refinement of m.
 (p., a fixed-pixel icon column so a floated-pair's icon side doesn't
-scale down with the rest of the row). One further issue found live
-2026-08-20 is **not yet resolved** — see this section's closing note.
+scale down with the rest of the row). A further icon-clipping bug
+found live 2026-08-20 testing p. (q.) turned out to be neither n. nor
+j. recurring, but a `textview` embedded-border reservation the
+fixed-column mechanism didn't account for — root-caused and fixed the
+same day, commit `e0eb4f3946`. One further, unrelated issue found the
+same day is **not yet resolved** — see this section's closing note.
 
 `atkams/messages/lib/htmlatk.c`'s HTML-mail renderer builds each
 `<table>` as a tree of `lset`/`lsetview` objects (`atk/adew/lset.ch`,
@@ -3135,12 +3139,61 @@ seen any other way in the corpus so far, but a right-hand fixed icon
 would just fall through to the pre-existing proportional split rather
 than being silently wrong.
 
-**Not yet resolved:** found live 2026-08-20 testing p. — widening the
-message window lets ordinary paragraph text reflow to fill the new
-width, but content inside an `lset`-rendered HTML table (including
-this same floated-pair row) stays visibly narrow, as if still laid out
-for the window's earlier, narrower size. Not investigated further
-yet — logged here to pick up next session.
+#### q. Fixed-pixel icon columns (n./p.) still lost pixels: `textview` reserves its own embedded border, uncounted by the column's exact-fit sizing
+
+Found live 2026-08-20, testing p.: the gas-meter icon (and, separately,
+National Grid's 5-icon social row once it got the same fixed-column
+treatment as p. — see below) still lost a few pixels off the right edge
+even though n. and p. were both already shipped and, individually,
+correct. Two false leads chased first and ruled out with direct
+evidence before finding the real cause: (1) `image_Zoom`'s scaling math
+— re-verified live via a temporary trace and found exact in every case
+checked, and moot anyway for the gas-meter icon specifically, whose
+native decoded size already matched its declared width, so no scaling
+ever ran; (2) `imagev`'s bevel border (item j.) reappearing — a
+`bordersize` reading that looked like `SetNoBorder` had stopped working
+turned out to be an artifact of testing through a new `writedsr` debug
+tool that round-trips a fixture through a real ATK datastream file;
+`image__Read`/`image__Write` never persist the transient `noBorder`
+flag, so of course it came back `FALSE` after a disk round-trip — the
+live `messages` path never serializes the image at all, so this never
+applied there.
+
+The real cause: the fixed lset column sizes the `lpair` box to exactly
+the icon's own pixel width, but the `text` object rendered inside it
+goes through `textview`, and `textv.c`'s line-layout unconditionally
+reserves a small border (`EBX`, 2px) on each side when computing its
+own drawable width — even for a bare cell wrapper never meant to be
+edited. Live-traced (temporary instrumentation added to and then
+removed from `drawtxtv.c`/`textv.c`/`imagev.c`, core ATK text/image
+view code) against two independent real icons — the 81px gas-meter
+icon and the 30px social-row icons — and both showed the exact same
+**-6px** shortfall regardless of size, ruling out anything proportional.
+Fixed entirely in `htmlatk.c` (not core `textview`, which is
+widely-shared): a new `ICONCELL_WIDTH_PAD` constant pads the fixed
+column's requested width by 6px at both call sites. While chasing this,
+also extended n./p.'s fixed-column mechanism from just the floated-pair
+icon to any `<td>` whose sole content is one appropriately-sized `<img>`
+(so the National Grid social-icon row, previously relying on an
+equal-weight percentage split that could round a given icon a pixel or
+two short, gets the same treatment) — capped to icon-scale widths
+(`ICONCELL_MAXFIXEDPX=120`) after an uncapped first attempt
+immediately regressed live: a 350px decorative divider image sitting in
+the row's own `<tr>` got a fixed column too, starving its sibling and
+squeezing the whole icon row down with it.
+
+Live-confirmed fixed by wdc ("YES! gas meter icon perfect. Facebook and
+the other icons back to their proper size and placement.").
+
+**Not yet resolved:** a separate bug, also found live 2026-08-20 while
+testing p. before q. was root-caused — widening the message window lets
+ordinary paragraph text reflow to fill the new width, but content
+inside an `lset`-rendered HTML table (including this same floated-pair
+row) stays visibly narrow, as if still laid out for the window's
+earlier, narrower size. Not investigated further yet — logged here to
+pick up next session. Also not yet addressed: `<td style=
+"background-color:...">` isn't honored at all (noticed via a
+Thunderbird comparison of the gas-meter icon's cell background).
 
 ## Primary build environment: macOS/Darwin
 
