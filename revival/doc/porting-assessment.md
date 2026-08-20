@@ -2710,7 +2710,11 @@ fully working (see `roadmap.md`'s Applications and insets table).
 layout itself found and fixed 2026-08-17/18 (commits `c5f535ca9b`,
 `b38e9fda90`, `a9a82d66f1`). Fixing them exposed seven further,
 pre-existing bugs elsewhere in core ATK (`textview` — f/g/h/i; `image`/
-`imagev` — j/k/l), also found and fixed 2026-08-18/19.
+`imagev` — j/k/l), also found and fixed 2026-08-18/19. A further
+`htmlatk.c`-level layout gap (m., a real HTML idiom this renderer had
+no representation for at all, not a core-ATK bug) found and fixed
+2026-08-19 while working the National Grid header's remaining
+placement issues.
 
 `atkams/messages/lib/htmlatk.c`'s HTML-mail renderer builds each
 `<table>` as a tree of `lset`/`lsetview` objects (`atk/adew/lset.ch`,
@@ -2998,6 +3002,52 @@ because nothing in this codebase previously zoomed a plain truecolor
 image. Fixed by initializing `newimage = NULL` at declaration and
 checking `!newimage || !RGBP(newimage)`, matching the code's own
 evident intent.
+
+#### m. `align="left"`/`align="right"` floated adjacent `<table>`s had no side-by-side representation at all
+
+Not a core-ATK bug like f-l above — a real gap in `htmlatk.c`'s own
+table-layout coverage. Real marketing HTML routinely places two things
+side by side not with one `<tr>` holding two `<td>`s (the case
+`BuildLsetGrid`/`BuildLsetChain` already handled), but with two
+*sibling* `<table>`s, one `align="left"` and the next `align="right"`,
+relying on a browser's float layout to place them beside each other.
+Confirmed live in National Grid's gas-meter row: a `width="10%"
+align="left"` table holding just the icon, immediately followed by a
+`width="85%" align="right"` table holding the paragraph
+(`revival/tests/national-grid.html`, ~line 279-297).
+
+Both of those tables are individually a single row/single cell — i.e.
+exactly what `TableIsTrivialWrapper` (added for #24 item e.'s spacer-
+table problem) treats as pure structural boilerplate and unwraps into
+plain flowing content. That unwrapping is what broke this idiom:
+once unwrapped, the icon and paragraph both ended up as ordinary
+inline content of the *same* surrounding `textview` (confirmed via
+`htmlatktest.test dump`: the row came out as one plain leaf, the
+image's view character followed directly by the paragraph's text
+runs, no `lset` split anywhere) — and `textview` has no CSS-style
+float layout of its own, so every line after the image's own line
+started back at the column's full left edge, below the image, not
+beside it. Visually: the paragraph text wrapped above and below the
+icon instead of to its right.
+
+Fixed with two changes in `htmlatk.c`: an `align="left"`/`"right"`
+table is now exempted from the trivial-wrapper unwrap (its align *is*
+real visual intent, not boilerplate); and when such a table is popped
+off the main walk stack, `TryPairFloatedTables` peeks at its next real
+sibling (skipping whitespace-only text nodes) and, if that sibling is
+also a `<table>`, builds a genuine 2-column `lset` split from the pair
+— left/right chosen from the floated table's own `align` (not the
+partner's, so a partner with no `align` of its own still lands
+correctly, matching ordinary CSS float semantics), weighted by each
+side's declared `width=` percentage (falling back to 50/50 if neither
+declares one). A floated table with no pairable sibling still renders
+via the ordinary single-column path rather than vanishing. Also
+required allowing `align` through `htmlpart.c`'s attribute allowlist
+for `table`/`td`/`th` (previously stripped during sanitization like
+`width` was before #24 item a.'s fix). Verified via
+`htmlatktest.test dump`: the row now comes out as a real `type=1
+pct=89` `lset` split (icon leaf left, paragraph leaf right), matching
+the 10%/85% declared widths.
 
 ## Primary build environment: macOS/Darwin
 
