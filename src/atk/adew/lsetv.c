@@ -152,7 +152,7 @@ static int initkids(struct lsetview *self, struct lset *ls)
 	   comment there for why (a real extra struct field rippled
 	   sizeof(struct lpair) through frame.ch's embedding and every
 	   descendant, and blew up live as a version-mismatch segfault). */
-	int mv = TRUE | (ls->nobar ? lpair_NOBAR : 0) | (ls->vcenter ? lpair_VCENTER : 0);
+	int mv = TRUE | (ls->nobar ? lpair_NOBAR : 0) | (ls->vcenter ? lpair_VCENTER : 0) | (ls->autoheight ? lpair_AUTOHEIGHT : 0);
 	if(ls->type == lsetview_MakeHorz)
 	    lsetview_HSplit(self,v1,v2,ls->pct,mv);
 	else if(ls->type == lsetview_MakeHorzFixed) {

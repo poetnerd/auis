@@ -65,6 +65,18 @@ data:
 	   (top-pinned, the original behavior) for \V <3 files and every
 	   other lset caller in the tree. */
 	int vcenter;
+	/* When set, the stacked (top/bottom) view built for this split
+	   sizes its top child to its own real desired height instead of
+	   an equal/weighted share of the stack (lpair_AUTOHEIGHT,
+	   lpair.ch). Added 2026-08-20 for htmlatk.c's BuildLsetLeafFromFloatTable,
+	   which stacks a floated table's real HTML rows (title, synopsis,
+	   Buy button -- previously all but the first were destroyed
+	   outright, confirmed live against the Book Rack fixture) instead
+	   of flattening them into one leaf. Persisted as of the on-disk
+	   \V 4 format (lset__Read/Write); defaults to 0 (equal/weighted
+	   split, the original behavior) for \V <4 files and every other
+	   lset caller in the tree. */
+	int autoheight;
 	char dataname[32];
 	char viewname[32];
 	char refname[64];

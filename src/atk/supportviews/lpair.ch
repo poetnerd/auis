@@ -74,6 +74,31 @@
    (lpair.c) is the only place that reads this bit. */
 #define lpair_VCENTER		4
 
+/* A fourth bit, same packing rationale as lpair_NOBAR/lpair_VCENTER
+   above. Added 2026-08-20 for htmlatk.c's BuildLsetLeafFromFloatTable:
+   a floated table's content side is often multiple real HTML rows
+   (a title row, a synopsis paragraph, a Buy-button row), which used
+   to get flattened into a single lset leaf by keeping only the first
+   row and destroying the rest -- confirmed live against the Book Rack
+   fixture, wdc reported synopsis text and Buy links vanishing outright
+   for several entries. The fix stacks all of a float table's rows via
+   BuildLsetChain(..., lsetview_MakeVert, ...) instead, but a stack
+   built that way still needs each row sized to its OWN real content
+   height, not an equal or colspan-style weighted share of the whole
+   stack's height (a one-line title row and a four-line synopsis
+   paragraph are not the same size). lpair_ResetDimensions (lpair.c)
+   is the only place that reads this bit: for a HORIZONTAL-typex
+   (stacked) pair with this bit set, it queries obj[0]'s real desired
+   height for the pair's own width and gives obj[0] exactly that many
+   pixels, handing the remainder to obj[1] -- exactly mirroring
+   lpair_TOPFIXED's own left/top-child convention, just with the pixel
+   amount resolved dynamically per resize (via view_DesiredSize)
+   instead of a static value baked in ahead of time. Falls back to the
+   ordinary weighted split (unchanged) when obj[0]'s query comes back
+   degenerate (<=0 or >= the pair's whole height) -- same guarded-
+   fallback shape as lpair_VCENTER above. */
+#define lpair_AUTOHEIGHT	8
+
 /* values for lpair.sizeform */
 #define lpair_PERCENTAGE		0
 #define lpair_FIXED			1 /* Compatibility is the mother of hacks... */
