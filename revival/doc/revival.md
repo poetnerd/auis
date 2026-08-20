@@ -693,6 +693,27 @@ next step, not yet done:
   initializing the pointer to `NULL` and checking for that alongside
   the existing type check.
 
+- **`image`'s `Zoom()` method truncated its output pixel count instead
+  of rounding, clipping a scaled image's right/bottom edge by a
+  column or row.** `buildZoomIndex` (the same function `Zoom()` calls
+  to build its resampling index, right next to the uninitialized-
+  pointer bug above) computed the scaled output width as a plain
+  `float`-to-`unsigned int` assignment — `fzoom * width`, no rounding
+  — so any ratio landing just under a whole pixel came out one short:
+  a 31px-native icon scaled to a declared `width="30"` computed
+  `floor(0.96 * 31) = 29`. Combined with the HTML-mail renderer's own
+  zoom-percentage calculation (also a truncating integer division, a
+  separate and much younger piece of code, not itself a bug — the
+  percentage-based `Zoom()` interface just amplified it), this was a
+  double truncation, systematically landing short rather than
+  occasionally. Confirmed live: several of a real newsletter's scaled
+  icons visibly missing their rightmost column of pixels. Fixed by
+  rounding instead of truncating, plus a defensive clamp on the
+  resulting per-pixel source index (a rounded-up output size means the
+  highest index this loop computes is correspondingly larger, so it's
+  clamped into range rather than trusted not to ever read one pixel
+  past the source buffer).
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

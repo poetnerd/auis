@@ -2714,7 +2714,12 @@ pre-existing bugs elsewhere in core ATK (`textview` — f/g/h/i; `image`/
 `htmlatk.c`-level layout gap (m., a real HTML idiom this renderer had
 no representation for at all, not a core-ATK bug) found and fixed
 2026-08-19 while working the National Grid header's remaining
-placement issues.
+placement issues, followed the same day by one more core-ATK bug
+(n., `image__Zoom` pixel-count truncation), a new `lset`/`lpair`
+capability (o., suppressing the divider bar), and a refinement of m.
+(p., a fixed-pixel icon column so a floated-pair's icon side doesn't
+scale down with the rest of the row). One further issue found live
+2026-08-20 is **not yet resolved** — see this section's closing note.
 
 `atkams/messages/lib/htmlatk.c`'s HTML-mail renderer builds each
 `<table>` as a tree of `lset`/`lsetview` objects (`atk/adew/lset.ch`,
@@ -3048,6 +3053,94 @@ for `table`/`td`/`th` (previously stripped during sanitization like
 `htmlatktest.test dump`: the row now comes out as a real `type=1
 pct=89` `lset` split (icon leaf left, paragraph leaf right), matching
 the 10%/85% declared widths.
+
+#### n. `image__Zoom`'s pixel-count rounding truncated instead of rounding, clipping the scaled image's right/bottom edge
+
+A core-ATK bug, not `htmlatk.c`-specific — `imagev.c`'s own interactive
+zoom-in/out feature was equally affected, just never exercised at
+percentages that made the truncation visible. `image__Zoom`
+(`atk/basics/common/image.c`) computes its output pixel dimensions via
+`buildZoomIndex`, which did `*rwidth = fzoom * width` — a plain
+`float`-to-`unsigned int` assignment, truncating toward zero rather
+than rounding. Combined with `htmlatk.c`'s item k. fix
+(`ScaleImageToDeclaredSize`) computing the zoom percentage itself via
+truncating integer division, real icon dimensions routinely hit a
+double truncation: e.g. a 31px-native icon scaled to a declared
+`width="30"` computes `zoom=(30*100)/31=96` (truncated), and
+`floor(0.96*31)=floor(29.76)=29` — one column short of the requested
+30. Found live 2026-08-20 as "the rightmost column of the icon looks
+clipped," reproduced on National Grid's gas-meter icon and several of
+its social-row icons. Fixed by rounding (`+ 0.5` before the cast)
+instead of truncating, plus a defensive clamp on the per-pixel source
+index (a rounded-up output size means the highest index this loop
+computes is correspondingly larger, so it's clamped into range rather
+than trusted not to ever read one pixel past the source buffer).
+Verified with a throwaway standalone harness (`image_Zoom` called
+directly, off-screen, on synthetic images at the exact ratios above)
+rather than through `htmlatktest.test`, since that tool's `dump` mode
+only ever inspects `lset`/`text` structure, never decoded pixel data.
+
+#### o. Every `lset`/`lpair` split drew a visible divider bar, with no way to suppress it
+
+Noted as an accepted, unfixed limitation when item m. shipped (same
+day): a real browser never draws a resize bar between table cells, but
+`lpair`'s `DoFullUpdate` (`atk/supportviews/lpair.c`) draws one
+unconditionally on every split, and `lsetview`'s `initkids()`
+hardcoded every split it built as draggable with no data-level way to
+turn the bar off. Surfaced live as visually noisy vertical lines
+between National Grid's 5 social-row icons.
+
+The first attempt at a fix added a real `boolean barvisible` field to
+`lpair`'s data section. That changed `sizeof(struct lpair)`, and
+because `frame.ch` (window chrome, used by nearly every ATK view)
+embeds `struct lpair` inline via inheritance, every already-compiled
+`.o` referencing `frame`/`lpair` silently disagreed on layout with the
+freshly-recompiled ones — caught live as `"Incompatible version of
+lpair requested!"` immediately followed by a segfault in `messages`.
+(classpp auto-computes each class's version number from `sizeof(struct
+%s)`, folded into a compile-time constant per translation unit — see
+`overhead/class/pp/class.c`'s `%s_VERSION` codegen — so two `.o`s
+built against different struct layouts for the same class disagree the
+instant one of them allocates and the other's code touches it.)
+
+Fixed instead by packing the bit onto the *existing* `movable`
+field/parameter (a new `lpair_NOBAR` bit, `lpair.ch`) rather than
+growing the struct at all — zero layout change, so no wider rebuild
+than `lpair.c`/`lsetv.c` themselves. `lset.ch` gained a genuinely new
+persisted field, `nobar` (safe — nothing subclasses `lset`, unlike
+`lpair`), read/written under a bumped `\V 2` on-disk version with the
+old field count still accepted for `\V 1` data. `BuildLsetChain`
+(`htmlatk.c`) now sets `nobar` on every split it creates, since a real
+browser never shows one here regardless of table shape.
+
+#### p. Floated-pair icon column used a percentage split, so it visibly shrank (and its bitmap clipped) in a narrow window
+
+A refinement of m., found live 2026-08-19 right after m. shipped:
+`TryPairFloatedTables` weighted both sides of a floated-table pair by
+their declared `width=` percentages, including the icon side. A
+percentage split shrinks both sides together as the container narrows
+— fine for the text side, wrong for the icon side, since a bitmap
+doesn't scale down to fit a smaller view the way flowing text does.
+Fixed by giving the icon side a **fixed** pixel width instead,
+reusing `BuildLsetChain`'s existing `fixedpx` mechanism (previously
+only used for empty spacer `<td>`s, item b.): a new
+`FloatTableSoleImageWidth` helper recognizes when a floated table's
+only real content is a single `<img>` (ignoring whitespace and
+pass-through wrapper tags like `<a>`/`<center>`), and uses that
+image's own declared pixel width as the fixed `bsize`, leaving the
+text side to take whatever's left. Only works when the image-only side
+lands in `BuildLsetChain`'s left/top slot (its `fixedpx` convention
+folds a fixed cell in there specifically, never the last slot) — not
+seen any other way in the corpus so far, but a right-hand fixed icon
+would just fall through to the pre-existing proportional split rather
+than being silently wrong.
+
+**Not yet resolved:** found live 2026-08-20 testing p. — widening the
+message window lets ordinary paragraph text reflow to fill the new
+width, but content inside an `lset`-rendered HTML table (including
+this same floated-pair row) stays visibly narrow, as if still laid out
+for the window's earlier, narrower size. Not investigated further
+yet — logged here to pick up next session.
 
 ## Primary build environment: macOS/Darwin
 
