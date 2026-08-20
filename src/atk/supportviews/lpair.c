@@ -484,6 +484,36 @@ static void lpair_ResetDimensions(struct lpair *self)
 
 	x = 0;
 	y = 0;
+
+	/* lpair_AUTOHEIGHT (see lpair.ch): a stacked pair whose two
+	   children are one real HTML row (obj[0]) and the rest of a
+	   multi-row stack folded beneath it (obj[1], itself an
+	   AUTOHEIGHT lpair one level down -- see BuildLsetChain in
+	   htmlatk.c). The ordinary weighted split above already ran (via
+	   lpair_ComputeSizes, called just before this function in
+	   DoFullUpdate) and put SOME split into self->objcvt[0]/[1], but
+	   that split has no way to know a title row wants 20px and a
+	   synopsis paragraph wants 90 -- it just divides this pair's
+	   total height by relative weight. Overriding it here, right
+	   before the placement loop below uses it, asks obj[0] for its
+	   own real desired height at this pair's actual width and gives
+	   it exactly that, handing whatever's left to obj[1] -- which
+	   recursively does the same for the row after it. Only applied
+	   when the query comes back sane (0 < dh0 < total); a degenerate
+	   result (obj[0] can't size itself yet, or claims more than the
+	   whole pair) falls through to the unmodified weighted split,
+	   same guarded-fallback shape as lpair_VCENTER's own check. */
+	if (self->typex == lpair_HORIZONTAL && (self->movable & lpair_AUTOHEIGHT)
+	    && self->obj[0] && self->obj[1]) {
+		long dw, dh0, total;
+		view_DesiredSize(self->obj[0], lpair_GetLogicalWidth(self), lpair_GetLogicalHeight(self), view_WidthSet, &dw, &dh0);
+		total = lpair_GetLogicalHeight(self);
+		if (dh0 > 0 && dh0 < total) {
+			self->objcvt[0] = dh0;
+			self->objcvt[1] = total - dh0;
+		}
+	}
+
 	for (i = 0; i < 2; i++) { /* Loop over the two halves of the lpair. */
 		child = (struct view *) self->obj[i];
 		if (child != NULL)

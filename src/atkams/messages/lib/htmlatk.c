@@ -1582,6 +1582,15 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
            table-cell pairing, so this is unconditional here, matching
            nobar just above. */
         node->vcenter = 1;
+        /* A stacked (lsetview_MakeVert) split built by this function
+           gives its top child (obj[0]/left, i.e. cells[i].leaf here)
+           its own real desired height instead of an equal/weighted
+           share of the stack (lpair_AUTOHEIGHT, lpair.ch/lpair.c
+           2026-08-20) -- see BuildLsetLeafFromFloatTable below, the
+           only caller that builds a MakeVert chain here so far. Inert
+           for a side-by-side (MakeHorz) split, same as vcenter being
+           inert for MakeVert -- unconditional here matches both. */
+        node->autoheight = 1;
         if (cells[i].fixedpx > 0) {
             node->type = fixedsplittype;
             node->pct = (int) cells[i].fixedpx; /* a pixel bsize here, not a percentage -- see lsetview_MakeHorzFixed's comment in lsetv.ch */
@@ -2262,27 +2271,41 @@ static long FloatTableSoleImageWidth(const struct htmlnode *n)
    below only ever calls this on the two floated tables directly, never
    on a <td>), so BuildLsetGrid -- the same builder RenderTableAsLset
    uses for an ordinary table -- is the right tool, not BuildLsetCell
-   (which expects a <td>). Every real floated table found in the corpus
-   is a single row/single cell (the "table used as one column" idiom);
-   if BuildLsetGrid ever returns more than one row, only the first is
-   usable as this leaf's own single content slot -- the same accepted
-   "no natural home for extra structure in one leaf" degrade already
-   documented for rowspan (BuildLsetGrid's own header comment) -- any
-   further rows are destroyed here rather than leaked. An empty/
-   degenerate table (BuildLsetGrid finds no real rows at all) is not a
-   failure, same as elsewhere in this file -- it becomes a blank filler
-   leaf instead. */
+   (which expects a <td>).
+
+   A real floated table's content side is very often MORE than one row
+   -- a title row, a synopsis paragraph, a Buy-button row are three
+   separate <tr>s in the Book Rack fixture's book-card idiom -- and
+   this leaf has to come back as exactly one lset for TryPairFloatedTables
+   to pair against its sibling column, so multiple rows get stacked
+   here via BuildLsetChain(lsetview_MakeVert), the same chain-builder
+   BuildLsetGrid itself uses for a row's cells (lsetview_MakeHorz)
+   just turned the other axis. This used to instead keep only
+   rows.items[0] and dataobject_Destroy() every row after it -- found
+   live 2026-08-20 against Book Rack, wdc reported synopsis text and
+   Buy-button links vanishing outright for several entries; every one
+   of those was exactly this: real row content silently destroyed
+   here. Each row is sized to its own real desired height, not an
+   equal/weighted share of the stack -- see lpair_AUTOHEIGHT
+   (lpair.ch/lpair.c), set unconditionally on every node BuildLsetChain
+   builds. An empty/degenerate table (BuildLsetGrid finds no real rows
+   at all) is not a failure, same as elsewhere in this file -- it
+   becomes a blank filler leaf instead. */
 static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode, struct hax_state *st)
 {
     struct lsetvec rows;
     struct lset *leaf;
 
     if (BuildLsetGrid(tablenode, st, &rows) && rows.count > 0) {
+        struct wlvec cells;
         long i;
-        leaf = rows.items[0];
-        for (i = 1; i < rows.count; ++i) dataobject_Destroy((struct dataobject *) rows.items[i]);
+
+        wlvec_init(&cells);
+        for (i = 0; i < rows.count; ++i) wlvec_push(&cells, rows.items[i], 1, 0);
         lsetvec_free(&rows);
-        return leaf;
+        leaf = BuildLsetChain(cells.items, cells.count, lsetview_MakeVert, lsetview_MakeVertFixed, st);
+        wlvec_free(&cells);
+        return leaf ? leaf : MakeFillerLeaf(st);
     }
     lsetvec_free(&rows);
     return MakeFillerLeaf(st);

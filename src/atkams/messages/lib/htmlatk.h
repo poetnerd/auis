@@ -1008,6 +1008,75 @@
 	revival.md rather than here since it's a general ATK scrollbar bug,
 	not an htmlatk.c-local one.
 
+	SEVENTEENTH item, 2026-08-20, found live against a real "Book Rack"
+	newsletter (revival/tests/bookrack.html, added this session --
+	saved the same way national-grid.html was, per the SIXTEENTH item
+	above). wdc's report, from a live rendering next to a Thunderbird
+	reference: images failing to load, synopsis text missing for the
+	first few book entries, "Buy" links/icons missing throughout, and
+	later entries (where the cover image itself failed to fetch)
+	showing text but not laid out right. Isolating each book card's
+	markup (a floated pair of <table>s -- cover image on one side,
+	title/synopsis/Buy-button on the other, the same align="left"/
+	"right" idiom TryPairFloatedTables (2026-08-18/19, not separately
+	logged here) already exists to pair) found the real cause:
+	BuildLsetLeafFromFloatTable, which turns one side of that pair into
+	a single lset leaf, kept only rows.items[0] from BuildLsetGrid's
+	result and called dataobject_Destroy() on every row after it --
+	deliberate at the time ("every real floated table found in the
+	corpus is a single row/single cell"), but wrong for Book Rack's
+	book-card idiom, where the content side is routinely 2-3 real rows
+	(a title row, a synopsis-plus-review-link row, a Buy-button row).
+	Confirmed structurally via `htmlatktest.test writeds` (this
+	standalone driver needs ANDREWDIR set explicitly -- run bare with
+	no env, it silently dynamic-loads *some* stale "lset" class
+	instead of this checkout's freshly built one, and duly writes a
+	stale \V-format datastream; cost real time to notice before
+	realizing it was an environment artifact, not a code bug): before
+	the fix, "Isaac Butler"/"Meticulously researched..."/"Read the
+	full review" were absent from the emitted datastream entirely;
+	after, all present.
+
+	Fixed by no longer discarding rows 1..N: they're stacked into one
+	lset via BuildLsetChain(..., lsetview_MakeVert, ...), the same
+	chain-builder BuildLsetGrid itself already uses for a row's cells,
+	just turned the other axis. That surfaced a second problem this
+	renderer had already run into once before, from the opposite
+	direction: a stack of rows with genuinely different natural
+	heights (a one-line title, a four-line synopsis) can't just split
+	the available height evenly or by weight -- lpair__DesiredSize's
+	own height-summing fix (2026-08-18, see its comment in lpair.c)
+	was for exactly this class of problem, but on the DesiredSize/
+	reporting side; ResetDimensions/placement had no equivalent on the
+	SPLITTING side. Added lpair_AUTOHEIGHT (lpair.ch/lpair.c), a
+	fourth bit on the same movable-field packing lpair_NOBAR and
+	lpair_VCENTER already established (see lpair_NOBAR's own comment
+	for why: a real extra struct field on lpair specifically rippled
+	sizeof(struct lpair) through frame.ch's inline embedding and blew
+	up live as a version-mismatch segfault, elsewhere entirely, the
+	first time this project tried it). Unlike lpair, adding a real
+	field to lset itself is safe (nothing embeds struct lset inline
+	the way frame.ch embeds struct lpair) and is the same approach
+	nobar/vcenter already took: a new `autoheight` field on lset
+	(lset.ch), persisted lset.ch's on-disk \V format 3->4
+	(lset__Read/Write, lset.c), and threaded through lsetv.c's
+	initkids the same way nobar/vcenter are. BuildLsetChain
+	(htmlatk.c) now sets node->autoheight = 1 unconditionally on every
+	node it builds, both axes -- inert on a side-by-side (MakeHorz)
+	split the same way vcenter is inert on a stacked (MakeVert) one.
+	wdc, after a live rebuild+relaunch against the real fixture:
+	"Much better!"
+
+	Not investigated this round: the image-load failures themselves
+	(some Book Rack cover images never resolved even after this fix --
+	structurally unrelated to the row-destruction bug above, since the
+	surrounding markup for a failed-image entry and a succeeded one is
+	identical; likely a per-image fetch/decode issue, not an htmlatk.c
+	structural one). wdc's original report's fourth point -- entries
+	whose image failed to load still showing text, "but not how it
+	should look" -- may or may not be resolved as a side effect of the
+	row-stacking fix above; not separately confirmed.
+
 	== Gate 5 (not implemented by this module) ==
 
 	Wiring this into src/atkams/messages/lib/text822.c (replacing the
