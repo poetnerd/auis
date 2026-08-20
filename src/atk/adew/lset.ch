@@ -47,6 +47,15 @@ methods:
 data:
 	int type;
 	int pct;
+	/* When set, the view built for this split should not draw its
+	   lpair divider bar (see lpair.ch's barvisible/SetBarVisible).
+	   Added 2026-08-19 for htmlatk.c's HTML table rendering: a real
+	   browser never shows a resize bar between table cells, so every
+	   BuildLsetChain-generated split (htmlatk.c) sets this. Persisted
+	   as of the on-disk \V 2 format (lset__Read/Write); defaults to 0
+	   (bar shown, the original/pre-2026-08-19 behavior) for \V 1 files
+	   and every other lset caller in the tree. */
+	int nobar;
 	char dataname[32];
 	char viewname[32];
 	char refname[64];

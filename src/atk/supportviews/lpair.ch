@@ -41,6 +41,28 @@
 
 #define lpair_NOCHANGE		(-1)	/* Used when it is wished not to change the current value of a state */
 
+/* A second, independent bit on the existing "moveable" parameter/field
+   (VSplit/HSplit/etc., and self->movable) -- NOT a new struct field.
+   Added 2026-08-19 for htmlatk.c's HTML table rendering (a real browser
+   never draws a resize bar between table cells). A prior version of
+   this fix added a real `boolean barvisible` field to lpair's data
+   section instead; that changed sizeof(struct lpair), and because
+   frame.ch (used almost everywhere in the tree) embeds struct lpair
+   inline via inheritance, every already-compiled .o that referenced
+   frame/lpair silently disagreed on layout with freshly-recompiled
+   ones -- caught live as "Incompatible version of lpair requested!"
+   followed by a segfault (class.c's classpp-generated %s_VERSION is
+   sizeof(struct %s) folded into a compile-time constant, compared
+   between whichever .o allocated an object and whichever .o's class
+   code runs against it). Packing the bit into the existing movable
+   field instead touches zero bytes of layout, so it needs no wider
+   rebuild than lpair.c/lsetv.c/htmlatk.c themselves. Pass
+   TRUE|lpair_NOBAR as the moveable argument to still be draggable but
+   suppress the drawn divider line; DoFullUpdate is the only place
+   that reads this bit (offset/cursor-region code still keys off plain
+   movable truthiness, unchanged from before this bit existed). */
+#define lpair_NOBAR		2
+
 /* values for lpair.sizeform */
 #define lpair_PERCENTAGE		0
 #define lpair_FIXED			1 /* Compatibility is the mother of hacks... */
@@ -89,7 +111,8 @@ data:
     int typex;	/* vertical or horizontal */
     int lasthit;        /* Coordinate (perpendicular to bar) of last mouse down. */
     char sizeform;	/* form of the size specs */
-    char movable; 	/* May we drag the boundary? */
+    char movable; 	/* May we drag the boundary? Also carries the
+			   lpair_NOBAR bit -- see its comment above. */
     char ismoving;	/* In the middle of a move */
     char needsfull;	/* Full update needed 'cause either size or children changed */
     boolean maybeZero;		/* true if one half can shrink to 0 */

@@ -146,16 +146,24 @@ static int initkids(struct lsetview *self, struct lset *ls)
 	struct lsetview *v1,*v2;
 	v1 = lsetview_Create(self->level+1,(struct lset *) ls->left,(struct view *)self);
 	v2 = lsetview_Create(self->level+1,(struct lset *)ls->right,(struct view *)self);
+	{
+	/* lpair_NOBAR (lpair.ch) is a bit on the same moveable
+	   parameter, not a separate flag -- see its comment there for
+	   why (a real extra struct field rippled sizeof(struct lpair)
+	   through frame.ch's embedding and every descendant, and blew
+	   up live as a version-mismatch segfault). */
+	int mv = TRUE | (ls->nobar ? lpair_NOBAR : 0);
 	if(ls->type == lsetview_MakeHorz)
-	    lsetview_HSplit(self,v1,v2,ls->pct,TRUE);
+	    lsetview_HSplit(self,v1,v2,ls->pct,mv);
 	else if(ls->type == lsetview_MakeHorzFixed) {
 	    /* ls->pct is a pixel bsize here, not a percentage -- see
 	       lsetview_MakeHorzFixed's own comment in lsetv.ch. */
-	    lsetview_HTFixed(self,v1,v2,ls->pct,TRUE);
+	    lsetview_HTFixed(self,v1,v2,ls->pct,mv);
 	} else if(ls->type == lsetview_MakeVertFixed)
-	    lsetview_VTFixed(self,v1,v2,ls->pct,TRUE);
+	    lsetview_VTFixed(self,v1,v2,ls->pct,mv);
 	else
-	    lsetview_VSplit(self,v1,v2,ls->pct,TRUE);
+	    lsetview_VSplit(self,v1,v2,ls->pct,mv);
+	}
 	self->mode = lsetview_IsSplit;
 	lsetview_WantUpdate(self,self);
     }

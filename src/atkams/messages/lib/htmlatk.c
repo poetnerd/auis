@@ -1507,6 +1507,13 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
     for (i = count - 2; i >= 0; --i) {
         struct lset *node = (struct lset *) class_NewObject("lset");
         if (!node) { st->hardfail = 1; return NULL; }
+        /* A real browser never draws a resize bar between table cells
+           -- lset/lpair's divider line is an ATK layout-tool artifact
+           with no HTML equivalent, so every split this renderer builds
+           suppresses it (nobar, added 2026-08-19 to lset.ch/lpair.ch;
+           this was National Grid header issue (2), the visually noisy
+           divider lines lpair drew between the 5 social icons). */
+        node->nobar = 1;
         if (cells[i].fixedpx > 0) {
             node->type = fixedsplittype;
             node->pct = (int) cells[i].fixedpx; /* a pixel bsize here, not a percentage -- see lsetview_MakeHorzFixed's comment in lsetv.ch */
@@ -2076,6 +2083,57 @@ static long ParsePercentForFloatWeight(const char *s)
     return v;
 }
 
+/* Returns the declared pixel width of the sole <img> in n's subtree if
+   n's only real content (ignoring whitespace-only text and pass-
+   through wrapper tags like <a>/<center>/<font>/<td>/<tr>) is exactly
+   that one image, else 0. Used below to give a floated table's icon
+   column a FIXED pixel width instead of a percentage share of the
+   container -- unlike a percentage split, a fixed split doesn't shrink
+   the icon as the window narrows (lpair_ComputeSizesFromTotal carves
+   fixed pixels off first, the same mechanism CellFixedPixelWidth above
+   already uses for spacer cells), matching real-browser behavior where
+   a fixed-size icon stays put and the flexible text column is what
+   gives way first. Found live, 2026-08-19, right after the divider-bar
+   fix shipped: without this, National Grid's gas-meter icon visibly
+   got clipped/chopped in a narrow window because its percentage-split
+   column shrank right along with the row, while its bitmap doesn't
+   scale down to fit a smaller view -- the same row's OTHER (top,
+   non-lset) image just overflows off-screen uncropped instead, which
+   is what made the inconsistency obvious.
+
+   Returns 0 (not -1) for "nothing found yet" so the recursion can walk
+   an empty subtree; -1 means "disqualified" (real text present, more
+   than one image, or an image with no usable pixel width) and is
+   never itself returned to a caller outside this function -- see its
+   only call site below, which treats non-positive as "don't use a
+   fixed width here." */
+static long FloatTableSoleImageWidth(const struct htmlnode *n)
+{
+    const struct htmlnode *c;
+    long found = 0;
+
+    if (htmlpart_IsText(n)) {
+        long i;
+        for (i = 0; i < n->textlen; ++i) {
+            if (!is_collapsible_space((unsigned char) n->text[i])) return -1;
+        }
+        return 0;
+    }
+    if (strcmp(n->tag, "img") == 0) {
+        long w = ParseFixedPixelWidth(htmlpart_GetAttr(n, "width"));
+        return (w > 0) ? w : -1;
+    }
+    for (c = n->children; c; c = c->next) {
+        long w = FloatTableSoleImageWidth(c);
+        if (w < 0) return -1;
+        if (w > 0) {
+            if (found > 0) return -1; /* more than one image -- not "just an icon" */
+            found = w;
+        }
+    }
+    return found;
+}
+
 /* Builds a single lset leaf/subtree for one side of a floated-table
    pair. tablenode is itself always a <table> here (TryPairFloatedTables
    below only ever calls this on the two floated tables directly, never
@@ -2231,9 +2289,10 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
 {
     long peek = ws->count - 1;
     const struct htmlnode *partner;
+    const struct htmlnode *leftNode;
     struct lset *leftLeaf, *rightLeaf, *row;
     struct wleaf cells[2];
-    long nWeight, partnerWeight;
+    long nWeight, partnerWeight, leftImgWidth;
     int nIsRight;
 
     while (peek >= 0 && !ws->items[peek].post && htmlpart_IsText(ws->items[peek].node)) {
@@ -2257,11 +2316,22 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
     else if (nWeight <= 0) { nWeight = (partnerWeight < 100) ? 100 - partnerWeight : 1; }
     else if (partnerWeight <= 0) { partnerWeight = (nWeight < 100) ? 100 - nWeight : 1; }
 
-    leftLeaf = BuildLsetLeafFromFloatTable(nIsRight ? partner : n, st);
+    leftNode = nIsRight ? partner : n;
+    leftLeaf = BuildLsetLeafFromFloatTable(leftNode, st);
     rightLeaf = BuildLsetLeafFromFloatTable(nIsRight ? n : partner, st);
     if (!leftLeaf || !rightLeaf) { st->hardfail = 1; return FALSE; }
 
-    cells[0].leaf = leftLeaf; cells[0].weight = nIsRight ? partnerWeight : nWeight; cells[0].fixedpx = 0;
+    /* Only the LEFT slot can use a fixed pixel width -- BuildLsetChain
+       only ever folds a fixedpx cell in as the left/top child (see its
+       own comment), never the last/right one, so a would-be fixed
+       right-hand icon (e.g. an align="right" icon beside align="left"
+       text, not seen in the corpus so far) just falls through to the
+       existing proportional split below instead of being silently
+       wrong. */
+    leftImgWidth = FloatTableSoleImageWidth(leftNode);
+
+    cells[0].leaf = leftLeaf; cells[0].weight = nIsRight ? partnerWeight : nWeight;
+    cells[0].fixedpx = (leftImgWidth > 0) ? leftImgWidth : 0;
     cells[1].leaf = rightLeaf; cells[1].weight = nIsRight ? nWeight : partnerWeight; cells[1].fixedpx = 0;
     row = BuildLsetChain(cells, 2, lsetview_MakeHorz, lsetview_MakeHorzFixed, st);
     if (!row) return FALSE;

@@ -176,6 +176,7 @@ long lset__Read(struct lset *self, FILE *file, long id)
     char *s;
     long c,version;
     long status;
+    version = 1; /* default if no \V marker is present in the stream at all */
     char objectname[200],*cp;
     long objectid;
     struct dataobject *newobject = NULL;
@@ -267,8 +268,18 @@ putchar(c);
 	    *buf++ = c;
 	}
     }
-    sscanf(cbuf,"%d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->application),
-	 &did,&lid,&rid,&textpending);
+    /* nobar (added \V 2) is only present starting with version 2 --
+       version-1 data has one fewer field, so parse it separately
+       rather than let sscanf silently leave self->nobar uninitialized
+       against short input. */
+    if (version >= 2)
+	sscanf(cbuf,"%d %d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->nobar),
+	     &(self->application), &did,&lid,&rid,&textpending);
+    else {
+	self->nobar = 0;
+	sscanf(cbuf,"%d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->application),
+	     &did,&lid,&rid,&textpending);
+    }
     cp = strchr(cbuf,'\n'); cp++;
     cp = lset_GetLine(cp,self->dataname);
     cp = lset_GetLine(cp,self->viewname);
@@ -301,11 +312,11 @@ long lset__Write(struct lset *self, FILE *file, long writeid, int level)
     self->header.dataobject.writeID = writeid;
 
     fprintf(file,"\\begindata{lset,%ld}\n",lset_GetID(self));
-    fprintf(file,"\\V 1\n"); /* Version Number */
+    fprintf(file,"\\V 2\n"); /* Version Number -- bumped 2026-08-19 for nobar, see lset.ch */
     if(self->dobj){dataobject_Write(self->dobj,file,writeid,level+1); did = dataobject_UniqueID(self->dobj);}
     if(self->left){dataobject_Write(self->left,file,writeid,level+1);lid = dataobject_UniqueID(self->left);}
     if(self->right){ dataobject_Write(self->right,file,writeid,level+1);rid = dataobject_UniqueID(self->right);}
-    fprintf(file,"%d %d %d %ld %ld %ld %d\n>OBJ< %s\n>VIEW< %s\n>REF< %s\n" ,self->type,self->pct,self->application,
+    fprintf(file,"%d %d %d %d %ld %ld %ld %d\n>OBJ< %s\n>VIEW< %s\n>REF< %s\n" ,self->type,self->pct,self->nobar,self->application,
 	 did,lid,rid,(self->pdoc != NULL),self->dataname,self->viewname,self->refname);
     if(self->pdoc){
 	text_Write(self->pdoc,file,writeid,level+1);
@@ -321,6 +332,7 @@ boolean lset__InitializeObject(struct classheader *classID, struct lset *self)
 *self->refname = '\0';
 self->type = 0;
 self->pct = 0;
+self->nobar = 0;
 self->revision = 0;
 self->dobj = NULL;
 self->left = NULL;
