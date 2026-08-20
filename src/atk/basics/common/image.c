@@ -1242,7 +1242,7 @@ void image__Compress(struct image *self)
 static unsigned int * buildZoomIndex(unsigned int width, unsigned int zoom, unsigned int *rwidth)
 { float         fzoom;
   unsigned int *index;
-  unsigned int  a;
+  unsigned int  a, idx;
 
   if (!zoom) {
     fzoom = 100.0;
@@ -1250,12 +1250,35 @@ static unsigned int * buildZoomIndex(unsigned int width, unsigned int zoom, unsi
   }
   else {
     fzoom = (float)zoom / 100.0;
-    *rwidth = fzoom * width;
+    /* Round to the nearest pixel, not truncate -- image__Zoom's only
+       caller outside this file (htmlatk.c's ScaleImageToDeclaredSize)
+       itself computes zoom as an already-truncated integer percentage
+       of a target/native ratio, so this was a DOUBLE truncation
+       (target/native -> truncated percent -> truncated pixel count),
+       landing systematically short by a pixel for very ordinary
+       ratios. Concretely: a 31px-native icon scaled to a declared
+       width="30" computes zoom=(30*100)/31=96 (truncated), and the old
+       `fzoom*width` here gave floor(0.96*31)=floor(29.76)=29 -- one
+       column short of the requested 30, clipping the image's right/
+       bottom edge. Found live 2026-08-19 in National Grid's HTML mail
+       rendering (both the gas-meter icon and the social-row icons),
+       but this is a general image_Zoom bug, not specific to HTML mail
+       -- imagev.c's own interactive zoom feature (its other caller)
+       was equally affected. */
+    *rwidth = (unsigned int)(fzoom * width + 0.5);
   }
   index = (unsigned int *)malloc(sizeof(unsigned int) * *rwidth);
   for (a = 0; a < *rwidth; a++)
-    if (zoom)
-      *(index + a) = (float)a / fzoom;
+    if (zoom) {
+      /* Defensive clamp: *rwidth can now round UP to one more output
+	 pixel than the old floor()'d version produced, so the highest
+	 source index this loop computes is correspondingly larger too
+	 -- clamp it into range rather than trust the arithmetic not to
+	 ever land exactly on (or past) width, which would read one
+	 pixel beyond this image's actual pixel data. */
+      idx = (unsigned int)((float)a / fzoom);
+      *(index + a) = (idx < width) ? idx : width - 1;
+    }
     else
       *(index + a) = a;
   return(index);

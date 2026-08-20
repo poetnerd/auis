@@ -92,14 +92,20 @@ static void DoFullUpdate(struct lpair *self, enum view_UpdateType type, struct r
 	else
 		y += self->objcvt[0];
 
-	lpair_SetTransferMode(self, graphic_BLACK);
 	offset = (self->movable) ? BARWIDTH : 0; /* If not movable, don't put extra space around bar. */
-	if (self->typex == lpair_VERTICAL) {
-		lpair_MoveTo(self, x + offset, 0);
-		lpair_DrawLineTo(self, x + offset, lpair_GetLogicalHeight(self)/*-1*/);
-	} else {
-		lpair_MoveTo(self, 0, y + offset);
-		lpair_DrawLineTo(self, lpair_GetLogicalWidth(self)/*-1*/, y + offset);
+	if (!(self->movable & lpair_NOBAR)) {
+		/* lpair_NOBAR only suppresses the drawn line -- offset (and
+		   thus the space reserved for it in ComputeSizes, which
+		   keys off plain movable truthiness) is deliberately left
+		   alone, so layout geometry is identical either way. */
+		lpair_SetTransferMode(self, graphic_BLACK);
+		if (self->typex == lpair_VERTICAL) {
+			lpair_MoveTo(self, x + offset, 0);
+			lpair_DrawLineTo(self, x + offset, lpair_GetLogicalHeight(self)/*-1*/);
+		} else {
+			lpair_MoveTo(self, 0, y + offset);
+			lpair_DrawLineTo(self, lpair_GetLogicalWidth(self)/*-1*/, y + offset);
+		}
 	}
 
 	if (leftTopObject != NULL) {

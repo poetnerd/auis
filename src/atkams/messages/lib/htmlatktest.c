@@ -333,7 +333,7 @@ static void DumpTableCell(struct table *T, int r, int c);
 static void DumpLsetTree(struct lset *ls, int indent)
 {
     if (!ls) { printf("%*s(null)\n", indent, ""); return; }
-    printf("%*sLSET type=%d pct=%d", indent, "", ls->type, ls->pct);
+    printf("%*sLSET type=%d pct=%d nobar=%d", indent, "", ls->type, ls->pct, ls->nobar);
     if (ls->left || ls->right) {
         printf(" (split)\n");
         printf("%*sLEFT:\n", indent + 2, "");
