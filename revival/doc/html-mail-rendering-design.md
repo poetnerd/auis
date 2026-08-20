@@ -470,17 +470,19 @@ breakage above) — this is the best fit available within `lset`/
 `lpair`'s actual capabilities, not a claim that it's correct HTML
 rendering.
 
-Two capabilities `table`/`spread` had that `lset` genuinely doesn't,
-not recovered by this switch: **no border/background rendering at
-all** (`table`/`spread`'s `JOINED`/`GHOST`/`SUPPRESSED` boundary-color
-model has no `lset` equivalent), and **every `lset` split renders a
-visible thin resize-divider/grab bar** between its two sides —
-`lsetv.c`'s `initkids()` hardcodes `moveable=TRUE` on every split with
-no data-level way to suppress it, and `lset.ch`'s data section has no
-such field to add one cheaply. A genuine invisible CSS layout table
-(the overwhelmingly common real-world case — `border="0"`, used purely
-for alignment) will show these divider bars where a browser would show
-nothing. Both are accepted, known gaps, not fixed here.
+One capability `table`/`spread` had that `lset` genuinely doesn't, not
+recovered by this switch: **no border/background rendering at all**
+(`table`/`spread`'s `JOINED`/`GHOST`/`SUPPRESSED` boundary-color model
+has no `lset` equivalent). Accepted, known gap, not fixed here.
+
+The other capability gap noted here originally — every `lset` split
+rendering a visible resize-divider bar, with no way to suppress it —
+is now fixed (2026-08-20): `lpair.ch` gained an `lpair_NOBAR` bit
+(packed onto the existing `movable` parameter/field, not a new struct
+field — see the National Grid open-bugs entry below for why that
+distinction mattered live) and `lset.ch` a persisted `nobar` field;
+`BuildLsetChain` sets it on every split it builds, since a real browser
+never shows one here regardless of table shape.
 
 The scrollbar-elevator inaccuracy itself (`getinfo()`'s character-count
 model) is *mitigated*, not fixed, by peeling — spreading real content
@@ -756,6 +758,27 @@ than one screen:
   declared `width=` percentage (`align` also newly allowed through
   `htmlpart.c`'s attribute allowlist). This was item (1) of the five
   National Grid header issues below.
+- That same floated-pair icon column used a *percentage* split at
+  first, so it visibly shrank (and its bitmap clipped) as the window
+  narrowed — a bitmap doesn't scale down to fit a smaller view the way
+  flowing text does. Fixed 2026-08-19 by giving the icon side a fixed
+  pixel width instead (`FloatTableSoleImageWidth`, reusing
+  `BuildLsetChain`'s existing `fixedpx` mechanism), leaving the text
+  side to take whatever's left.
+- `image__Zoom` (`atk/basics/common/image.c`, core ATK, not
+  HTML-mail-specific) truncated its output pixel count instead of
+  rounding, systematically clipping a scaled image's right/bottom edge
+  by a column or row — e.g. a 31px icon scaled to a declared
+  `width="30"` landed at 29px. Combined with `ScaleImageToDeclaredSize`
+  computing its zoom percentage via truncating integer division, this
+  was a double truncation, visible on several of National Grid's
+  scaled social-row icons. Fixed 2026-08-20 by rounding instead of
+  truncating (plus a defensive clamp on the resulting source-pixel
+  index).
+- Every `lset` split drew a visible divider bar with no way to turn it
+  off — see this document's Table strategy section above for the fix
+  and the struct-layout pitfall hit along the way. This was item (2)
+  of the five National Grid header issues below.
 
 **Known open bugs:**
 - Forward/backward paging (`^v`/`Escape-v`) and the scrollbar's elevator
@@ -766,17 +789,20 @@ than one screen:
   earlier in this document, still only mitigated by peeling, not fixed
   at the root.
 - Five layout/styling issues found live 2026-08-19 against the National
-  Grid fixture's "National Grid" header row. (1) is fixed (see above,
-  same date); (2)-(5) not yet investigated: (2) the thin vertical
-  divider lines `lpair` draws between side-by-side splits are visually
-  noisy across the 5-icon row (a milder case of the same "no way to
-  suppress the split divider" limitation noted in Table strategy
-  above); (3) the "National Grid" text link sits too high above the
-  blue divider bar; (4) that same text renders in the default body
-  font/weight instead of larger, bold, sans-serif — possibly a
-  `style=`/CSS-to-ATK-style mapping gap; (5) the blue divider bar
-  itself is top-aligned within its row instead of vertically centered
-  against the icon row beside it.
+  Grid fixture's "National Grid" header row. (1) and (2) are fixed
+  (see above, 2026-08-19/20); (3)-(5) not yet investigated: (3) the
+  "National Grid" text link sits too high above the blue divider bar;
+  (4) that same text renders in the default body font/weight instead
+  of larger, bold, sans-serif — possibly a `style=`/CSS-to-ATK-style
+  mapping gap; (5) the blue divider bar itself is top-aligned within
+  its row instead of vertically centered against the icon row beside
+  it.
+- Found live 2026-08-20, testing the icon-column fix above: widening
+  the message window lets ordinary paragraph text reflow to fill the
+  new width, but content inside an `lset`-rendered HTML table (the
+  same floated-pair row included) stays visibly narrow, as if still
+  laid out for the window's earlier, narrower size. Not investigated
+  yet — logged to pick up next session.
 
 ## Planned next work
 
