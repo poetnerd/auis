@@ -779,6 +779,22 @@ than one screen:
   off — see this document's Table strategy section above for the fix
   and the struct-layout pitfall hit along the way. This was item (2)
   of the five National Grid header issues below.
+- Fixed-pixel icon columns (the two bullets above) still lost a few
+  pixels off the right edge even after both fixes shipped — not a
+  scaling or border bug (both re-verified live and ruled out), but
+  `textview`'s own line-layout unconditionally reserving a small
+  embedded border (`EBX`, 2px/side, `textv.c`) that the column's
+  exact-fit sizing never accounted for. Live-traced against both the
+  gas-meter icon (81px) and National Grid's social-row icons (30px) --
+  same exact -6px shortfall regardless of size. Fixed 2026-08-20 by
+  padding the fixed column's requested width (`ICONCELL_WIDTH_PAD`,
+  `htmlatk.c`) rather than touching core `textview`. While chasing
+  this, also extended the fixed-column treatment from just the
+  floated-pair icon to any `<td>` whose sole content is one
+  appropriately-sized `<img>` (so the 5-icon social row, previously on
+  a percentage split, gets it too), capped to icon-scale widths
+  (`ICONCELL_MAXFIXEDPX`) after an uncapped first attempt let a 350px
+  decorative divider image starve its row sibling.
 
 **Known open bugs:**
 - Forward/backward paging (`^v`/`Escape-v`) and the scrollbar's elevator
@@ -803,6 +819,11 @@ than one screen:
   same floated-pair row included) stays visibly narrow, as if still
   laid out for the window's earlier, narrower size. Not investigated
   yet — logged to pick up next session.
+- `<td style="background-color:...">` isn't honored at all — noticed
+  via a Thunderbird comparison of the gas-meter icon's cell (its
+  white-matted transparent PNG background blends invisibly into our
+  plain-white page but shows as a distinct white square against
+  Thunderbird's actual `#f0f0f0` cell background). Not investigated.
 
 ## Planned next work
 
