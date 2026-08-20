@@ -446,10 +446,20 @@ static int attr_allowed(const char *tag, const char *attr)
            CellFixedPixelWidth's comment there, and htmlatk.h's
            judgment-call log, which flagged per-cell width as the place
            to extend once a real fixture/message showed the pattern
-           (The Book Rack, found this same day). Without it here, the
-           attribute never reaches htmlatk.c at all. */
+           (The Book Rack, found this same day).
+
+           align added 2026-08-19: real marketing HTML routinely floats
+           two sibling <table>s side by side (align="left"/"right")
+           instead of using <td>s in one <tr> -- confirmed live,
+           National Grid's gas-meter icon+text row. htmlatk.c's table
+           dispatch only consults align on <table> (see TableFloatAlign
+           there); allowed here on td/th too purely for consistency with
+           the rest of this attribute group, though nothing currently
+           reads it there. Without allowing it here, the attribute never
+           reaches htmlatk.c at all. */
         return strcmp(attr, "colspan") == 0 || strcmp(attr, "rowspan") == 0
-            || strcmp(attr, "border") == 0 || strcmp(attr, "width") == 0;
+            || strcmp(attr, "border") == 0 || strcmp(attr, "width") == 0
+            || strcmp(attr, "align") == 0;
     }
     if (strcmp(tag, "font") == 0) {
         return strcmp(attr, "color") == 0 || strcmp(attr, "size") == 0;
