@@ -2002,6 +2002,111 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
     return TRUE;
 }
 
+/* ==================================================================== *
+ * Floated adjacent tables (align="left"/align="right"). Real marketing
+ * HTML routinely lays two things side by side -- an icon and a
+ * paragraph of text, say -- not with a single <tr> holding two <td>s
+ * (the case BuildLsetGrid/BuildLsetChain above already handle) but
+ * with two SIBLING <table>s, one align="left" and the next
+ * align="right", relying on the browser's float layout to place them
+ * beside each other. Confirmed live, National Grid's gas-meter row:
+ * a width="10%" align="left" table holding just the icon, immediately
+ * followed by a width="85%" align="right" table holding the
+ * paragraph (revival/tests/national-grid.html, ~line 279-297).
+ *
+ * Both of those tables are individually a single row/single cell --
+ * i.e. exactly what TableIsTrivialWrapper (above) treats as pure
+ * structural boilerplate and unwraps into plain flowing content. That
+ * unwrapping is exactly what breaks this idiom: once unwrapped, the
+ * icon and paragraph both end up as ordinary inline content of the
+ * SAME surrounding textview (confirmed via htmlatktest.test dump,
+ * 2026-08-19: LSET-AT[21] came out as one single textview leaf, image
+ * view character followed directly by the paragraph's text runs, no
+ * lset split at all) -- and textview has no CSS-style "float" layout
+ * of its own to place wrapped-around text beside a tall inline view;
+ * every line after the image's own line starts back at the column's
+ * full left edge, below the image, not beside it. The fix has to
+ * happen a level up: an align="left"/"right" table must NOT be
+ * silently unwrapped, so its content survives as a distinct unit that
+ * TryPairFloatedTables (below) can combine with its sibling into a
+ * genuine 2-column lset split -- a real fixed left/right partition,
+ * where the text side's OWN (narrower) textview then wraps its
+ * paragraph within that partition on every line, not just the first.
+ * ==================================================================== */
+
+/* Returns "left"/"right" (unowned -- a literal, not a copy) if
+   tablenode declares align="left" or align="right", else NULL.
+   align="center" -- the default alignment used constantly throughout
+   this fixture corpus for genuinely-centered layout wrapper tables --
+   is deliberately NOT treated as a float signal, only left/right are;
+   nor is any other tag, since this floated-table-pair idiom is the
+   one real shape found in the corpus (see this section's header
+   comment) -- a bare align="left" on some other block-level tag isn't
+   handled here. */
+static const char *TableFloatAlign(const struct htmlnode *tablenode)
+{
+    const char *a;
+    if (strcmp(tablenode->tag, "table") != 0) return NULL;
+    a = htmlpart_GetAttr(tablenode, "align");
+    if (!a) return NULL;
+    if (strcmp(a, "left") == 0) return "left";
+    if (strcmp(a, "right") == 0) return "right";
+    return NULL;
+}
+
+/* Unlike ParseFixedPixelWidth above, a floated table's own width="N%"
+   is directly usable here despite that function's "no container width
+   available" problem -- resolving one standalone into absolute pixels
+   would need a container width, but weighing it against a SIBLING
+   floated table's own declared percentage doesn't: the pair's two
+   declared percentages (e.g. 10%/85% for National Grid's icon+text
+   row) already express the ratio TryPairFloatedTables needs, directly
+   usable as BuildLsetChain leaf weights, with no absolute container
+   width involved at all. Returns 0 (not a usable weight) for anything
+   that isn't a bare positive integer followed by '%'. */
+static long ParsePercentForFloatWeight(const char *s)
+{
+    long v;
+    char *end;
+    if (!s || !*s) return 0;
+    v = strtol(s, &end, 10);
+    if (end == s || v <= 0) return 0;
+    if (strcmp(end, "%") != 0) return 0;
+    if (v > 100) v = 100;
+    return v;
+}
+
+/* Builds a single lset leaf/subtree for one side of a floated-table
+   pair. tablenode is itself always a <table> here (TryPairFloatedTables
+   below only ever calls this on the two floated tables directly, never
+   on a <td>), so BuildLsetGrid -- the same builder RenderTableAsLset
+   uses for an ordinary table -- is the right tool, not BuildLsetCell
+   (which expects a <td>). Every real floated table found in the corpus
+   is a single row/single cell (the "table used as one column" idiom);
+   if BuildLsetGrid ever returns more than one row, only the first is
+   usable as this leaf's own single content slot -- the same accepted
+   "no natural home for extra structure in one leaf" degrade already
+   documented for rowspan (BuildLsetGrid's own header comment) -- any
+   further rows are destroyed here rather than leaked. An empty/
+   degenerate table (BuildLsetGrid finds no real rows at all) is not a
+   failure, same as elsewhere in this file -- it becomes a blank filler
+   leaf instead. */
+static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode, struct hax_state *st)
+{
+    struct lsetvec rows;
+    struct lset *leaf;
+
+    if (BuildLsetGrid(tablenode, st, &rows) && rows.count > 0) {
+        long i;
+        leaf = rows.items[0];
+        for (i = 1; i < rows.count; ++i) dataobject_Destroy((struct dataobject *) rows.items[i]);
+        lsetvec_free(&rows);
+        return leaf;
+    }
+    lsetvec_free(&rows);
+    return MakeFillerLeaf(st);
+}
+
 /* Top-level entry: builds one lset per row (cells only, see
    BuildLsetGrid's note above for why rows are no longer stacked via a
    second lset/lpair layer) and inserts each as its own inline view at
@@ -2092,6 +2197,84 @@ static void ws_push_siblings(struct hax_walkstack *ws, const struct htmlnode *fi
     for (s = first; s; s = s->next) nodevec_push(&tmp, s);
     for (i = tmp.count - 1; i >= 0; --i) ws_push(ws, tmp.items[i], 0, 0);
     nodevec_free(&tmp);
+}
+
+/* Called from the main dispatch immediately after popping a <table>
+   n whose TableFloatAlign is non-NULL (see this file's floated-
+   adjacent-tables section header comment above BuildLsetLeafFromFloatTable
+   for the full idiom/root-cause writeup). Peeks at what the walk stack
+   has queued up as n's very next unprocessed sibling -- ws.items[ws.count-1],
+   guaranteed to be exactly that, and nothing else, because nothing
+   else gets pushed onto ws between a sibling list's single batch push
+   (ws_push_siblings, above) and this dispatch popping its items one at
+   a time (the <table> case never itself pushes anything before
+   reaching here) -- skipping over any whitespace-only text node in
+   between (the routine gap left by source-formatting indentation
+   between two sibling tags). If that next real sibling is itself a
+   <table>, builds a genuine 2-column lset split from the pair (left/
+   right slot chosen from n's OWN align, not the partner's, so a
+   partner with no align of its own -- or even a contradicting one --
+   still ends up correctly positioned relative to the side n explicitly
+   requested; ordinary CSS float semantics work the same way, a floated
+   element moves to its side and everything else just fills the rest),
+   inserts it as a single embedded view exactly the way RenderTableAsLset
+   inserts an ordinary row, consumes both n's already-popped entry (the
+   caller's job) and the partner's still-queued one (this function's:
+   done by simply shrinking ws.count, discarding the queued item
+   without ever popping/dispatching it normally) from the stack, and
+   returns TRUE. Returns FALSE (stack untouched, nothing inserted) if
+   there's no real next sibling or it isn't a <table> -- the caller
+   falls through to the ordinary single-column RenderTableAsLset path
+   for n in that case, same as before this feature existed. */
+static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
+                                 const char *floatAlign, struct hax_walkstack *ws)
+{
+    long peek = ws->count - 1;
+    const struct htmlnode *partner;
+    struct lset *leftLeaf, *rightLeaf, *row;
+    struct wleaf cells[2];
+    long nWeight, partnerWeight;
+    int nIsRight;
+
+    while (peek >= 0 && !ws->items[peek].post && htmlpart_IsText(ws->items[peek].node)) {
+        const struct htmlnode *t = ws->items[peek].node;
+        long i;
+        int allWhitespace = 1;
+        for (i = 0; i < t->textlen; ++i) {
+            if (!is_collapsible_space((unsigned char) t->text[i])) { allWhitespace = 0; break; }
+        }
+        if (!allWhitespace) return FALSE;
+        --peek;
+    }
+    if (peek < 0 || ws->items[peek].post) return FALSE;
+    partner = ws->items[peek].node;
+    if (!htmlpart_IsElement(partner) || strcmp(partner->tag, "table") != 0) return FALSE;
+
+    nIsRight = (strcmp(floatAlign, "right") == 0);
+    nWeight = ParsePercentForFloatWeight(htmlpart_GetAttr(n, "width"));
+    partnerWeight = ParsePercentForFloatWeight(htmlpart_GetAttr(partner, "width"));
+    if (nWeight <= 0 && partnerWeight <= 0) { nWeight = 1; partnerWeight = 1; }
+    else if (nWeight <= 0) { nWeight = (partnerWeight < 100) ? 100 - partnerWeight : 1; }
+    else if (partnerWeight <= 0) { partnerWeight = (nWeight < 100) ? 100 - nWeight : 1; }
+
+    leftLeaf = BuildLsetLeafFromFloatTable(nIsRight ? partner : n, st);
+    rightLeaf = BuildLsetLeafFromFloatTable(nIsRight ? n : partner, st);
+    if (!leftLeaf || !rightLeaf) { st->hardfail = 1; return FALSE; }
+
+    cells[0].leaf = leftLeaf; cells[0].weight = nIsRight ? partnerWeight : nWeight; cells[0].fixedpx = 0;
+    cells[1].leaf = rightLeaf; cells[1].weight = nIsRight ? nWeight : partnerWeight; cells[1].fixedpx = 0;
+    row = BuildLsetChain(cells, 2, lsetview_MakeHorz, lsetview_MakeHorzFixed, st);
+    if (!row) return FALSE;
+
+    FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
+    text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName((struct dataobject *) row), (struct dataobject *) row);
+    ++st->pos;
+    st->trailingNL = 0;
+    st->anyContent = 1;
+    st->spacePending = 0;
+
+    ws->count = peek; /* discard partner's still-queued entry, and any whitespace already skipped past above -- both fully accounted for by the combined row just inserted */
+    return TRUE;
 }
 
 static int tag_is_para(const char *t)
@@ -2222,11 +2405,26 @@ boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
 
             if (strcmp(n->tag, "table") == 0) {
                 const struct htmlnode *cellChildren;
-                if (TableIsTrivialWrapper(n, &cellChildren)) {
+                const char *floatAlign = TableFloatAlign(n);
+                /* An align="left"/"right" table is NOT a no-op wrapper
+                   even when it would otherwise structurally qualify
+                   (single row/single cell, exactly the National Grid
+                   icon table's own shape) -- its align IS the visual
+                   intent TableIsTrivialWrapper's comment says a 1x1
+                   wrapper never carries, so it must survive as a
+                   distinct unit for TryPairFloatedTables below instead
+                   of being flattened into the surrounding flow. See
+                   this file's floated-adjacent-tables section header
+                   comment (above BuildLsetLeafFromFloatTable) for the
+                   full root-cause writeup. */
+                if (!floatAlign && TableIsTrivialWrapper(n, &cellChildren)) {
                     /* 1x1 no-op wrapper table -- see TableIsTrivialWrapper's
                        own comment. Inline its cell's children directly
                        instead of building an lset for it at all. */
                     ws_push_siblings(&ws, cellChildren);
+                    continue;
+                }
+                if (floatAlign && TryPairFloatedTables(&st, n, floatAlign, &ws)) {
                     continue;
                 }
                 /* Every table builds via lset now -- no more routing
@@ -2235,7 +2433,12 @@ boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
                    this file's header comment and htmlatk.h's judgment-
                    call log). BuildLsetGrid/RenderTableAsLset degrade
                    gracefully (hardfail recorded, nothing inserted) for
-                   a structurally degenerate table with no real rows. */
+                   a structurally degenerate table with no real rows.
+                   A floated table with no pairable sibling (TryPair-
+                   FloatedTables returned FALSE) also lands here --
+                   still renders its own content as an ordinary single-
+                   column row instead of vanishing, just without a
+                   partner to sit beside. */
                 if (!RenderTableAsLset(&st, n)) { /* hardfail already recorded */ }
                 continue;
             }
