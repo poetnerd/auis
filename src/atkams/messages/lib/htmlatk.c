@@ -963,8 +963,24 @@ static void ScaleImageToDeclaredSize(struct dataobject **dobRef, const struct ht
     if (targetW <= 0 || targetH <= 0) return;
     if (targetW == nativeW && targetH == nativeH) return;
 
-    xzoom = (targetW * 100) / nativeW;
-    yzoom = (targetH * 100) / nativeH;
+    /* Round, don't truncate -- image_Zoom takes an integer PERCENTAGE,
+       so truncating here silently asks for a slightly smaller image
+       than declaredW/H call for (e.g. targetW=81 over nativeW=240
+       wants 33.75%, truncated to 33% -- an image.c fix already rounds
+       buildZoomIndex's own fzoom*width pixel math (2026-08-19), but
+       that only helps if the percentage handed to it is already
+       right; a percentage truncated low here still under-sizes the
+       result before that rounding ever gets a chance to compensate).
+       Confirmed live 2026-08-20 against real corpus icons (e.g. a
+       37x38-native icon downscaled to a declared 30px width) via a
+       throwaway decode-diff harness -- image_Zoom's own output now
+       lands exactly on targetW/targetH in every case checked. (A
+       separate, unrelated gas-meter-icon clipping report investigated
+       the same day turned out to be a textview embedded-border issue,
+       not a scaling one -- see CellFixedPixelWidth's ICONCELL_WIDTH_PAD
+       comment.) */
+    xzoom = (targetW * 100 + nativeW / 2) / nativeW;
+    yzoom = (targetH * 100 + nativeH / 2) / nativeH;
     if (xzoom <= 0) xzoom = 1;
     if (yzoom <= 0) yzoom = 1;
 
@@ -1330,6 +1346,7 @@ static void lsetvec_free(struct lsetvec *v) { free(v->items); v->items = NULL; v
 
 static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st, struct lsetvec *outRows);
 static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnode **outTable);
+static long FloatTableSoleImageWidth(const struct htmlnode *n);
 
 /* Small paired vector of (leaf, weight) for one row's cells --
    analogous to lsetvec above but carrying each cell's WEIGHT alongside
@@ -1701,6 +1718,31 @@ static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnod
    time. A text-bearing cell with no explicit sizing signal at all
    keeps the existing equal/colspan-weighted default; guessing an
    intrinsic content width is out of scope, same as it always was. */
+#define ICONCELL_MAXFIXEDPX 120
+
+/* A cell's lset column gets sized to EXACTLY an icon's own pixel
+   width (FloatTableSoleImageWidth), but the actual content inside it
+   is a "text" object rendered via textview, and textview.c's own
+   textview__LineRedraw *unconditionally* reserves EBX (2px, textv.c)
+   on each side when computing its drawable width (xs =
+   textview_GetLogicalWidth(self) - 2*bx) -- even for a bare,
+   decoration-free cell wrapper never meant to be edited. That's core,
+   widely-shared ATK text-layout code (used by every textview in every
+   app), not something to touch for one HTML-rendering edge case,
+   so the fix lives here instead: pad the column past the icon's own
+   width by enough to cover textview's reservation. Live-traced
+   2026-08-20 (both drawtxtv.c and textv.c instrumented temporarily)
+   against two independent real icons -- the gas-meter icon (81px
+   native) and National Grid's 30px social-row icons -- and both
+   measured the SAME real shortfall: exactly 6 fewer pixels than the
+   fixedpx column requested by the time the image was actually drawn
+   (81->75, 30->24), consistent with 2*EBX plus a couple of pixels
+   consumed elsewhere in the line before the image is reached. 6 is
+   used directly (not derived from EBX symbolically) since the exact
+   remaining pixel or two beyond 2*EBX wasn't fully traced to a single
+   line, and this value is confirmed correct against real fixture
+   icons rather than computed from firstprinciples. */
+#define ICONCELL_WIDTH_PAD 6
 static long CellFixedPixelWidth(const struct htmlnode *td)
 {
     long w;
@@ -1709,6 +1751,36 @@ static long CellFixedPixelWidth(const struct htmlnode *td)
         w = ParseFixedPixelWidth(htmlpart_GetAttr(td, "width"));
         if (w > 0) return w;
     }
+    /* A <td> whose only real content is one appropriately-sized <img>
+       (the same shape FloatTableSoleImageWidth was written to detect
+       for the floated-pair icon column, see its own header comment)
+       gets the same treatment here: a real browser sizes such a cell
+       to the image's own width, not a proportional share of the row,
+       so an icon doesn't get clipped by ordinary percentage-split
+       rounding the way it can when several of these sit side by side
+       (found live 2026-08-20 -- National Grid's 5-icon social row,
+       each cell an equal-weight <td> wrapping one <img width="30">,
+       had at least one icon losing its rightmost column of pixels to
+       exactly this rounding, same underlying mechanism as the
+       gas-meter-icon fix above, just via BuildLsetChain's plain
+       equal-weight path instead of TryPairFloatedTables).
+
+       Capped to icon-scale widths ONLY -- unlike a spacer cell (always
+       small by definition, NodeIsVisuallyEmpty above), a lone <img>
+       can just as easily be a full-width banner or divider, and
+       lpair_TOPFIXED has no graceful-degrade (same "shrinks the row
+       sibling toward 0" risk already documented and rejected for
+       nested tables above, just reached via a raw image instead of a
+       wrapped table). Found live 2026-08-20: National Grid's 350px
+       "Blue Brand Line" divider sits in the very next <tr> beside
+       that same 5-icon table (two <td>s, one per image) -- giving it
+       an uncapped fixed width starved its row sibling and squeezed
+       every icon in the table down with it. Real icon widths seen in
+       the corpus so far top out at 81px (the gas-meter icon);
+       ICONCELL_MAXFIXEDPX leaves headroom for that without reaching
+       into banner/divider territory. */
+    w = FloatTableSoleImageWidth(td);
+    if (w > 0 && w <= ICONCELL_MAXFIXEDPX) return w + ICONCELL_WIDTH_PAD;
     return 0;
 }
 
@@ -2331,7 +2403,12 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
     leftImgWidth = FloatTableSoleImageWidth(leftNode);
 
     cells[0].leaf = leftLeaf; cells[0].weight = nIsRight ? partnerWeight : nWeight;
-    cells[0].fixedpx = (leftImgWidth > 0) ? leftImgWidth : 0;
+    /* + ICONCELL_WIDTH_PAD: see its own comment (CellFixedPixelWidth,
+       above) -- the same textview-embedded-border shortfall applies
+       here too (live-confirmed against this exact gas-meter-icon
+       fixture, 2026-08-20: 81px native, only 75px actually drawn
+       without this pad). */
+    cells[0].fixedpx = (leftImgWidth > 0) ? leftImgWidth + ICONCELL_WIDTH_PAD : 0;
     cells[1].leaf = rightLeaf; cells[1].weight = nIsRight ? nWeight : partnerWeight; cells[1].fixedpx = 0;
     row = BuildLsetChain(cells, 2, lsetview_MakeHorz, lsetview_MakeHorzFixed, st);
     if (!row) return FALSE;
