@@ -106,16 +106,11 @@ being front-loaded here.
   can't decode PNG, so real mail's PNG logos/graphics — the single
   most common inline-image format — always showed as a text
   placeholder). Confirmed live against real-world mail images.
-- **Next step:** Two loose ends, both deliberately deferred, neither
-  blocking further use:
-  - A distinct, non-HTML-specific core-ATK bug in scrollbar
-    endzone-click handling (jump-to-end cycles through 3 states rather
-    than settling) — see Open issues below and `revival.md`.
-  - *Optional, later:* retarget `htmlview`'s own standalone viewer
-    onto the same shared parser, so there's one HTML engine in the
-    tree rather than two. `htmlview`'s composition/authoring side
-    (hand-building a document, not parsing untrusted wire HTML) is a
-    separate concern and doesn't need to change.
+- **Next step:** *Optional, later:* retarget `htmlview`'s own
+  standalone viewer onto the same shared parser, so there's one HTML
+  engine in the tree rather than two. `htmlview`'s composition/
+  authoring side (hand-building a document, not parsing untrusted wire
+  HTML) is a separate concern and doesn't need to change.
   With core rendering done and verified, the open question is whether
   to keep hardening on the `html` branch or merge it back into `trunk`
   at its current, already-useful state (the `andrew-6.4` precedent) and
@@ -154,7 +149,7 @@ Smaller items that don't fit the tables above.
 - `filetype.c DeleteEntry`: a bogus-free risk and an apparently-inverted condition, flagged by the compiler, never observed to actually fire
 - `runapp -d` with no app-class argument segfaults instead of printing usage — pre-existing since the 1988 source, not a regression
 - **RESOLVED 2026-08-12 (docs):** a fresh checkout has two separate hardcoded-path spots, not one — `site.h`'s `DEFAULT_ANDREWDIR_ENV` was documented, but `config/Makefile`'s `BASEDIR` (baked in from `site.h` by imake at Step 2, and not reliably self-regenerated afterward — see the fossil-mtime caveat elsewhere in this file) wasn't, and silently stays stale if `site.h` gets fixed after Step 2 has already run once. Reported independently by an outside builder hitting exactly this. `quickstart.md`'s "Site configuration" section now covers both.
-- Clicking a scrollbar endzone to jump to the end of a document cycles through 3 distinct results rather than settling — root cause identified (`textview`'s `endzone()`/`setframe()`, `src/atk/text/textv.c`, fires a second chained scroll operation on every discrete click, not just a held-down repeat), not yet fixed. Found chasing an HTML-mail-rendering report but is a general ATK scrollbar bug, not HTML-specific. See `revival.md` → "Open issues" for the full writeup.
+- **RESOLVED 2026-08-19:** clicking a scrollbar endzone to jump to the end of a document blanked the whole window on a held click, past the endzone button's ~100ms auto-repeat — `BackSpace`'s `MoveByPixels` "stay within the current line" fast-path was applied regardless of whether `pos` was actually the current top position, and the endzone's repeat re-issued an identical jump request while stale state from the first click was still around, tripping the shortcut against an unrelated value and landing on a position with no line of its own. Fixed by gating the shortcut on `pos == textview_GetTopPosition(self)` (`492e9b6e24`). Found chasing an HTML-mail-rendering report but was a general ATK scrollbar bug, not HTML-specific. See `revival.md` → "Old bugs never found till now" for the full writeup.
 
 **Heisenbugs** (intermittent, low reproducibility)
 - Xlib display-lock self-deadlock: reproduced once, root cause identified (`_XLockDisplay` re-entered from inside `XRefreshKeyboardMapping`, triggered by a keyboard-mapping-change event) but not yet fixed. Current best explanation for the older, harder-to-pin-down "`^V` scroll hang."
