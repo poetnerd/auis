@@ -482,13 +482,47 @@ static void lpair_ResetDimensions(struct lpair *self)
 	register struct view *child;
 	struct rectangle enclosingRect;
 
-	x = 0; 
+	x = 0;
 	y = 0;
 	for (i = 0; i < 2; i++) { /* Loop over the two halves of the lpair. */
 		child = (struct view *) self->obj[i];
 		if (child != NULL)
 			if (self->typex == lpair_VERTICAL) {
-				rectangle_SetRectSize(&enclosingRect, x, y, self->objcvt[i], lpair_GetLogicalHeight(self));
+				long childY = y, childH = lpair_GetLogicalHeight(self);
+				/* lpair_VCENTER (see lpair.ch): a side-by-side pair
+				   whose two children were built to real HTML
+				   table-cell valign="middle" semantics (htmlatk.c's
+				   BuildLsetChain, added 2026-08-20) -- without this,
+				   every side-by-side child is stretched to the FULL
+				   row height starting at y=0, and any child shorter
+				   than its sibling (an icon shorter than its
+				   sibling's wrapped text, or a thin divider line
+				   shorter than a row of icons) draws pinned to the
+				   top of that oversized box instead of centered in
+				   it, which is what every real browser does by
+				   default. Recomputed here rather than once at
+				   parse time because lpair_ResetDimensions already
+				   reruns on every resize (DoFullUpdate calls
+				   lpair_ComputeSizes+lpair_ResetDimensions fresh
+				   each time), so this naturally re-centers against
+				   the child's real current desired height instead
+				   of a stale guess -- no separate reflow hook
+				   needed. Only fires when there's real slack (the
+				   child's own desired height for its assigned
+				   width is strictly less than the row height);
+				   a child that wants to fill the row (the common
+				   case for every other lpair user -- window
+				   splits, prefs panes, etc, none of which set this
+				   bit) is completely unaffected. */
+				if (self->movable & lpair_VCENTER) {
+					long dw, dh;
+					view_DesiredSize(child, self->objcvt[i], childH, view_WidthSet, &dw, &dh);
+					if (dh > 0 && dh < childH) {
+						childY = y + (childH - dh) / 2;
+						childH = dh;
+					}
+				}
+				rectangle_SetRectSize(&enclosingRect, x, childY, self->objcvt[i], childH);
 				view_InsertView(child, self, &enclosingRect);
 				x += self->objcvt[i] + 2 * BARWIDTH + 1;
 			}

@@ -56,6 +56,15 @@ data:
 	   (bar shown, the original/pre-2026-08-19 behavior) for \V 1 files
 	   and every other lset caller in the tree. */
 	int nobar;
+	/* When set, the side-by-side view built for this split centers
+	   its shorter child vertically within the shared row height
+	   (lpair_VCENTER, lpair.ch) instead of pinning it to the top --
+	   real browsers' default table-cell valign. Added 2026-08-20
+	   alongside nobar, same htmlatk.c motivation and same \V 2->3
+	   persisted-format bump (lset__Read/Write); defaults to 0
+	   (top-pinned, the original behavior) for \V <3 files and every
+	   other lset caller in the tree. */
+	int vcenter;
 	char dataname[32];
 	char viewname[32];
 	char refname[64];

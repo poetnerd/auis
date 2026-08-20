@@ -991,16 +991,37 @@ static void ScaleImageToDeclaredSize(struct dataobject **dobRef, const struct ht
     }
 }
 
-/* Top-level (non-table-cell) <img> handling: try a real embed via the
-   resolver; on any failure (no resolver, resolver declines, format
-   unsupported) fall back to the inline text placeholder. If the
-   server-declared Content-Type's decoder fails, retries once against
-   whatever SniffImageMimetype() identifies from the bytes themselves
-   -- see that function's own note on why (a mislabeled-but-otherwise-
-   fine image, e.g. real JPEG bytes served as "image/gif") and why
-   this is a fallback attempted only after the declared type already
-   failed, not a first-choice replacement for it. */
-static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
+/* Resolves and decodes n's <img> src into a ready-to-embed image
+   dataobject (scaled to its declared size, border suppressed), or
+   returns NULL if it can't be used. Factored out of RenderImageInline
+   (which still contains the full account of the resolve/decode/sniff-
+   retry logic and remains its only caller for now) in anticipation of
+   a future BuildLsetCell path that attaches a sole-image table cell's
+   imagev DIRECTLY as its lset leaf's view, instead of going through
+   the generic "wrap cell content in a text object" path -- that
+   wrapping silently pads a lone icon with the surrounding line's
+   text-font ascent (drawtxtv.c's AllocateLineItem reserves ascent
+   space above ANY embedded view unconditionally, on the assumption
+   it's sitting on a real text baseline; a cell whose only content is
+   one image has no real baseline for that assumption to hold, and the
+   padding it adds is invisible but real -- live-confirmed 2026-08-20,
+   National Grid's social-icon row: the divider bar beside it ended up
+   visibly higher than the icons' true vertical center because of
+   exactly this, compounded across nesting levels). Not wired up yet:
+   these icon cells are also wrapped in <a href> for click-through,
+   and that click-through currently rides on the href-as-text-style-
+   mark mechanism (see htmlatk_LinkAt), which a direct imagev leaf
+   would have no equivalent for -- see the "Book Rack" case (wdc,
+   2026-08-20) for the harder version of this same click-through-vs-
+   lset question before building on this.
+
+   *outBeaconBlocked and *outPlaceholderHint are always set (blocked
+   defaults FALSE, hint defaults NULL) -- RenderImageInline's own
+   three-way placeholder-vs-silence decision is unchanged, just now
+   driven by these out-params. Caller owns the returned dataobject and
+   must free() *outPlaceholderHint when non-NULL. */
+static struct dataobject *ResolveImageDataObject(struct hax_state *st, const struct htmlnode *n,
+                                                   boolean *outBeaconBlocked, char **outPlaceholderHint)
 {
     const char *src = htmlpart_GetAttr(n, "src");
     unsigned char *bytes = NULL;
@@ -1009,15 +1030,16 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
     boolean resolved = FALSE;
     struct dataobject *dob = NULL;
     boolean ok = FALSE;
-    const char *placeholderHint = NULL;
-    boolean beaconBlocked = FALSE;
+
+    *outBeaconBlocked = FALSE;
+    *outPlaceholderHint = NULL;
 
     if (src && st->resolver) {
         if (environ_GetProfileSwitch("ams.blockbeaconimages", TRUE) && LooksLikeBeacon(n, src)) {
-            beaconBlocked = TRUE;
-        } else {
-            resolved = (*st->resolver)(st->resolverRock, src, &bytes, &len, &mimetype);
+            *outBeaconBlocked = TRUE;
+            return NULL;
         }
+        resolved = (*st->resolver)(st->resolverRock, src, &bytes, &len, &mimetype);
     }
 
     TraceDecode("DECODE ENTER src=%s resolved=%d bytes=%p len=%ld mimetype=%s\n",
@@ -1026,7 +1048,7 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
     if (resolved && bytes) {
         int savedErr;
         const char *dobClass;
-        placeholderHint = mimetype;
+        *outPlaceholderHint = mimetype ? strdup(mimetype) : NULL;
         dobClass = ImageClassForMimetype(mimetype);
         dob = (struct dataobject *) class_NewObject((char *) dobClass);
         savedErr = SuppressStderrBegin(); /* speculative: a labeled-decode failure here is expected/routine now, see SuppressStderrBegin's own comment */
@@ -1042,7 +1064,8 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
                 dobClass = ImageClassForMimetype(sniffed);
                 dob = (struct dataobject *) class_NewObject((char *) dobClass);
                 ok = dob && TryReadImageInto(dob, sniffed, bytes, len);
-                placeholderHint = sniffed; /* the truth, whether or not this retry itself succeeded */
+                free(*outPlaceholderHint);
+                *outPlaceholderHint = strdup(sniffed); /* the truth, whether or not this retry itself succeeded */
                 TraceDecode("  attempt2 class=%s ok=%d\n", dobClass, ok);
             }
         }
@@ -1057,17 +1080,41 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
                 ScaleImageToDeclaredSize(&dob, n);
                 image_SetNoBorder((struct image *) dob, TRUE);
             }
-            FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
-            text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName(dob), dob);
-            ++st->pos;
-            st->anyContent = 1;
-            st->trailingNL = 0;
-            st->spacePending = 0;
             free(bytes);
             free(mimetype);
-            return;
+            return dob;
         }
         if (dob) dataobject_Destroy(dob);
+    }
+    free(bytes);
+    free(mimetype);
+    return NULL;
+}
+
+/* Top-level (non-table-cell) <img> handling: try a real embed via the
+   resolver; on any failure (no resolver, resolver declines, format
+   unsupported) fall back to the inline text placeholder. If the
+   server-declared Content-Type's decoder fails, retries once against
+   whatever SniffImageMimetype() identifies from the bytes themselves
+   -- see that function's own note on why (a mislabeled-but-otherwise-
+   fine image, e.g. real JPEG bytes served as "image/gif") and why
+   this is a fallback attempted only after the declared type already
+   failed, not a first-choice replacement for it. */
+static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
+{
+    boolean beaconBlocked;
+    char *placeholderHint;
+    struct dataobject *dob = ResolveImageDataObject(st, n, &beaconBlocked, &placeholderHint);
+
+    if (dob) {
+        FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
+        text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName(dob), dob);
+        ++st->pos;
+        st->anyContent = 1;
+        st->trailingNL = 0;
+        st->spacePending = 0;
+        free(placeholderHint);
+        return;
     }
     if (beaconBlocked) {
         /* Deliberately silent -- no placeholder text at all, unlike
@@ -1086,19 +1133,15 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
            (options.c) -- it documents that a blocked image simply
            vanishes rather than describing what it says here, so this
            behavior is the one users are told to expect. */
-        free(bytes);
-        free(mimetype);
         return;
     }
     /* placeholderHint (when non-NULL here) is the best-known real
        format for a resolved-but-undecodable image -- the sniffed
        type if a sniff was attempted (truthful regardless of whether
        the retry itself succeeded), else the server's declared
-       Content-Type -- so BuildImgPlaceholder needs it before
-       mimetype is freed below. */
+       Content-Type. */
     emit_img_placeholder_inline(st, n, placeholderHint);
-    free(bytes);
-    free(mimetype);
+    free(placeholderHint);
 }
 
 /* ==================================================================== *
@@ -1531,6 +1574,14 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
            this was National Grid header issue (2), the visually noisy
            divider lines lpair drew between the 5 social icons). */
         node->nobar = 1;
+        /* Real browsers default table-cell vertical-align to "middle" --
+           lpair_VCENTER (see lpair.ch/lpair.c 2026-08-20) makes this
+           split center whichever of its two children ends up shorter
+           within the shared row height, instead of pinning it to the
+           top. Every split BuildLsetChain builds is exactly such a
+           table-cell pairing, so this is unconditional here, matching
+           nobar just above. */
+        node->vcenter = 1;
         if (cells[i].fixedpx > 0) {
             node->type = fixedsplittype;
             node->pct = (int) cells[i].fixedpx; /* a pixel bsize here, not a percentage -- see lsetview_MakeHorzFixed's comment in lsetv.ch */
