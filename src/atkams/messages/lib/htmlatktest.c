@@ -558,7 +558,14 @@ static int do_dump(const char *fixture, htmlatk_ImageResolver resolver)
    field already holds so the write actually proceeds), not fetched
    from im_GetWriteID() since that would need an extra header this
    standalone driver doesn't otherwise include. */
-static int do_writeds(const char *fixture, const char *outpath)
+/* resolver may be NULL (original writeds behavior, no image fetch) or
+   TestResolver (writedsr mode below) -- lets a synthetic cidmap-backed
+   fixture round-trip real local image bytes into the emitted
+   datastream, so `ez` can open it and show whatever htmlatk_Render's
+   own image-embedding path actually produced, independent of
+   messages/network entirely. */
+static int do_writeds(const char *fixture, const char *outpath,
+    boolean (*resolver)(void *, const char *, unsigned char **, long *, char **))
 {
     long len;
     unsigned char *data = readfile(fixture, &len);
@@ -576,7 +583,7 @@ static int do_writeds(const char *fixture, const char *outpath)
     t = (struct text *) class_NewObject("text");
     if (!t) { fprintf(stderr, "htmlatktest.test: could not create text object\n"); return 2; }
 
-    ok = htmlatk_Render(t, 0, root, NULL, NULL, &inserted);
+    ok = htmlatk_Render(t, 0, root, resolver, NULL, &inserted);
     htmlpart_Free(root);
 
     printf("RENDER-OK: %d\n", (int) ok);
@@ -703,7 +710,11 @@ int main(int argc, char **argv)
         return do_linkat(argv[2], strtol(argv[3], NULL, 10));
     }
     if (argc == 4 && strcmp(argv[1], "writeds") == 0) {
-        return do_writeds(argv[2], argv[3]);
+        return do_writeds(argv[2], argv[3], NULL);
+    }
+    if (argc == 5 && strcmp(argv[1], "writedsr") == 0) {
+        LoadCidMap(argv[3]);
+        return do_writeds(argv[2], argv[4], TestResolver);
     }
     if (argc == 3 && strcmp(argv[1], "roundtrip") == 0) {
         return do_roundtrip(argv[2]);
@@ -712,6 +723,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "       htmlatktest.test resolve <fixturefile> <cidmap>\n");
     fprintf(stderr, "       htmlatktest.test linkat <fixturefile> <pos>\n");
     fprintf(stderr, "       htmlatktest.test writeds <fixturefile> <outfile>\n");
+    fprintf(stderr, "       htmlatktest.test writedsr <fixturefile> <cidmap> <outfile>\n");
     fprintf(stderr, "       htmlatktest.test roundtrip <dsfile>\n");
     return 2;
 }
