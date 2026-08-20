@@ -97,6 +97,8 @@ extern int saveprofilestring(char *prog, char *pref, char *val, int warn), Count
 #define OT_INTEGER_VERYNARROW 4
 #define OT_INTEGER_CKP 5
 #define OT_INTEGER_MAXTOTALCLASSMENU 6
+#define OT_INTEGER_IMAGEFETCHBUDGET 7
+#define OT_INTEGER_IMAGEFETCHTIMEOUT 8
 
 static char *IntegerMessages[] = {
     "Changed the maximum size of the File Into... menu to %d.",
@@ -105,10 +107,12 @@ static char *IntegerMessages[] = {
     "Changed the percentage of caption/body area for bodies to %d.",
     "Changed the threshhold for the 'narrow' folder list setup to %d pixels.",
     "Changed the checkpoint interval to %d seconds.",
-    "Changed the maximum number of folders on a File Into... menu card to %d."
+    "Changed the maximum number of folders on a File Into... menu card to %d.",
+    "Changed the whole-message image fetch time limit to %d seconds.",
+    "Changed the per-image fetch time limit to %d seconds."
 };
 
-int IntegerDefaults[] = {8, 12, 8, 50, 12, 1, 25};
+int IntegerDefaults[] = {8, 12, 8, 50, 12, 1, 25, 25, 5};
 
 #define OT_SPECIAL_CRUCIALCLASSES 0
 #define OT_SPECIAL_FONT 1
@@ -140,6 +144,8 @@ static struct OptionChoice Options[] = {
 	{"Load remote images in HTML mail", OT_PROFSWITCH, OT_PROFSWITCH_LOADREMOTEIMAGES, 0, "HTML mail can reference images by URL. By default Messages shows a placeholder instead of fetching them, since fetching one can tell the sender you opened the message. Turn this on to fetch and display them automatically for every message."},
 	{"Block obvious tracking-pixel images", OT_PROFSWITCH, OT_PROFSWITCH_BLOCKBEACONS, 0, "Skips fetching images that look like tracking pixels (tiny declared size, or a URL containing a word like 'beacon' or 'track'), leaving nothing in their place rather than a placeholder. On by default; only matters once images are being fetched at all."},
 	{"Trusted senders (always load their images)", OT_SPECIAL, OT_SPECIAL_IMAGEALLOWLIST, 0, "A comma-separated list of senders (address or domain) whose images load automatically even when 'Load remote images' above is off. Add entries here, or via 'Add current sender to allow images' on a message's 'This Message' menu. Tracking-pixel blocking above still applies to them."},
+	{"Whole-message image fetch time limit", OT_INTEGER, OT_INTEGER_IMAGEFETCHBUDGET, 0, "The most total time, in seconds, one message's remote images may spend fetching before the rest are left as placeholders."},
+	{"Per-image fetch time limit", OT_INTEGER, OT_INTEGER_IMAGEFETCHTIMEOUT, 0, "The most time, in seconds, any single remote image may take before it's given up on and left as a placeholder."},
 	{"Special headers to highlight", OT_SPECIAL, OT_SPECIAL_KEYHEADS, 0, "This option alters the list of headers that are highlighted (not hidden) when you display a message.  Your entry should be a list of words separated by colons, with no spaces.  The default list is \"From:Date:Subject:To:CC:ReSent-From:ReSent-To\".  The option after this one can be used to alter the meaning of THIS option, so that it is a list of those headers NOT to highlight, and all non-specified headers WILL be highlighted."},
 	{"Highlight non-listed headers", OT_EXPLEVEL, EXP_SHOWALLBUTKEYS, 0, "By default, most of a message's headers are hidden from you, and you have to scroll backwards to see them.  You can alter the list of those few headers that ARE highlighted, using the previous option.  Using THIS option, you can change it so that the list of headers below is a list of those headers that do NOT get highlighted by default."},
 	{"Highlight NO headers", OT_EXPLEVEL, EXP_SHOWNOHEADS, 0, "This option turns off all header highlighting, leaving all of the bodies area for the message bodies themselves"},
@@ -256,7 +262,7 @@ int ProfSwitchHit(long self, struct value *val, int which, int hisrock)
 
 int IntegerHit(long self, struct value *val, int which, int hisrock)
 {
-    char Msg[1000], AnsBuf[25], *pref;
+    char Msg[1000], AnsBuf[25], *pref, *app = "messages";
     int parm, numval;
 
     if (hisrock == value_OBJECTDESTROYED) return;
@@ -288,11 +294,23 @@ int IntegerHit(long self, struct value *val, int which, int hisrock)
 	    pref = "CheckpointFrequency";
 	    numval *= 30;
 	    break;
+	case OT_INTEGER_IMAGEFETCHBUDGET:
+	    /* Stored under "ams." like the other httpimg-related prefs
+	       (OT_SPECIAL_IMAGEALLOWLIST above) -- text822.c's own
+	       environ_GetProfileInt("ams.imagefetchbudget", ...) call has
+	       no reason to know this dialog exists. */
+	    app = "ams";
+	    pref = "imagefetchbudget";
+	    break;
+	case OT_INTEGER_IMAGEFETCHTIMEOUT:
+	    app = "ams";
+	    pref = "imagefetchtimeout";
+	    break;
 	default:
 	    break;
     }
     sprintf(AnsBuf, "%d", numval);
-    if (saveprofilestring("messages", pref, AnsBuf, Options[which].IsStartup) != PREF_ABORT) {
+    if (saveprofilestring(app, pref, AnsBuf, Options[which].IsStartup) != PREF_ABORT) {
 	if (parm == OT_INTEGER_MAXCLASSMENU || parm == OT_INTEGER_MAXTOTALCLASSMENU) ams_ResetClassList();
 	if (parm == OT_INTEGER_CKP) ams_SetCheckpointFrequency(numval);
     }
@@ -510,6 +528,12 @@ int options__SetMessagesOptions(struct classheader *c, struct t822view *bv)
 		case OT_INTEGER_CKP:
 		    pref = "messages.CheckpointFrequency";
 		    scaledown = 30;
+		    break;
+		case OT_INTEGER_IMAGEFETCHBUDGET:
+		    pref = "ams.imagefetchbudget";
+		    break;
+		case OT_INTEGER_IMAGEFETCHTIMEOUT:
+		    pref = "ams.imagefetchtimeout";
 		    break;
 	    }
 	    value_SetValue(v, environ_GetProfileInt(pref, def*scaledown)/scaledown);

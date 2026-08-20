@@ -1805,16 +1805,20 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    below and httpimg.h's own design note on why a live network fetch
    cannot share a budget sized only for local CPU work). httpimg.h's
    struct httpimg_budget, as initialized below, already bounds total
-   fetch time to HTTPIMG_LOADIMAGES_MAXSECONDS on its own (via curl's
-   own --max-time/--connect-timeout, enforced inside httpimg.c, not
-   here) -- this second, larger wall-clock budget exists only to keep
-   RenderHtmlPart()'s own post-hoc "was that too slow" check (t2 - t1
-   below) from treating that same, expected network time as a hang and
-   discarding a render that actually succeeded. Sized as
-   HTTPIMG_LOADIMAGES_MAXSECONDS (the most the fetches themselves are
-   ever allowed to take) plus HTML_RENDER_TIME_BUDGET's own original
-   headroom (the local parse/build-views work around those fetches is
-   no slower with images on than off).
+   fetch time to the "ams.imagefetchbudget" preference (imageMaxSeconds
+   below) on its own (via curl's own --max-time/--connect-timeout,
+   enforced inside httpimg.c, not here) -- this second, larger
+   wall-clock budget exists only to keep RenderHtmlPart()'s own
+   post-hoc "was that too slow" check (t2 - t1 below) from treating
+   that same, expected network time as a hang and discarding a render
+   that actually succeeded. Sized as imageMaxSeconds (the most the
+   fetches themselves are ever allowed to take) plus
+   HTML_RENDER_TIME_BUDGET's own original headroom (the local
+   parse/build-views work around those fetches is no slower with
+   images on than off) -- computed from the live preference value at
+   the point of use, not a compile-time constant, so raising
+   "ams.imagefetchbudget" doesn't leave this check silently out of
+   sync with the budget it's supposed to match.
 
    Both numbers below were originally 6 and 6 -- sized against this
    module's own synthetic smoke test (httpimg.c's design-time trial
@@ -1836,17 +1840,23 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    count cap the 6-second deadline itself had barely any slack above
    that observed 3-second real cost for THIS message; a slightly
    larger or slower-hosted newsletter would trip the seconds cap too.
-   24 fetches / 25 seconds gives real headroom above both the observed
-   14-image/~3-second case (not just barely clearing it) while staying
-   finite: a message with hundreds of remote <img> references (an
-   adversarial flood, not anything in the corpus) still can't spawn an
-   unbounded number of curl subprocesses or hold the render open
-   indefinitely if those hosts are slow or unreachable -- that
-   pathological case, not typical newsletter volume, is what these
-   caps exist to bound. */
-#define HTTPIMG_LOADIMAGES_MAXFETCHES 24
-#define HTTPIMG_LOADIMAGES_MAXSECONDS 25
-#define HTML_RENDER_TIME_BUDGET_WITH_IMAGES (HTTPIMG_LOADIMAGES_MAXSECONDS + HTML_RENDER_TIME_BUDGET)
+   Raised at the time to 24 fetches / 25 seconds. A second real message
+   (revival/tests/bookrack.html, a Shelf Awareness newsletter with 27
+   distinct non-beacon images) broke the *count* half of that again --
+   silently dropping its last 3 images (curl never even invoked for
+   them) despite well over half the 25-second deadline still being
+   unused. The count cap was removed rather than raised a second time
+   (2026-08-20): it never bounded anything the deadline doesn't already
+   bound on its own (more images within the same wall-clock window just
+   means faster, smaller fetches, not more total time), so it was pure
+   risk of undercounting real mail for no corresponding safety benefit.
+   See httpimg.h's struct httpimg_budget comment for the two bounds
+   that remain: a per-fetch cap, and this overall deadline. Both are
+   now configurable ("ams.imagefetchtimeout" / "ams.imagefetchbudget",
+   options.c) rather than fixed constants -- the defaults below are
+   only what's used until a preference overrides them. */
+#define HTTPIMG_LOADIMAGES_MAXSECONDS_DEFAULT 25
+#define HTTPIMG_PERFETCH_MAXSECONDS_DEFAULT 5
 
 /* Renders html[0..htmllen) (already CTE-decoded HTML bytes) into d at
    *ShowPos, per the design doc's two-level fallback contract: Stage
@@ -1899,13 +1909,18 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    expose at all (it only tracks Content-Type/Content-Disposition), so
    real cid: image resolution is not silently skipped, it simply isn't
    built yet, independent of this switch. When the resolver is live,
-   HTML_RENDER_TIME_BUDGET_WITH_IMAGES (not HTML_RENDER_TIME_BUDGET)
-   is used for the t2 - t1 check below -- see that constant's own
-   comment for why a plain, unmodified HTML_RENDER_TIME_BUDGET would
-   make turning images on actively counterproductive (every render
-   that used the network at all would read as "too slow" and get
-   thrown away in favor of the Stage 2 plain-text fallback, even
-   though it had just finished successfully). curl's own --max-time
+   imageMaxSeconds + HTML_RENDER_TIME_BUDGET (not HTML_RENDER_TIME_BUDGET
+   alone) is used for the t2 - t1 check below, imageMaxSeconds being
+   the same "ams.imagefetchbudget" value the budget itself was just
+   initialized with just above -- a plain, unmodified
+   HTML_RENDER_TIME_BUDGET would make turning images on actively
+   counterproductive (every render that used the network at all would
+   read as "too slow" and get thrown away in favor of the Stage 2
+   plain-text fallback, even though it had just finished successfully).
+   Computed from the live preference value rather than a compile-time
+   constant so raising "ams.imagefetchbudget" actually gives fetches
+   more time to complete, not just a longer wait before the same old
+   ceiling discards the result anyway. curl's own --max-time
    inside httpimg.c is still the thing actually bounding any one
    fetch; this is only the outer check that decides whether the
    result of however long that took gets kept. One acknowledged gap:
@@ -2024,13 +2039,22 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
 	   governed only by "ams.blockbeaconimages". */
 	boolean trustedSender = SenderIsAllowlisted(CurrentFromAddress);
 	boolean loadImages = loadImagesOverride || trustedSender || environ_GetProfileSwitch("ams.loadremoteimages", FALSE);
+	/* Both configurable (options.c's "Whole-message image fetch time
+	   limit" / "Per-image fetch time limit" rows); read here rather
+	   than as compile-time constants so a preference change takes
+	   effect on the very next message, same as every other profile
+	   read in this function. imageMaxSeconds is also reused below to
+	   size the post-render "was that too slow" check -- see this
+	   function's own doc comment. */
+	int imageMaxSeconds = environ_GetProfileInt("ams.imagefetchbudget", HTTPIMG_LOADIMAGES_MAXSECONDS_DEFAULT);
+	int imagePerFetchSeconds = environ_GetProfileInt("ams.imagefetchtimeout", HTTPIMG_PERFETCH_MAXSECONDS_DEFAULT);
 	struct httpimg_budget imgBudget;
 	htmlatk_ImageResolver resolver = NULL;
 	void *resolverRock = NULL;
 	boolean ok;
 
 	if (loadImages) {
-	    httpimg_InitBudget(&imgBudget, HTTPIMG_LOADIMAGES_MAXFETCHES, HTTPIMG_LOADIMAGES_MAXSECONDS);
+	    httpimg_InitBudget(&imgBudget, imageMaxSeconds, imagePerFetchSeconds);
 	    resolver = httpimg_ResolveImage;
 	    resolverRock = &imgBudget;
 	    /* im's own SIGCHLD handling (im.c: cleanUpZombies, TRUE by
@@ -2064,13 +2088,13 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
 	    im_SetCleanUpZombies(FALSE);
 	}
 
-	Trace822("RenderHtmlPart: loadImages=%d fetchesLeft_before=%d\n", loadImages, loadImages ? imgBudget.fetchesLeft : -1);
+	Trace822("RenderHtmlPart: loadImages=%d imageMaxSeconds=%d imagePerFetchSeconds=%d\n", loadImages, imageMaxSeconds, imagePerFetchSeconds);
 	ok = htmlatk_Render((struct text *) d, (long) *ShowPos, tree, resolver, resolverRock, &lengthOut);
-	Trace822("RenderHtmlPart: htmlatk_Render returned ok=%d lengthOut=%ld fetchesLeft_after=%d\n", ok, lengthOut, loadImages ? imgBudget.fetchesLeft : -1);
+	Trace822("RenderHtmlPart: htmlatk_Render returned ok=%d lengthOut=%ld\n", ok, lengthOut);
 	if (loadImages) im_SetCleanUpZombies(TRUE);
 	if (loadImages) httpimg_FreeBudget(&imgBudget); /* frees the cache's malloc'd copies (httpimg.h) -- imgBudget itself is stack-local, nothing to free for it */
 	t2 = time(NULL);
-	if (ok && (t2 - t1) <= (loadImages ? HTML_RENDER_TIME_BUDGET_WITH_IMAGES : HTML_RENDER_TIME_BUDGET)) {
+	if (ok && (t2 - t1) <= (loadImages ? (imageMaxSeconds + HTML_RENDER_TIME_BUDGET) : HTML_RENDER_TIME_BUDGET)) {
 	    *ShowPos += (int) lengthOut;
 	    htmlpart_Free(tree);
 	    if (convhtml) free(convhtml);

@@ -114,23 +114,27 @@ static void Trace(const char *fmt, ...)
    case memory use per fetch. */
 #define HTTPIMG_MAX_BYTES (4L * 1024 * 1024)
 
-/* Upper bound on any single curl invocation's --max-time, itself
-   further clamped down to whatever remains of the caller's overall
-   struct httpimg_budget deadline (see httpimg_ResolveImage below).
-   --connect-timeout is kept well under this so a host that never
-   completes a TCP handshake fails fast and leaves time for the
-   caller's remaining budget rather than eating the whole per-fetch
-   allowance on a connect that was never going to succeed. */
+/* Fallback used when a caller passes perFetchMaxSeconds <= 0 to
+   httpimg_InitBudget() (callers are expected to pass a real value --
+   currently text822.c's "ams.imagefetchtimeout" preference -- this is
+   just the safe floor if one doesn't). Whatever value is actually in
+   effect (the field, not this constant) is still further clamped down
+   to whatever remains of the caller's overall struct httpimg_budget
+   deadline (see httpimg_ResolveImage below). --connect-timeout is
+   kept well under it so a host that never completes a TCP handshake
+   fails fast and leaves time for the caller's remaining budget rather
+   than eating the whole per-fetch allowance on a connect that was
+   never going to succeed. */
 #define HTTPIMG_DEFAULT_MAX_TIME 5
 #define HTTPIMG_CONNECT_TIMEOUT 3
 
 #define HTTPIMG_HEADER_READ_CAP 16384
 
-void httpimg_InitBudget(struct httpimg_budget *budget, int maxFetches, int maxSeconds)
+void httpimg_InitBudget(struct httpimg_budget *budget, int maxSeconds, int perFetchMaxSeconds)
 {
     if (!budget) return;
-    budget->fetchesLeft = (maxFetches > 0) ? maxFetches : 0;
     budget->deadline = time(NULL) + ((maxSeconds > 0) ? maxSeconds : 0);
+    budget->perFetchMaxSeconds = (perFetchMaxSeconds > 0) ? perFetchMaxSeconds : HTTPIMG_DEFAULT_MAX_TIME;
     budget->cacheCount = 0;
 }
 
@@ -399,20 +403,13 @@ boolean httpimg_ResolveImage(void *rock, const char *src,
         }
     }
 
-    if (budget->fetchesLeft <= 0) { Trace("  -> FALSE: fetchesLeft exhausted (0)\n"); return FALSE; }
-
     now = time(NULL);
     if (now >= budget->deadline) { Trace("  -> FALSE: deadline passed (now=%ld deadline=%ld)\n", (long) now, (long) budget->deadline); return FALSE; }
     remain = budget->deadline - now;
-    perFetchTime = (remain < HTTPIMG_DEFAULT_MAX_TIME) ? (int) remain : HTTPIMG_DEFAULT_MAX_TIME;
+    perFetchTime = (remain < budget->perFetchMaxSeconds) ? (int) remain : budget->perFetchMaxSeconds;
     if (perFetchTime < 1) perFetchTime = 1;
 
-    Trace("  budget before: fetchesLeft=%d remain=%lds perFetchTime=%d\n", budget->fetchesLeft, (long) remain, perFetchTime);
-
-    /* Consumed now, before the network attempt: the cost (up to
-       perFetchTime seconds) is incurred regardless of the outcome,
-       see httpimg.h's note on why this is charged either way. */
-    budget->fetchesLeft -= 1;
+    Trace("  budget before: remain=%lds perFetchTime=%d\n", (long) remain, perFetchTime);
 
     bodyFd = mkstemp(bodyPath);
     if (bodyFd < 0) { Trace("  -> FALSE: mkstemp(body) failed errno=%d (%s)\n", errno, strerror(errno)); return FALSE; }

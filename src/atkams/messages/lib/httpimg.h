@@ -51,8 +51,8 @@
 	   any input, so nothing needs interrupting mid-call. A network
 	   fetch breaks that premise: it does not terminate quickly for
 	   adversarial or merely slow/dead hosts. httpimg_ResolveImage()
-	   is given its own explicit struct httpimg_budget (fetch count +
-	   wall-clock deadline, see below) so a caller CAN bound total
+	   is given its own explicit struct httpimg_budget (a per-fetch cap
+	   plus an overall wall-clock deadline, see below) so a caller CAN bound total
 	   worst-case time across every <img> in one message, but nothing
 	   here enforces that a caller actually does -- the caller (whoever
 	   wires this into RenderHtmlPart) needs to size that budget
@@ -104,28 +104,38 @@
    htmlatk_ImageResolver's rock parameter, htmlatk.h). One message can
    contain many <img> tags; without a shared cap each one would pay its
    own full network timeout independently, so a message with N slow/
-   dead remote images could take on the order of N * (per-fetch
-   timeout) wall-clock seconds before RenderHtmlPart() ever gets to
-   check HTML_RENDER_TIME_BUDGET. httpimg_ResolveImage() decrements
-   fetchesLeft once per real network attempt (success or failure --
-   the cost already happened by the time curl exits, so it counts
-   either way) so total elapsed wall-clock time across the whole
-   render pass stays bounded by roughly fetchesLeft * (per-fetch
-   timeout), capped further by deadline. A bad-scheme src (file:,
-   data:, javascript:, cid:, ...) is rejected before any of that --
-   it never touches the network or the fetch count, since it costs
-   nothing to reject. Callers must allocate one of these per render pass (call
-   httpimg_InitBudget() once, then pass its address as resolverRock to
-   htmlatk_Render()) -- rock == NULL is treated as "no budget was
-   configured" and every fetch is refused, not as "unlimited," since
-   that is the safe direction to fail in. */
+   dead remote images could take on the order of N * perFetchMaxSeconds
+   wall-clock seconds before RenderHtmlPart() ever gets to check
+   HTML_RENDER_TIME_BUDGET. Two bounds, not three: perFetchMaxSeconds
+   caps any one fetch (a single dead/adversarial host can't hang
+   forever), and deadline caps the sum across every fetch in this
+   render pass (many individually-fine fetches can't add up to an
+   unreasonable total). A bad-scheme src (file:, data:, javascript:,
+   cid:, ...) is rejected before either check -- it never touches the
+   network, since it costs nothing to reject.
+
+   REMOVED 2026-08-20: an earlier version also carried a fixed
+   `fetchesLeft` count cap (originally 24, sized against one 14-image
+   sample newsletter). A later real message (revival/tests/
+   bookrack.html, 27 distinct non-beacon images) exceeded it, silently
+   dropping the last few images with no fetch attempted at all --
+   rejected before curl ever ran, not a timeout. The count added
+   nothing the deadline doesn't already bound on its own (a message
+   with hundreds of real images just means more, faster-completing
+   fetches within the same wall-clock window; deadline still caps
+   total time either way), so it was dropped rather than just raised
+   again to another guessed number. Callers must allocate one of these
+   per render pass (call httpimg_InitBudget() once, then pass its
+   address as resolverRock to htmlatk_Render()) -- rock == NULL is
+   treated as "no budget was configured" and every fetch is refused,
+   not as "unlimited," since that is the safe direction to fail in. */
 /* Cache is fixed-size and append-only for the lifetime of one render
    pass (never evicted, just stops growing once full) -- real mail
    that motivated this (a Shelf Awareness book-list newsletter)
    re-references the same handful of small chrome icons (buy/share
    buttons, social icons) once per row, and each repeat was paying a
-   full network fetch and consuming the fetch-count budget for bytes
-   already in hand from the first occurrence -- confirmed via a live
+   full network fetch for bytes already in hand from the first
+   occurrence -- confirmed via a live
    trace: the exact same src (e.g. "sar3/buy-l.png") entering
    httpimg_ResolveImage() five separate times in one render pass. A
    cache hit costs neither a fetch nor budget. HTTPIMG_CACHE_SIZE is
@@ -144,22 +154,24 @@ struct httpimg_cache_entry {
 };
 
 struct httpimg_budget {
-    int fetchesLeft;
     time_t deadline;
+    int perFetchMaxSeconds;
     int cacheCount;
     struct httpimg_cache_entry cache[HTTPIMG_CACHE_SIZE];
 };
 
-/* Initializes budget for one render pass: up to maxFetches network
-   attempts total, none of them starting after time(NULL)+maxSeconds.
-   Each individual fetch's own --max-time is further capped to
-   whatever time remains until that deadline when it starts, so a
-   fetch that begins near the end of the window cannot by itself run
-   past it. Caller must call httpimg_FreeBudget() on the same struct
-   once the render pass is done (the cache above owns malloc'd
-   copies of every distinct src's bytes/mimetype it saw, freed
-   there). */
-void httpimg_InitBudget(struct httpimg_budget *budget, int maxFetches, int maxSeconds);
+/* Initializes budget for one render pass: no fetch may start after
+   time(NULL)+maxSeconds, and any single curl invocation's own
+   --max-time is capped to perFetchMaxSeconds -- further capped still
+   to whatever time remains until the deadline when that fetch starts,
+   so a fetch beginning near the end of the window cannot by itself
+   run past it (see httpimg_ResolveImage()). perFetchMaxSeconds <= 0 is
+   treated as "use HTTPIMG_DEFAULT_MAX_TIME," the same safe-default
+   handling maxSeconds <= 0 already gets. Caller must call
+   httpimg_FreeBudget() on the same struct once the render pass is
+   done (the cache above owns malloc'd copies of every distinct src's
+   bytes/mimetype it saw, freed there). */
+void httpimg_InitBudget(struct httpimg_budget *budget, int maxSeconds, int perFetchMaxSeconds);
 
 /* Frees every cache entry's malloc'd src/bytes/mimetype. Safe to call
    on a budget that was InitBudget()'d but never used (cacheCount 0).
@@ -171,9 +183,9 @@ void httpimg_FreeBudget(struct httpimg_budget *budget);
 /* htmlatk_ImageResolver-shaped (see htmlatk.h): rock must be a
    struct httpimg_budget* (see above). Resolves src via a single
    blocking `curl` subprocess (no shell, see file header) when src's
-   scheme is http: or https: and the budget above still allows it;
+   scheme is http: or https: and the deadline hasn't passed yet;
    returns FALSE untouched-out-params for every other case (bad
-   scheme, exhausted budget, curl exited nonzero, response bigger than
+   scheme, deadline passed, curl exited nonzero, response bigger than
    this module's fixed size cap, or a Content-Type that doesn't start
    with "image/"). On TRUE, *bytesOut and *mimetypeOut are malloc'd copies
    the caller owns (matches htmlatk_ImageResolver's documented
