@@ -743,6 +743,19 @@ than one screen:
   above (nothing had called `Zoom()` on a plain truecolor/PNG image
   before). Manifested as solid black boxes instead of shrunk pictures.
   Fixed by initializing the pointer.
+- Real HTML's "floated adjacent tables" idiom (two sibling `<table>`s,
+  `align="left"`/`align="right"`, instead of two `<td>`s in one `<tr>`)
+  had no side-by-side representation at all — both tables, being
+  individually a single row/single cell, were unwrapped by
+  `TableIsTrivialWrapper` as boilerplate and flattened into one plain
+  textview's flowing content, which has no CSS-style float layout of
+  its own: text wrapped below the floated image instead of beside it,
+  on every line but the first. Fixed by exempting an `align=`-bearing
+  table from that unwrap and pairing it with its next real sibling
+  table into a genuine 2-column `lset` split, weighted by each side's
+  declared `width=` percentage (`align` also newly allowed through
+  `htmlpart.c`'s attribute allowlist). This was item (1) of the five
+  National Grid header issues below.
 
 **Known open bugs:**
 - Forward/backward paging (`^v`/`Escape-v`) and the scrollbar's elevator
@@ -753,17 +766,17 @@ than one screen:
   earlier in this document, still only mitigated by peeling, not fixed
   at the root.
 - Five layout/styling issues found live 2026-08-19 against the National
-  Grid fixture's "National Grid" header row, not yet investigated:
-  (1) the red gas-meter icon's paragraph wraps below/above it instead of
-  to its right; (2) the thin vertical divider lines `lpair` draws
-  between side-by-side splits are visually noisy across the 5-icon row
-  (a milder case of the same "no way to suppress the split divider"
-  limitation noted in Table strategy above); (3) the "National Grid"
-  text link sits too high above the blue divider bar; (4) that same
-  text renders in the default body font/weight instead of larger,
-  bold, sans-serif — possibly a `style=`/CSS-to-ATK-style mapping gap;
-  (5) the blue divider bar itself is top-aligned within its row instead
-  of vertically centered against the icon row beside it.
+  Grid fixture's "National Grid" header row. (1) is fixed (see above,
+  same date); (2)-(5) not yet investigated: (2) the thin vertical
+  divider lines `lpair` draws between side-by-side splits are visually
+  noisy across the 5-icon row (a milder case of the same "no way to
+  suppress the split divider" limitation noted in Table strategy
+  above); (3) the "National Grid" text link sits too high above the
+  blue divider bar; (4) that same text renders in the default body
+  font/weight instead of larger, bold, sans-serif — possibly a
+  `style=`/CSS-to-ATK-style mapping gap; (5) the blue divider bar
+  itself is top-aligned within its row instead of vertically centered
+  against the icon row beside it.
 
 ## Planned next work
 
