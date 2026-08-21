@@ -1870,3 +1870,50 @@ symbol binding), and the crash was confirmed gone live. See
 writeup, and `revival/doc/html-mail-rendering-design.md` for the
 feature this was building (per-sender trusted images, deliberately kept
 independent of the existing tracking-pixel-blocking preference).
+
+### 2026-08-21 — Xft "migration" was never doing real fontconfig resolution; fixed, plus two rollout bugs
+
+Full analysis and fix in `porting-assessment.md` §9, "Update 2026-08-21"
+(the bug itself was found and scoped the day before, in "Update
+2026-08-20" of the same section). Summary: `xfontdesc_GetXftFont`
+(`xfontd.c`) never independently resolved a font by family/size through
+fontconfig — it only antialiased whichever bitmap font the legacy
+X-core-font matcher happened to land on, so arbitrary CSS font sizes
+(added the same day for HTML-mail rendering) got the nearest bitmap PCF
+stretched to fit instead of a genuinely scalable outline.
+
+- `xfontd.c`: `xfontdesc_LoadXFont` now calls `XftFontOpenName` with a
+  fontconfig pattern built from the same `xfamily`/`weight`/`slant`/
+  `desiredSize` inputs, independent of the X-core-font cascade below it.
+  Gated on whether the literal, alias-driven font name attempt already
+  failed — succeeding there means AUIS's own `fonts.alias` has a
+  deliberate private-encoding mapping (icon/symbol/cursor fonts:
+  `andysymbol`, `xshape`, `icon`, `msgs`), which must never go through
+  fontconfig (confirmed live that fontconfig substitutes *some* real
+  Latin font for literally any string, silently turning icon glyph codes
+  into literal letters — first rollout bug, fixed by switching from a
+  family-name guess to this alias-success signal). Second rollout bug: a
+  leftover safety check re-verified the *final* core-font match's XLFD
+  registry before accepting the fontconfig font, which rejected
+  perfectly good fonts for any family with no real core-protocol match
+  (e.g. `arial`) once its fallback cascade bottomed out on the wrong
+  encoding — removed, since the alias-success gate already established
+  intent.
+- `xfontd.c`: `xfontdesc_WidthTable` now sources per-character advance
+  widths from the resolved Xft font's real metrics (`XftTextExtents8`)
+  instead of the core font's when one is in play — the two disagreeing
+  produced visibly uneven, gappy spacing on ordinary text.
+  `HeightTable`/`StringSize`/`TextSize`/`CharSummary` deliberately left
+  on core metrics (scope note in the doc).
+- `xgraphic.c`: `xgraphic_DrawChars`'s vertical alignment math now reads
+  ascent/descent from the resolved Xft font instead of the core "dummy"
+  `XFontStruct` when one exists — reinstates the 2026-07-12
+  calc-investigation experiment (`claude-history/
+  calc-text-rendering-investigation.md`) that was shelved as a no-op at
+  the time, now load-bearing since the visual font can genuinely diverge
+  from the core font.
+
+Verified live against the Book Rack fixture: Andy symbol glyphs, default
+Andrew text, and HTML-mail inset text (Arial/Georgia) all render
+correctly; a console flood of `X error 2-BadValue ... operation 45:0`
+seen mid-rollout was gone after both bug fixes above.
