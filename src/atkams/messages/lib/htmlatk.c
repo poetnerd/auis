@@ -60,6 +60,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>	/* strcasecmp */
 #include <ctype.h>
 #include <stdarg.h>
 #include <fcntl.h>
@@ -154,6 +155,50 @@ static long ParseFixedPixelWidth(const char *s)
     if (*end != '\0' && strcmp(end, "px") != 0) return 0;
     if (v > 100000) v = 100000;
     return v;
+}
+
+/* Parses a CSS font-size value ("20px", "15pt", "20", ...) into a
+   point size for style_SetFontSize -- see FontSizeStyleFor's own
+   comment on why that classprocedure's Operand is points, not pixels
+   (the legacy <font size="N"> table it already feeds, { 8, 10, 12,
+   14, 18, 24, 32 }, is unmistakably a point scale). "px" is converted
+   via the standard CSS reference (96px = 72pt, i.e. 1px = 0.75pt);
+   "pt" (and no unit at all -- a handful of real fixtures declare a
+   bare number, technically invalid CSS but unambiguous enough to
+   accept the same way ParseFixedPixelWidth accepts a bare width) are
+   taken as already being points. Returns 0 (not usable) for anything
+   else -- "smaller"/"larger" are handled by the caller instead, via
+   RelativeFontSizeStyleFor (they aren't a size this function could
+   even return: ATK's own style_PreviousFontSize basis makes them
+   genuinely relative to whatever's ambient, not a fixed point value
+   this function's ConstantFontSize-shaped return could express). What
+   IS still unhandled here: "em"/"%" (relative to a base size this
+   renderer has no notion of tracking through nested elements -- unlike
+   smaller/larger, CSS defines these as a multiplier, not a fixed
+   delta, and ATK's relative basis only offers the latter) and the
+   absolute size keywords (small, medium, large, x-large, ...) --
+   guessing any of these wrong would be worse than falling back to
+   whatever size the surrounding text already has, so this deliberately
+   doesn't try. Clamped to a sane 4-96pt range so a
+   malformed or malicious value (an absurd font-size seen live would
+   otherwise ask X for a huge/zero font and either fail oddly or
+   visually blow out the whole layout) can't do anything worse than
+   render at the clamp boundary. */
+static long ParseCssFontSizePoints(const char *s)
+{
+    double v;
+    char *end;
+    long pt;
+    if (!s || !*s) return 0;
+    v = strtod(s, &end);
+    if (end == s || v <= 0) return 0;
+    while (*end == ' ') ++end;
+    if (strcasecmp(end, "px") == 0) pt = (long) (v * 0.75 + 0.5);
+    else if (strcasecmp(end, "pt") == 0 || *end == '\0') pt = (long) (v + 0.5);
+    else return 0;
+    if (pt < 4) pt = 4;
+    if (pt > 96) pt = 96;
+    return pt;
 }
 
 /* Generic growable pointer vector, reused for row-collection and
@@ -347,6 +392,172 @@ static struct style *FontSizeStyleFor(long n)
         FontSizeCache[n] = st;
     }
     return FontSizeCache[n];
+}
+
+/* CSS font-size:...px/pt, an arbitrary point value (not the fixed
+   1-7 legacy scale FontSizeStyleFor above serves) -- same linear-
+   scan-cache-with-a-cap shape as ColorCache above, keyed by the
+   already-resolved point value rather than a string (ParseCssFontSizePoints
+   has already done the real parsing/unit-conversion work by the time
+   this is called, so there's no raw string left worth deduplicating
+   on). Capped for the same reason ColorCache is: real fixtures only
+   ever use a handful of distinct sizes, so the cap is never reached
+   in practice, and past it this just degrades to one-off allocation
+   rather than failing. */
+#define POINTSIZECACHE_MAX 32
+static struct { long pt; struct style *st; } PointSizeCache[POINTSIZECACHE_MAX];
+static int PointSizeCacheCount = 0;
+
+static struct style *PointSizeStyleFor(long pt)
+{
+    int i;
+    struct style *st;
+    for (i = 0; i < PointSizeCacheCount; ++i) {
+        if (PointSizeCache[i].pt == pt) return PointSizeCache[i].st;
+    }
+    st = style_New();
+    if (!st) return NULL;
+    style_SetFontSize(st, style_ConstantFontSize, pt);
+    if (PointSizeCacheCount < POINTSIZECACHE_MAX) {
+        PointSizeCache[PointSizeCacheCount].pt = pt;
+        PointSizeCache[PointSizeCacheCount].st = st;
+        ++PointSizeCacheCount;
+    }
+    return st;
+}
+
+/* CSS font-size: smaller/larger -- relative to whatever size is
+   already in effect at this point in the document, unlike every
+   other case above (all of which set an absolute size regardless of
+   context). ATK's style system already has exactly this notion:
+   style_PreviousFontSize adds Operand points to the ambient size
+   instead of replacing it (src/atk/text/text.c:1734-1736,
+   sv->CurFontSize += styleptr->FontSize.Operand); fnote.c already
+   uses it this same way, style_SetFontSize(Style,
+   style_PreviousFontSize, -2), to make footnote text 2pt smaller than
+   its surrounding body text. Reusing that exact delta for CSS
+   "smaller"/"larger" (rather than inventing a different one) keeps
+   this consistent with the one other place in the tree that already
+   makes this same "a couple points off the ambient size" judgment
+   call. Only two styles ever needed, so a bare pair of statics is
+   simpler than a cache. */
+static struct style *SmallerSt = NULL, *LargerSt = NULL;
+
+static struct style *RelativeFontSizeStyleFor(int larger)
+{
+    struct style **cache = larger ? &LargerSt : &SmallerSt;
+    if (!*cache) {
+        struct style *st = style_New();
+        if (!st) return NULL;
+        style_SetFontSize(st, style_PreviousFontSize, larger ? 2 : -2);
+        *cache = st;
+    }
+    return *cache;
+}
+
+/* Extracts the first name out of a CSS font-family list ("Georgia,
+   Times, serif" -> "Georgia") into outbuf, stripped of surrounding
+   whitespace and a matched pair of quotes ('"Times New Roman", serif'
+   -> "Times New Roman"). style_SetFontFamily (style.ch) takes exactly
+   one name, not a fallback list, so there's no way to honor the rest
+   of a multi-name declaration -- this renderer has no font-
+   availability probing to pick a later name if the first isn't
+   installed, so it just hands the first name to Xft/fontconfig
+   (HAVE_XFT is on for this build) and trusts its own substitution
+   logic to find something reasonable, the same way a real browser
+   would fall back for a missing family, just one layer earlier.
+   Generic CSS family keywords (serif, sans-serif, monospace, ...)
+   pass through unchanged for the same reason -- fontconfig already
+   treats them as valid generic family names on its own, nothing
+   htmlatk-specific to translate. Returns 0 (outbuf untouched) if raw
+   is empty or the first name is empty after stripping (e.g. a stray
+   leading comma). */
+static int ParseCssFontFamilyFirst(const char *raw, char *outbuf, size_t bufsz)
+{
+    const char *start, *end;
+    size_t len;
+    if (!raw || !*raw || bufsz == 0) return 0;
+    start = raw;
+    while (*start == ' ' || *start == '\t') ++start;
+    end = strchr(start, ',');
+    if (!end) end = start + strlen(start);
+    while (end > start && (end[-1] == ' ' || end[-1] == '\t')) --end;
+    if (end - start >= 2 && (*start == '"' || *start == '\'') && end[-1] == *start) {
+        ++start; --end;
+    }
+    if (end <= start) return 0;
+    len = (size_t) (end - start);
+    if (len >= bufsz) len = bufsz - 1;
+    memcpy(outbuf, start, len);
+    outbuf[len] = '\0';
+    return 1;
+}
+
+/* Same linear-scan-cache-with-a-cap shape as ColorCache/PointSizeCache
+   above, keyed by the already-extracted family name string. */
+#define FONTFAMILYCACHE_MAX 32
+static struct { char *name; struct style *st; } FontFamilyCache[FONTFAMILYCACHE_MAX];
+static int FontFamilyCacheCount = 0;
+
+static struct style *FontFamilyStyleFor(const char *name)
+{
+    int i;
+    struct style *st;
+    for (i = 0; i < FontFamilyCacheCount; ++i) {
+        if (strcmp(FontFamilyCache[i].name, name) == 0) return FontFamilyCache[i].st;
+    }
+    st = style_New();
+    if (!st) return NULL;
+    style_SetFontFamily(st, (char *) name);
+    if (FontFamilyCacheCount < FONTFAMILYCACHE_MAX) {
+        FontFamilyCache[FontFamilyCacheCount].name = dupstr(name);
+        FontFamilyCache[FontFamilyCacheCount].st = st;
+        if (FontFamilyCache[FontFamilyCacheCount].name) ++FontFamilyCacheCount;
+    }
+    return st;
+}
+
+/* CSS text-align / the legacy align="..." attribute -- horizontal
+   paragraph justification. ATK's style system already has this too:
+   style_Justification (style.ch) is a plain enum living right beside
+   FontSize on the same struct style, applied through the exact same
+   mechanism (text.c:1859-1871, sv->CurJustification =
+   styleptr->NewJustification, read at line-layout time in
+   drawtxtv.c). "FEATURED TITLES" -- a <td align="center"> around a
+   single <a> -- was the confirmed live case (wdc: "Centered text
+   isn't"): this renderer had literally never read align/text-align
+   anywhere before now (grepped clean; the only prior use of "align"
+   in this whole file is TableFloatAlign's align="left"/"right"
+   FLOAT-positioning signal, an unrelated concept despite the shared
+   attribute name). "start" is treated as left (this renderer has no
+   RTL concept to make that distinction meaningful); anything else
+   (right-to-left keywords, "inherit", ...) falls through to no style
+   at all, same as every other CSS parser in this file when it doesn't
+   recognize a value. Only 4 possible buckets, so a small fixed cache
+   -- same reasoning as BoldSt/ItalicSt/FontSizeCache above -- rather
+   than ColorCache's linear-scan shape. */
+static struct style *JustificationCache[6]; /* indexed by enum style_Justification */
+
+static struct style *JustificationStyleFor(enum style_Justification j)
+{
+    if (!JustificationCache[j]) {
+        struct style *st = style_New();
+        if (!st) return NULL;
+        style_SetJustification(st, j);
+        JustificationCache[j] = st;
+    }
+    return JustificationCache[j];
+}
+
+static enum style_Justification ParseJustification(const char *v, int *ok)
+{
+    *ok = 1;
+    if (strcasecmp(v, "center") == 0) return style_Centered;
+    if (strcasecmp(v, "left") == 0 || strcasecmp(v, "start") == 0) return style_LeftJustified;
+    if (strcasecmp(v, "right") == 0) return style_RightJustified;
+    if (strcasecmp(v, "justify") == 0) return style_LeftAndRightJustified;
+    *ok = 0;
+    return style_PreviousJustification;
 }
 
 /* ==================================================================== *
@@ -1224,7 +1435,8 @@ static void CollectRows(const struct htmlnode *tablenode, struct nodevec *rows)
    the cell's perspective, coalescing-aware) -- this one asks "is the
    TABLE ELEMENT itself a 1x1 no-op" from the table's own perspective,
    regardless of what's inside or how many rows survive coalescing. */
-static int TableIsTrivialWrapper(const struct htmlnode *tablenode, const struct htmlnode **outCellChildren)
+static int TableIsTrivialWrapper(const struct htmlnode *tablenode, const struct htmlnode **outCellChildren,
+                                  const struct htmlnode **outCellNode)
 {
     struct nodevec rows;
     const struct htmlnode *tr;
@@ -1243,6 +1455,7 @@ static int TableIsTrivialWrapper(const struct htmlnode *tablenode, const struct 
         }
         if (foundCell) {
             *outCellChildren = foundCell->children;
+            *outCellNode = foundCell;
             result = 1;
         }
     }
@@ -1390,6 +1603,9 @@ static void lsetvec_free(struct lsetvec *v) { free(v->items); v->items = NULL; v
 static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st, struct lsetvec *outRows);
 static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnode **outTable);
 static long FloatTableSoleImageWidth(const struct htmlnode *n);
+static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct htmlnode *root,
+    const struct htmlnode *ambientNode1, const struct htmlnode *ambientNode2,
+    htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut);
 
 /* Small paired vector of (leaf, weight) for one row's cells --
    analogous to lsetvec above but carrying each cell's WEIGHT alongside
@@ -1855,7 +2071,7 @@ static long CellFixedPixelWidth(const struct htmlnode *td)
    TableColumnCount/cross-row alignment (colspan-based) and
    BuildLsetChain's fixed-vs-proportional split choice are unrelated
    concerns -- see BuildLsetChain's own comment. */
-static struct lset *BuildLsetCell(const struct htmlnode *td, struct hax_state *st, long *outWeight, long *outFixedPx)
+static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlnode *tableNode, struct hax_state *st, long *outWeight, long *outFixedPx)
 {
     struct lset *leaf = (struct lset *) class_NewObject("lset");
     const struct htmlnode *soleTable;
@@ -1937,7 +2153,7 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, struct hax_state *s
     if (ct) {
         if (!CellIsEmpty(td)) {
             long celllen = 0;
-            if (!htmlatk_Render(ct, 0, td->children, st->resolver, st->resolverRock, &celllen))
+            if (!htmlatk_RenderAmbient(ct, 0, td->children, tableNode, td, st->resolver, st->resolverRock, &celllen))
                 st->hardfail = 1;
         }
         leaf->dobj = (struct dataobject *) ct;
@@ -2095,7 +2311,7 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
             long weight, fixedpx;
             if (!htmlpart_IsElement(td)) continue;
             if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
-            leaf = BuildLsetCell(td, st, &weight, &fixedpx);
+            leaf = BuildLsetCell(td, tablenode, st, &weight, &fixedpx);
             if (leaf) { wlvec_push(&cells, leaf, weight, fixedpx); rowWeight += weight; }
         }
         if (cells.count > 0) {
@@ -2582,16 +2798,106 @@ static int PushFormattingMarks(struct hax_state *st, const struct htmlnode *n)
     if (sv) { if (value_contains_ci(sv, "italic") || value_contains_ci(sv, "oblique")) { count += marks_push(st, ItalicSt); } free(sv); }
     sv = htmlpart_GetStyleProp(n, "text-decoration");
     if (sv) { if (value_contains_ci(sv, "underline")) { count += marks_push(st, UnderlineSt); } free(sv); }
+    sv = htmlpart_GetStyleProp(n, "font-size");
+    if (sv) {
+        if (strcasecmp(sv, "smaller") == 0) { count += marks_push(st, RelativeFontSizeStyleFor(0)); }
+        else if (strcasecmp(sv, "larger") == 0) { count += marks_push(st, RelativeFontSizeStyleFor(1)); }
+        else {
+            long pt = ParseCssFontSizePoints(sv);
+            if (pt > 0) { count += marks_push(st, PointSizeStyleFor(pt)); }
+        }
+        free(sv);
+    }
+    sv = htmlpart_GetStyleProp(n, "font-family");
+    if (sv) {
+        char family[128];
+        if (ParseCssFontFamilyFirst(sv, family, sizeof(family))) {
+            count += marks_push(st, FontFamilyStyleFor(family));
+        }
+        free(sv);
+    }
+
+    /* align="..." (the legacy presentation attribute, any element --
+       see attr_allowed's comment) first, then style="text-align:...";
+       pushing the attribute before the CSS property means a
+       conflicting inline style, if both are somehow present on the
+       same element, wins as the more specific/later-opened one, the
+       same precedence a real browser gives an inline style over a
+       presentation attribute.
+
+       NOT on <table>, though: align="left"/"right" there is a
+       genuinely different, older meaning -- "float this table" (real
+       browsers treat it exactly like CSS float, and so does this
+       renderer -- see TableFloatAlign/TryPairFloatedTables, the
+       ENTIRE reason align is even allowlisted on <table> to begin
+       with), not "justify the text inside it". Confirmed live,
+       National Grid, 2026-08-20: the gas-meter text's wrapping
+       <table align="right"> is the RIGHT half of exactly such a
+       float pair (icon table floated left, this text table floated
+       right) -- its own <td> inside separately, correctly declares
+       text-align:left, but treating the OUTER table's align="right"
+       as ALSO a justification signal fought that and won, right-
+       justifying the whole paragraph (wdc: "why did that text right
+       justify?"). align="center" on a <table> (never a float signal,
+       see TableFloatAlign's own comment) is unaffected by this
+       exclusion -- only left/right are ever ambiguous between the
+       two meanings, and only on this one tag. */
+    if (strcmp(n->tag, "table") != 0) {
+        const char *av = htmlpart_GetAttr(n, "align");
+        int ok;
+        if (av && *av) {
+            enum style_Justification j = ParseJustification(av, &ok);
+            if (ok) { count += marks_push(st, JustificationStyleFor(j)); }
+        }
+    }
+    sv = htmlpart_GetStyleProp(n, "text-align");
+    if (sv) {
+        int ok;
+        enum style_Justification j = ParseJustification(sv, &ok);
+        if (ok) { count += marks_push(st, JustificationStyleFor(j)); }
+        free(sv);
+    }
 
     return count;
 }
 
-boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
-                        htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut)
+/* The public entry point wraps this with ambientNode1=ambientNode2=
+   NULL. The two ambient nodes exist for BuildLsetCell (htmlatk.c):
+   an HTML <table>'s or <td>'s own style="..." was never being applied
+   to its cell's rendered content at all -- every element that reaches
+   this walk's main dispatch gets its own style read via
+   PushFormattingMarks, but a <table>/<td> node itself is consumed
+   entirely by the table-building machinery (BuildLsetGrid/
+   BuildLsetCell) and never passed through this loop as a walked node
+   -- confirmed live 2026-08-20, wdc: "sizing looks like it's not
+   having an effect", against Book Rack's "FEATURED TITLES" banner
+   (font-size:20px on the wrapping <table>, not on the <a> text
+   itself) and its whole covers-grid section (font-size:13px on each
+   card's text-column <table>, not on the <td> or any inner span).
+   BuildLsetCell now passes its enclosing tableNode and td here as
+   ambientNode1/ambientNode2 -- applied exactly like any other
+   element's own style would be, just spanning this whole call's
+   content instead of one node's subtree, and opened outer-to-inner
+   (table, then td) so a td-level override still wins per the same
+   innermost-wins resolution every other nested style already gets
+   (environment_GetInnerMost). Deliberately NOT propagated any further
+   than this one level: a <table> nested inside another <table>'s cell
+   only ever sees ITS OWN style this way, not an unbounded ancestor
+   chain -- BuildLsetGrid's own recursive calls (nested-table row
+   splicing) naturally re-root this same one-level treatment at
+   whatever table they're currently processing, which correctly
+   covers every real case found in the corpus (font-size is always
+   declared on the table/td immediately wrapping the text it sizes,
+   never several levels up) without the unbounded parameter-threading
+   a full ancestor stack would need. */
+static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct htmlnode *root,
+    const struct htmlnode *ambientNode1, const struct htmlnode *ambientNode2,
+    htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut)
 {
     struct hax_state st;
     struct hax_walkstack ws;
     long startpos = pos;
+    int ambientOpened = 0;
 
     InitStyles();
 
@@ -2607,6 +2913,9 @@ boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
     st.resolver = resolver;
     st.resolverRock = resolverRock;
     st.hardfail = 0;
+
+    if (ambientNode1) ambientOpened += PushFormattingMarks(&st, ambientNode1);
+    if (ambientNode2) ambientOpened += PushFormattingMarks(&st, ambientNode2);
 
     ws.items = NULL; ws.count = 0; ws.cap = 0;
     ws_push_siblings(&ws, root);
@@ -2626,6 +2935,7 @@ boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
 
             if (strcmp(n->tag, "table") == 0) {
                 const struct htmlnode *cellChildren;
+                const struct htmlnode *cellNode;
                 const char *floatAlign = TableFloatAlign(n);
                 /* An align="left"/"right" table is NOT a no-op wrapper
                    even when it would otherwise structurally qualify
@@ -2638,10 +2948,34 @@ boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
                    this file's floated-adjacent-tables section header
                    comment (above BuildLsetLeafFromFloatTable) for the
                    full root-cause writeup. */
-                if (!floatAlign && TableIsTrivialWrapper(n, &cellChildren)) {
+                if (!floatAlign && TableIsTrivialWrapper(n, &cellChildren, &cellNode)) {
                     /* 1x1 no-op wrapper table -- see TableIsTrivialWrapper's
                        own comment. Inline its cell's children directly
-                       instead of building an lset for it at all. */
+                       instead of building an lset for it at all. n's and
+                       its sole cell's own style="..."/align="..." still
+                       need applying, though -- a bare "no lset" skip
+                       used to drop both silently (neither the table nor
+                       its cell otherwise ever reaches PushFormattingMarks
+                       for this shape, unlike every other element type,
+                       and unlike BuildLsetCell's own ambient-node
+                       treatment for the general multi-row case -- see
+                       htmlatk_RenderAmbient's own comment). Confirmed
+                       live, Book Rack's "FEATURED TITLES" banner: a 1x1
+                       wrapper exactly this shape, <td align="center">
+                       around a single <a>, wdc: "Centered text isn't."
+                       Opened/closed via the exact same open-marks-then-
+                       push-a-POST-item shape every ordinary element
+                       below uses (n's POST event, once cellChildren are
+                       fully walked, falls through to the same
+                       unconditional marks_finalize every other tag's
+                       POST already does -- "table" matches none of that
+                       switch's specific cases, so nothing extra fires
+                       for it there); both nodes' marks share n's single
+                       POST event since only the COUNT closed there
+                       matters, not which node it's nominally attached
+                       to. */
+                    int opened = PushFormattingMarks(&st, n) + PushFormattingMarks(&st, cellNode);
+                    ws_push(&ws, n, 1, opened);
                     ws_push_siblings(&ws, cellChildren);
                     continue;
                 }
@@ -2729,6 +3063,15 @@ boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
         }
     }
 
+    /* Close the ambient table/td marks opened above, exactly the way
+       marks_finalize closes any other node's marks at its own POST
+       event -- there is no POST event for ambientNode1/ambientNode2
+       themselves (they were never pushed onto the walk stack, only
+       used for their style), so this call stands in for that,
+       spanning the entire root..final-pos range instead of one node's
+       subtree. */
+    marks_finalize(&st, ambientOpened);
+
     free(ws.items);
     free(st.list);
     free(st.marks);
@@ -2741,6 +3084,12 @@ boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
 
     if (lengthOut) *lengthOut = st.pos - startpos;
     return !st.hardfail;
+}
+
+boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
+                        htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut)
+{
+    return htmlatk_RenderAmbient(dest, pos, root, NULL, NULL, resolver, resolverRock, lengthOut);
 }
 
 /* ==================================================================== *

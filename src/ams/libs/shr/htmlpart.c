@@ -427,10 +427,21 @@ static int is_void_tag(const char *name)
 
 /* Per-element attribute allowlist (see htmlpart.h). "style" is
    allowed on any element that reaches here (i.e. any kept element --
-   attr_allowed is only ever consulted for a HP_KEEP-classified tag). */
+   attr_allowed is only ever consulted for a HP_KEEP-classified tag).
+
+   "align" was promoted to this same any-element treatment 2026-08-20,
+   alongside htmlatk.c finally reading it for text centering -- it
+   used to be allowed only on table/td/th (added 2026-08-19, purely
+   for TableFloatAlign's align="left"/"right" float-pairing signal;
+   its own comment there already noted "nothing currently reads it"
+   for the plain center/left/right case). The corpus has it on div/p
+   too (8 occurrences, vs. 650 on table/td), and there's no reason a
+   text-alignment attribute should be table-specific the way colspan/
+   rowspan/border genuinely are. */
 static int attr_allowed(const char *tag, const char *attr)
 {
     if (strcmp(attr, "style") == 0) return 1;
+    if (strcmp(attr, "align") == 0) return 1;
     if (strcmp(tag, "a") == 0) {
         return strcmp(attr, "href") == 0;
     }
@@ -448,18 +459,11 @@ static int attr_allowed(const char *tag, const char *attr)
            to extend once a real fixture/message showed the pattern
            (The Book Rack, found this same day).
 
-           align added 2026-08-19: real marketing HTML routinely floats
-           two sibling <table>s side by side (align="left"/"right")
-           instead of using <td>s in one <tr> -- confirmed live,
-           National Grid's gas-meter icon+text row. htmlatk.c's table
-           dispatch only consults align on <table> (see TableFloatAlign
-           there); allowed here on td/th too purely for consistency with
-           the rest of this attribute group, though nothing currently
-           reads it there. Without allowing it here, the attribute never
-           reaches htmlatk.c at all. */
+           (align, originally added here 2026-08-19 for exactly this
+           group, is now handled by the any-element check above instead
+           -- see its own comment.) */
         return strcmp(attr, "colspan") == 0 || strcmp(attr, "rowspan") == 0
-            || strcmp(attr, "border") == 0 || strcmp(attr, "width") == 0
-            || strcmp(attr, "align") == 0;
+            || strcmp(attr, "border") == 0 || strcmp(attr, "width") == 0;
     }
     if (strcmp(tag, "font") == 0) {
         return strcmp(attr, "color") == 0 || strcmp(attr, "size") == 0;
@@ -511,20 +515,46 @@ static int href_scheme_ok(const char *href)
    hidden div's text, with no visible counterpart anywhere else in the
    source). Without these two properties surviving the allowlist, a
    renderer has no way to know a node was ever marked hidden in the
-   first place. */
-static const char * const hp_style_props[7] = {
+   first place.
+
+   `font-size` was added 2026-08-20: wdc reported text sizing being
+   ignored wholesale in live rendering, and it turned out this
+   allowlist was the reason -- htmlatk.c already had a real, working
+   mechanism to apply an arbitrary font size (added for the legacy
+   `<font size="N">` attribute), but every `style="font-size:...px"`
+   declaration, which is how essentially all modern HTML mail actually
+   sets text size (`<font size>` itself is rare in the fixture corpus
+   by comparison -- confirmed, 892 CSS `font-size:...px` declarations
+   in the Book Rack fixture alone vs. 29 legacy `<font size=` uses
+   across the whole corpus), was being silently stripped by this
+   function before htmlatk.c ever saw it, long before render time.
+
+   `font-family` was added the same day, right after font-size: wdc
+   flagged the rendered font choice itself as wrong too, not just its
+   size, and the reason is identical -- this property was never on
+   the allowlist either, so a wrapping <table>/<td>'s or a <span>'s
+   own `font-family: Georgia, Times, serif` was stripped before
+   htmlatk.c could ever act on it, same as font-size was.
+
+   `text-align` was added right after, same session: wdc flagged
+   "FEATURED TITLES" not being centered despite its wrapping table's
+   `<td align="center">` -- that's the HTML attribute, not this CSS
+   property (attr_allowed's own comment above covers the attribute
+   side), but real mail uses both, and text-align was equally absent
+   from this allowlist. */
+static const char * const hp_style_props[10] = {
     "color", "background-color", "font-weight", "font-style", "text-decoration",
-    "display", "visibility"
+    "display", "visibility", "font-size", "font-family", "text-align"
 };
 
 static char *filter_style(const char *raw)
 {
-    char *vals[7];
+    char *vals[10];
     int i;
     const char *p = raw;
     struct hpbuf_s out;
 
-    for (i = 0; i < 7; ++i) vals[i] = NULL;
+    for (i = 0; i < 10; ++i) vals[i] = NULL;
 
     while (*p) {
         const char *propstart, *propend, *valstart, *valend;
@@ -546,7 +576,7 @@ static char *filter_style(const char *raw)
             valend = p;
             while (valend > valstart && isspace((unsigned char) valend[-1])) --valend;
 
-            for (i = 0; i < 7; ++i) {
+            for (i = 0; i < 10; ++i) {
                 if ((long) strlen(hp_style_props[i]) == proplen
                     && strncasecmp(hp_style_props[i], propstart, (size_t) proplen) == 0) {
                     free(vals[i]);
@@ -563,7 +593,7 @@ static char *filter_style(const char *raw)
     }
 
     hpbuf_init(&out);
-    for (i = 0; i < 7; ++i) {
+    for (i = 0; i < 10; ++i) {
         if (vals[i]) {
             if (out.len > 0) hpbuf_putc(&out, ';');
             hpbuf_puts(&out, hp_style_props[i]);
