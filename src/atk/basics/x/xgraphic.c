@@ -591,12 +591,16 @@ static void xgraphic_DrawChars(struct xgraphic *self, char *Text, short Operatio
     long x = point_X(&self->header.graphic.currentPoint);
     long y = point_Y(&self->header.graphic.currentPoint);
 #ifdef HAVE_XFT
-    /* Resolved once, up front, and reused by the Xft painting block
-       below, to avoid a second xfontdesc_GetXftFont lookup.  Alignment
-       math (below) intentionally still uses the core "dummy" XFontStruct's
-       metrics, not this font's -- matching what every other call site in
-       this file already assumes, and what the erase/redraw pairing in
-       ClearBoundedString/DrawBoundedString depends on being self-consistent. */
+    /* Resolved once, up front, and reused both by the vertical-alignment
+       math below and by the Xft painting block further down, to avoid
+       repeated xfontdesc_GetXftFont lookups.  Horizontal alignment
+       (ATRIGHT/BETWEENLEFTANDRIGHT below) and per-character advance
+       widths still come from the core "dummy" XFontStruct via
+       fontdesc_WidthTable/XTextWidth -- deliberately not switched over,
+       since that's the same width source the Xft glyph-advance loop
+       below already uses, so horizontal positions stay self-consistent
+       with what actually gets drawn even though it's an approximation
+       of the real (now independently-resolved) glyph widths. */
     XftFont *xftfont = NULL;
     if (self->header.graphic.currentFont != NULL &&
 	self->header.graphic.transferMode != graphic_XOR &&
@@ -613,22 +617,43 @@ static void xgraphic_DrawChars(struct xgraphic *self, char *Text, short Operatio
     if (StringMode==xgraphic_NULLTERMINATED) TextLength = strlen(Text);
 
     if (Operation /* !=graphic_NOMOVEMENT */) {
-        /* GetRealFontDesc is used to load the font cache in fontdesc */
-        maxChar =
-        &fontdesc_GetRealFontDesc(self->header.graphic.currentFont, self)->dummy.max_bounds;
+        long vAscent, vDescent;
+#ifdef HAVE_XFT
+        if (xftfont) {
+            /* The glyph actually painted below comes from xftfont, which
+               (now that xfontd.c resolves it via genuine fontconfig
+               matching) can be a real scalable font with different
+               ascent/descent than the core "dummy" XFontStruct's -- using
+               the core metrics here would vertically mis-position text
+               relative to what's drawn.  Safe to read directly: the same
+               xftfont was already resolved above via xfontdesc_GetXftFont,
+               which primes the font cache as a side effect, so this alone
+               doesn't need to trigger a fresh load. */
+            vAscent = xftfont->ascent;
+            vDescent = xftfont->descent;
+        }
+        else
+#endif
+        {
+            /* GetRealFontDesc is used to load the font cache in fontdesc */
+            maxChar =
+            &fontdesc_GetRealFontDesc(self->header.graphic.currentFont, self)->dummy.max_bounds;
+            vAscent = maxChar->ascent;
+            vDescent = maxChar->descent;
+        }
 
         if (Operation&
 	   (graphic_ATTOP|graphic_BETWEENTOPANDBOTTOM|graphic_ATBOTTOM)){
-	    y += maxChar->ascent;
+	    y += vAscent;
         }
         if (Operation&graphic_BETWEENTOPANDBASELINE) {
-            y += maxChar->ascent >> 1;
+            y += vAscent >> 1;
         }
         if (Operation&graphic_ATBOTTOM) {
-	    y -= maxChar->ascent + maxChar->descent;
+	    y -= vAscent + vDescent;
         }
         if (Operation&graphic_BETWEENTOPANDBOTTOM) {
-	    y -= (maxChar->ascent + maxChar->descent)>>1;
+	    y -= (vAscent + vDescent)>>1;
         }
         if (Operation&(graphic_ATRIGHT|graphic_BETWEENLEFTANDRIGHT)) {
 	    long LastXWidth;

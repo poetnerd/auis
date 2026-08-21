@@ -66,6 +66,9 @@ static void FillDlist();
 static struct FontSummary * GetFontSummary(struct xfontdesc *self);
 static char * GetNthDash(char *p, int cnt);
 static boolean XExplodeFontName(char *fontName, char *familyName, long bufSize, long *fontStyle, long *fontSize);
+#ifdef HAVE_XFT
+XftFont * xfontdesc_GetXftFont(struct xfontdesc *self, struct graphic *graphic2);
+#endif
 
 /* Filled in in InitializeClass from a user preference.
  * If TRUE, font substitutions result in a warning being printed on stderr.
@@ -462,7 +465,15 @@ static XFontStruct * xfontdesc_LoadXFont(struct xfontdesc *self, struct xgraphic
     struct fcache *oldMDFD = MDFD;
     char xstyleName[MAXPATHLEN];
     char *xfamily;
+    char *andyfamily;
+    char *weight;
+    char *slant;
+    char *spacing;
     static char *charset = 0;
+#ifdef HAVE_XFT
+    XftFont *resolvedXft = NULL;
+    boolean triedFontconfig = FALSE;
+#endif
 
     substitute[0] = '\0';
 
@@ -483,6 +494,40 @@ static XFontStruct * xfontdesc_LoadXFont(struct xfontdesc *self, struct xgraphic
 	}
     }
 
+    /* Derive the X/fontconfig-style family/weight/slant up front -- used
+       both by the core-font search below (if the literal Andy-alias name
+       doesn't match directly) and by the genuine fontconfig resolution
+       just below, independent of whether a core font ever matches. */
+    andyfamily = self->header.fontdesc.FontName->name;
+    if (strncmp(andyfamily, "andy", 4) == 0) {
+        fudge = BestFudgeFactor( xgraphic_GetVerticalResolution(graphic) );
+        if (andyfamily[4] == '\0') {
+            xfamily = "times";
+        }
+        else if (strcmp(andyfamily+4, "sans") == 0) {
+            xfamily = "helvetica";
+        }
+        else if (strcmp(andyfamily+4, "type") == 0) {
+            xfamily = "courier";
+        }
+        else if (strcmp(andyfamily+4, "symbol") == 0) {
+            xfamily = "symbol";
+        }
+        else {
+            xfamily = andyfamily;
+            fudge = 0;
+        }
+    }
+    else {
+        xfamily = andyfamily;
+        fudge = 0;
+    }
+
+    weight = (desiredStyle & fontdesc_Bold) ? "bold" :
+      ((desiredStyle & fontdesc_Medium) ? "demibold" : "medium");
+    slant = (desiredStyle & fontdesc_Italic) ? "i" : "r";
+    spacing = (desiredStyle & fontdesc_Fixed) ? "m" : "p";
+
     /* Don't try non-symbol andy fonts if we want more than us-ascii */
     strcpy(fontName, self->header.fontdesc.FontName->name);
     if (!strcmp(charset, "us-ascii") ||
@@ -498,42 +543,39 @@ static XFontStruct * xfontdesc_LoadXFont(struct xfontdesc *self, struct xgraphic
 	font = XLoadQueryFont(xgraphic_XDisplay(graphic), fontName);
     }
 
+#ifdef HAVE_XFT
+    /* Genuine fontconfig resolution of the *visual* (Xft) glyph -- only
+       attempted when the literal, alias-driven match just above did NOT
+       succeed.  AUIS's own fonts.alias maps a small, deliberate set of
+       internal names (icon/symbol/cursor/console fonts such as
+       "andysymbol", "xshape", "icon", "msgs") to specific bitmap PCF
+       resources with private, non-Unicode glyph encodings -- succeeding
+       on the unmodified literal name is exactly the signal that this is
+       one of those deliberate mappings, not an ordinary text family
+       fontconfig should ever be allowed to substitute for.  This can't
+       be gated on whether fontconfig itself finds a match: confirmed
+       live that it happily substitutes *some* real Latin font for
+       literally any family string, including "xshape"/"icon"/"msgs" --
+       so the gate has to be AUIS's own alias intent, not fontconfig's
+       opinion. */
+    if (font == NULL && strcmp(xfamily, "symbol") != 0) {
+        char fcName[MAXPATHLEN];
+        long fcDpi = xgraphic_GetVerticalResolution(graphic);
+        sprintf(fcName, "%s:weight=%s:slant=%s:dpi=%ld:size=%d",
+            xfamily,
+            (desiredStyle & fontdesc_Bold) ? "bold" : "medium",
+            (desiredStyle & fontdesc_Italic) ? "italic" : "roman",
+            (fcDpi > 0) ? fcDpi : 75,
+            (desiredSize > 0) ? desiredSize : 12);
+        triedFontconfig = TRUE;
+        resolvedXft = XftFontOpenName(xgraphic_XDisplay(graphic),
+            graphic->screenUsed, fcName);
+    }
+#endif
+
     /* Then try X naming convention. */
     if (font == NULL) {
-        char *andyfamily;
-        char *weight;
-        char *slant;
-        char *spacing;
-
-        andyfamily = self->header.fontdesc.FontName->name;
-        if (strncmp(andyfamily, "andy", 4) == 0) {
-            fudge = BestFudgeFactor( xgraphic_GetVerticalResolution(graphic) );
-            if (andyfamily[4] == '\0') {
-                xfamily = "times";
-            }
-            else if (strcmp(andyfamily+4, "sans") == 0) {
-                xfamily = "helvetica";
-            }
-            else if (strcmp(andyfamily+4, "type") == 0) {
-                xfamily = "courier";
-            }
-            else if (strcmp(andyfamily+4, "symbol") == 0) {
-                xfamily = "symbol";
-            }
-            else {
-                xfamily = andyfamily;
-                fudge = 0;
-            }
-        }
-        else {
-            xfamily = andyfamily;
-            fudge = 0;
-        }
-
-        weight = (desiredStyle & fontdesc_Bold) ? "bold" :
-          ((desiredStyle & fontdesc_Medium) ? "demibold" : "medium");
-        slant = (desiredStyle & fontdesc_Italic) ? "i" : "r";
-	spacing = (desiredStyle & fontdesc_Fixed) ? "m" : "p";
+        /* xfamily/weight/slant/spacing/fudge already computed above. */
 
         /* Try scalable font at actual screen DPI first (pixel_size=0 selects
            Type1/TrueType over bitmap PCFs, giving anti-aliased rendering). */
@@ -652,29 +694,30 @@ static XFontStruct * xfontdesc_LoadXFont(struct xfontdesc *self, struct xgraphic
 	fc->host = ConnectionNumber(fc->dpy);
 	fc->font = font;
 #ifdef HAVE_XFT
-	/* Load matching XftFont for anti-aliased rendering (scalable fonts only) */
-	fc->xft = NULL;
-	if (font != NULL) {
+	/* Whether to antialias at all was already decided above, at the
+	   XftFontOpenName call site: only for requests that did NOT resolve
+	   via a literal fonts.alias entry, i.e. ordinary text families,
+	   never AUIS's own icon/symbol/cursor fonts (see the comment
+	   there). Trust that decision directly instead of re-deriving it
+	   here from the matched core font's XLFD registry -- that registry
+	   belongs to whatever the legacy core-font fallback cascade below
+	   settled for as a *last resort* substitute (GetClosestFont,
+	   "fixed"/"variable", "ask the server for anything"), which for a
+	   web font name X's core protocol has no real match for at all
+	   (e.g. "arial") can easily land on an unrelated encoding --
+	   rejecting a perfectly good fontconfig font and falling back to
+	   ugly, non-scalable bitmap rendering for every such family. */
+	fc->xft = resolvedXft;
+	if (fc->xft == NULL && triedFontconfig && font != NULL) {
+	    /* fontconfig itself found nothing usable (rare -- it normally
+	       substitutes something for any string) -- fall back to
+	       antialiasing whichever core font the cascade below matched. */
 	    Atom fontAtom = XInternAtom(fc->dpy, "FONT", False);
 	    unsigned long atomVal;
 	    if (XGetFontProperty(font, fontAtom, &atomVal)) {
 		char *xlfd = XGetAtomName(fc->dpy, atomVal);
 		if (xlfd) {
-		    /* Only use Xft for Latin/Unicode charsets.
-		       Symbol, fontspecific, etc. use non-Unicode byte
-		       encodings that XftDrawString8 would misinterpret. */
-		    const char *cp = xlfd + strlen(xlfd);
-		    while (cp > xlfd && *cp != '-') cp--;  /* skip charset-encoding */
-		    if (cp > xlfd) {
-			const char *reg = cp - 1;
-			while (reg > xlfd && *reg != '-') reg--;
-			if (*reg == '-') {
-			    reg++;
-			    if (strncmp(reg, "iso8859", 7) == 0 ||
-				strncmp(reg, "iso10646", 8) == 0)
-				fc->xft = XftFontOpenXlfd(fc->dpy, graphic->screenUsed, xlfd);
-			}
-		    }
+		    fc->xft = XftFontOpenXlfd(fc->dpy, graphic->screenUsed, xlfd);
 		    XFree(xlfd);
 		}
 	    }
@@ -846,6 +889,9 @@ short* xfontdesc__WidthTable(struct xfontdesc *self, struct graphic *graphic2)
 	register short * fontWidthTable;
 	int i;
 	struct xgraphic *graphic=(struct xgraphic *)graphic2;
+#ifdef HAVE_XFT
+	XftFont *xftfont;
+#endif
 
 	if (self->header.fontdesc.widthTable)
 		return self->header.fontdesc.widthTable;
@@ -856,8 +902,34 @@ short* xfontdesc__WidthTable(struct xfontdesc *self, struct graphic *graphic2)
 	self->header.fontdesc.widthTable = fontWidthTable;
 	font = GETXFONT(self, graphic);
 
+#ifdef HAVE_XFT
+	/* When a genuinely scalable font is actually being drawn (see
+	   xgraphic_DrawChars's Xft path), per-character advance widths must
+	   come from *that* font's real glyph metrics, not the core bitmap
+	   font's -- otherwise the spacing used to position each glyph
+	   disagrees with the glyph actually painted, producing uneven,
+	   gappy-looking text.  Restricted to the core font's own valid
+	   single-byte range, matching the core-metrics fallback below. */
+	xftfont = xfontdesc_GetXftFont(self, (struct graphic *)graphic);
+	if (xftfont != NULL && !(font->min_byte1 || font->max_byte1)) {
+	    Display *dpy = xgraphic_XDisplay(graphic);
+	    for (i = 0; i < fontdesc_NumIcons; i++) {
+		if (i < font->min_char_or_byte2 || i > font->max_char_or_byte2) {
+		    fontWidthTable[i] = 0;
+		}
+		else {
+		    XGlyphInfo extents;
+		    XftChar8 c8 = (XftChar8)i;
+		    XftTextExtents8(dpy, xftfont, &c8, 1, &extents);
+		    fontWidthTable[i] = extents.xOff;
+		}
+	    }
+	    return fontWidthTable;
+	}
+#endif
+
 	/* Is it a "small" font that we can handle? */
-	if (font->min_byte1 || font->max_byte1) 
+	if (font->min_byte1 || font->max_byte1)
 		/* oh well, we have a 16 bit font and we are screwed.
 		   try to keep going by returning the same size for
 		   everything */

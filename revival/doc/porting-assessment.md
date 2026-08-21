@@ -189,7 +189,7 @@ lookup table, not a set of links):
 | 7b | Deferred: `contrib/bdffont` | LOW priority, deferred |
 | 7 | Console/stats module | LOW priority, deferred |
 | 8 | Misc POSIX drift | superseded — Linux-specific, moot on Darwin |
-| 9 | Font system | in progress as of 2026-07 |
+| 9 | Font system | body text fixed 2026-08-21; menu Xft migration still open |
 | 10 | Messages with IMAP backend | RESOLVED — see `roadmap.md` → Projects → AMS over IMAP/SMTP |
 | 11 | `%d`/`%ld` mismatch in scanf family | RESOLVED 2026-07-02 (full tree audit, 11 bugs fixed) |
 | 12 | LP64 untyped dispatch: `long` param / `int` arg mismatch | RESOLVED — subsumed into M1 (§14) |
@@ -511,7 +511,9 @@ reference in case a Linux config is revived.
 
 ### 9. Font system
 
-**Status:** in progress as of 2026-07.
+**Status:** in progress as of 2026-07; body text genuinely scalable as
+of 2026-08-21 (see "Update 2026-08-21" below), menu Xft migration still
+open.
 
 AUIS was written for the X core font protocol — server-side bitmap font
 rendering with XLFD naming, custom "Andy" bitmap fonts (BDF/PCF format),
@@ -542,7 +544,7 @@ conditionally:
 
 | Rendering path | Status |
 |---|---|
-| Body text | Migrated to Xft (2026-07, phase 1 complete) -- antialiasing only, still resolved via the legacy X-core-font match; see "Update 2026-08-20" below |
+| Body text | Migrated to Xft (2026-07, phase 1 complete); genuine fontconfig resolution added 2026-08-21 -- see "Update 2026-08-21" below |
 | Menus | Xft migration in progress (2026-07, phase 2) |
 | Symbol characters (bullets, math) | Andy `symba*.pcf` via X core — permanent |
 | Cursor shapes | Andy cursor PCF via X core — permanent |
@@ -630,6 +632,82 @@ core, shared ATK code -- every application that draws text goes
 through it, not just messages/htmlatk.c, so this is a bigger and
 more widely-felt change than anything in this HTML-rendering
 project so far.
+
+#### Update 2026-08-21: genuine fontconfig resolution implemented, tree-wide
+
+Implemented the recommended fix above, in `xfontdesc_LoadXFont`
+(`xfontd.c`): after the literal Andy-alias name attempt fails, build a
+fontconfig pattern (`family:weight=...:slant=...:dpi=...:size=...`)
+from the same `xfamily`/`weight`/`slant`/`desiredSize` inputs and call
+`XftFontOpenName`, independent of whether the X-core-font cascade below
+it ever matches anything. `xgraphic_DrawChars`'s vertical alignment math
+(`xgraphic.c`) now reads ascent/descent from that resolved font instead
+of the core "dummy" `XFontStruct` when one exists -- the reverted
+2026-07-12 calc-investigation experiment (see
+`claude-history/calc-text-rendering-investigation.md`), reinstated now
+that it's no longer a no-op. `xfontdesc_WidthTable` was also switched to
+source per-character advance widths from the resolved font's real glyph
+metrics (`XftTextExtents8`) rather than the core font's, since the two
+disagreeing produced visibly uneven/gappy spacing (first symptom hit
+during rollout, below). `HeightTable`/`StringSize`/`TextSize`/
+`CharSummary` were deliberately left on core metrics -- `HeightTable` has
+no live caller in this tree, and the other three are lower-traffic
+(whole-string width, cursor/footnote-marker positioning in
+`drawtxtv.c`/`fnotev.c`) and switching them risks subtle new
+misalignment bugs without an obvious way to visually verify the fix
+side-by-side; worth revisiting if cursor placement or footnote markers
+ever look subtly off.
+
+Two real bugs found live during rollout, both now fixed:
+
+1. **Icon/symbol fonts silently substituted with literal Latin glyphs.**
+   The first version of this fix gated fontconfig acceptance on the
+   *requested family name* (skip only literally-named `"symbol"`), which
+   missed other AUIS-internal private-encoding fonts requested by other
+   names (`xshape`, `icon`, `msgs` -- used for folder/message-list icon
+   glyphs) -- these sailed through fontconfig, which substitutes *some*
+   real Latin font for literally any string with no failure signal,
+   turning icon glyph codes into literal letters (folder icons rendering
+   as `E`, message flags as `n`). Root cause found by instrumenting
+   `xfontdesc_LoadXFont` and confirming live that `XftFontOpenName`
+   returns non-NULL even for `"xshape"`/`"icon"`/`"msgs"`. Fixed by
+   gating on a more reliable signal: whether the literal, unmodified font
+   name resolves via AUIS's own `fonts.alias` *before* the X-naming-
+   convention cascade runs at all -- succeeding there is exactly the
+   signal that this is one of AUIS's deliberate private-encoding
+   mappings, confirmed empirically to cleanly separate `xshape`/`icon`/
+   `msgs`/`andysymbol` (succeed on the literal name) from `andysans`/
+   `andy`/arbitrary CSS families like `arial`/`georgia` (fail the literal
+   name, fall into the X-naming-convention cascade).
+2. **A leftover safety check re-rejected legitimate fontconfig fonts for
+   families X's core protocol has no match for at all.** After fix #1,
+   Arial/sans-serif HTML-mail text was still rendering via the old ugly
+   bitmap-stretch path. Cause: a second, redundant gate re-verified the
+   *final* core-font match's XLFD registry (inherited from the original,
+   pre-fontconfig code) before accepting the fontconfig font. For a
+   family with no real presence in XQuartz's core-font catalog (e.g.
+   `"arial"`), the core-font fallback cascade (`GetClosestFont`,
+   `"fixed"`/`"variable"`, "ask the server for anything") legitimately
+   bottoms out on some unrelated last-resort substitute whose encoding
+   fails the Unicode check -- rejecting a perfectly good fontconfig font
+   and falling back to non-scalable rendering for every such family.
+   Fixed by removing the redundant re-check and trusting the
+   fonts.alias-based decision from fix #1 directly.
+
+Also observed and not a bug: switching per-character advance widths to
+the resolved font's own metrics changed default Andrew body text's
+effective size slightly (smaller) -- a byproduct of using real glyph
+metrics instead of the old bitmap font's, and a net improvement (fixed
+a caption-wrapping complaint in `messages`).
+
+Verified live via `messages` against the Book Rack fixture
+(`revival/tests/bookrack.html`): Andy symbol glyphs (bullets) render
+correctly, default Andrew text and HTML-mail inset text (including
+Arial/Georgia) all render as genuinely scalable/antialiased, and a
+console flood of `X error 2-BadValue ... operation 45:0` (X core
+`OpenFont`) seen mid-rollout was gone after the fixes above (likely a
+side effect of #2's rejected fonts forcing repeated fallback-cascade
+core-font opens; not independently root-caused beyond that).
 
 ### 10. Messages with IMAP backend
 
