@@ -864,9 +864,48 @@ down, these aren't undecided, just not yet done.
    content-sniffing fallback). `cid:` resolution is still the open
    half: needs Content-ID parsing `mimepart.c` doesn't have yet.
 
+4. **Forward paging (space bar) stops well short of the true end of a
+   long HTML message; backward paging (`b`) reaches it fine.** Found
+   live 2026-08-20/21 against the real Book Rack fixture (~73KB,
+   deeply nested lset/lpair tree): wdc reported 4 screenfuls reachable
+   via space bar from the top, but 9 screenfuls via `b` from the
+   bottom back up — roughly 5 screenfuls of real, rendered content
+   that forward paging never shows at all, distinct from (and found
+   after) item 3's remote-image work and this session's font-size/
+   font-family/table-style/centering additions to htmlatk.c.
+   **Partially diagnosed, not yet fixed.** Traced live via temporary
+   `fprintf` instrumentation (per this project's established technique
+   — see the "Diagnostic tracing" pattern elsewhere in this doc/
+   htmlatk.h's judgment-call log) in two spots, both since reverted
+   (`fossil diff` confirmed clean before ending the session):
+   `textview__MoveForward`'s "last line" cap branch (`textv.c`
+   ~2176-2210, added `de73971e25` per the Implementation section
+   above) and `AllocateLineItem`'s embedded-view `DesiredSize` query
+   (`drawtxtv.c` ~330). Confirmed: the cap arithmetic itself is
+   internally consistent — `pixelsComingOffTop` climbed 0→223→816→
+   2002→4374→6468, clamping exactly at `cap = viewHeight(6887) -
+   viewportHeight(419)`, i.e. spacebar paging *does* eventually reach
+   the full height it was told the content has. NOT yet confirmed:
+   whether that queried `viewHeight` (6887px) itself under-reports the
+   document's true rendered height, which is the live open question --
+   the `AllocateLineItem` trace turned out far too noisy to answer it
+   (gated on `pos == 0`, wrongly assuming that was unique to the one
+   giant top-level embedded view; every nested lset leaf's own private
+   text buffer also starts its own layout at `pos == 0`, so it fired
+   ~25,000 times across the whole nested tree instead of once).
+   **Next diagnostic step for whoever picks this up:** re-trace with
+   tighter gating (e.g. match on the specific top-level view object
+   pointer, or its `dataobject_UniqueID`, not a bare `pos == 0`
+   coincidence), and/or instrument `MoveBackward`'s equivalent path for
+   direct comparison against a forward trace from the same message —
+   `MoveBackward` finding the true end that `MoveForward` doesn't is
+   the whole signal here, so whatever it does differently to get there
+   is likely where the real answer is.
+
 Agreed order: (1) first — small, self-contained, no open design
 questions. (2) second — bigger, but nothing left to decide. (3) done,
-`cid:` half still open.
+`cid:` half still open. (4) found after (1)-(3), not yet sequenced
+against them.
 
 ## Open questions
 
