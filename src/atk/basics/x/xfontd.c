@@ -173,7 +173,7 @@ static struct FontSummary * GetFontSummary(struct xfontdesc *self)
      register int i;
 
      tsp = &self->header.fontdesc.summary;	/* for quick reference */
-     /* otherwise DescValid is set to true in LoadAndrewFont   
+     /* otherwise DescValid is set to true in LoadAndrewFont
 		-- (I think this comment is meaningless -wjh) */
      bzero(tsp, sizeof (struct FontSummary));
 
@@ -194,6 +194,29 @@ static struct FontSummary * GetFontSummary(struct xfontdesc *self)
          tsp->newlineHeight = tsp->maxHeight;
      tsp->maxBelow = maxChar->descent;
      tsp->maxLeft = -(maxChar->lbearing);
+
+#ifdef HAVE_XFT
+     /* textv.c/drawtxtv.c/fnotev.c use newlineHeight/maxHeight (via
+	fontdesc_FontSummary) to space line N+1 below line N -- if that
+	stays sourced from the core font above while the glyph actually
+	painted is the much larger resolvedXft font (e.g. a large CSS
+	font-size emphasis run), the reserved line height is too small
+	and the next line's ascenders collide with this line's
+	descenders.  Override with the resolved font's own metrics,
+	which is what's actually drawn.  maxLeft and the char-validity
+	loop below are left on the core font -- no direct Xft equivalent
+	for left bearing, and no reported symptom yet for char range. */
+     if (MDFD->xft != NULL) {
+	 XftFont *xftfont = MDFD->xft;
+	 tsp->maxWidth = xftfont->max_advance_width;
+	 tsp->maxSpacing = xftfont->max_advance_width;
+	 tsp->maxHeight = xftfont->ascent + xftfont->descent;
+	 tsp->newlineHeight = xftfont->height;
+	 if (tsp->newlineHeight == 0)
+	     tsp->newlineHeight = tsp->maxHeight;
+	 tsp->maxBelow = xftfont->descent;
+     }
+#endif
      for(i=0;i<fontdesc_NumIcons;i++) {
 	if (fontInfo->min_byte1 || fontInfo->max_byte1) 
 	    xfontdesc_SetCharValid(self, i);
@@ -573,8 +596,27 @@ static XFontStruct * xfontdesc_LoadXFont(struct xfontdesc *self, struct xgraphic
     }
 #endif
 
-    /* Then try X naming convention. */
+    /* Then try X naming convention.  Skipped once fontconfig has already
+       resolved a real font above: this specific multi-step guessing
+       cascade exists to find *some* core-protocol match for drawing,
+       but drawing no longer depends on it once resolvedXft is set --
+       xgraphic_DrawChars paints from resolvedXft, not from whatever
+       this cascade finds.  Skipping it also avoids spurious X BadValue
+       errors this exact cascade can trigger for families with no
+       genuine core-protocol scalable resource (confirmed live:
+       "courier" pixel_size=0 against XQuartz's core font path).  `font`
+       still ends up set below -- via the two GetClosestFont searches
+       (deliberately left running: a real XListFonts-driven best-match,
+       safer than this cascade's synthetic pixel_size=0 patterns) or the
+       guaranteed "fixed"/"variable" fallback after that -- since a
+       handful of other methods (WidthTable's range-gating, CharSummary,
+       StringSize/TextSize, xgraphic.c's horizontal-centering XTextWidth
+       call) still read it as an approximate metrics source. */
+#ifdef HAVE_XFT
+    if (font == NULL && resolvedXft == NULL) {
+#else
     if (font == NULL) {
+#endif
         /* xfamily/weight/slant/spacing/fudge already computed above. */
 
         /* Try scalable font at actual screen DPI first (pixel_size=0 selects
