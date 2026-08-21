@@ -1917,3 +1917,55 @@ Verified live against the Book Rack fixture: Andy symbol glyphs, default
 Andrew text, and HTML-mail inset text (Arial/Georgia) all render
 correctly; a console flood of `X error 2-BadValue ... operation 45:0`
 seen mid-rollout was gone after both bug fixes above.
+
+### 2026-08-21 — `arb`/piano demo inset: a 1988 `short` overflows on a legitimately-computed size; one bug fixed, a second, deeper one found and left open
+
+Unrelated to the Xft rollout above, reported live: `amsdemo`'s "Mail for
+your Ears" message — an `arbiter`/`arbiterview`-wrapped interactive piano
+keyboard, one of ATK's original arb-object demos — rendered as nothing at
+all: the surrounding text flowed straight through with zero reserved
+space, no error, no visible box.
+
+Traced (temporary `fopen`-based tracing in `lsetv.c`, `pianov.c`,
+`drawtxtv.c`, `lpair.c`, removed before commit) to `struct viewitem` in
+`txtvinfo.h`: `vi_width`/`vi_height` are a 1988-original `short width,
+height`. This piano's nested `lset`/`lpair` tree — four keyboard octaves,
+several control buttons, and a `textview` displaying the tune as 68 lines
+of raw note data (`1,16,659.241394 E`, etc.) — has a genuine, recursively-
+summed desired height of ~33,000px once that `textview` is squeezed into
+a narrow column. 32991 overflows a signed 16-bit `short` (max 32767),
+wrapping to -32545; that negative height is what actually got reserved in
+the text line, collapsing every leaf view's real draw call
+(`pianoV__DrawFromScratch`) to `width=0, height=0`. Confirmed live via the
+overflow arithmetic matching exactly. Fixed by widening both fields to
+`long`, matching every other size computation in this call chain, which
+has been `long` throughout since long before this branch existed — see
+the comment at the field for the full chain of reasoning and why
+`MAXSANEHEIGHT` (`lpair.c`, raised 2048→1,000,000 on 2026-08-18 for an
+unrelated, legitimate bug) is *not* the right place to re-clamp this: that
+threshold used to accidentally protect against this exact overflow as a
+side effect, silently mis-sizing the piano for its entire ~35-year life by
+picking the wrong sibling's height in `lpair__DesiredSize`'s side-by-side
+`MAXSANEHEIGHT` guard rather than the tune display's real (enormous) one
+— the tune was apparently never actually fully visible, on any machine,
+ever. Re-lowering that threshold would silently reintroduce the bug it
+was raised to fix (Book Rack's legitimately-tall HTML table content, up
+to ~6887px, needs to pass through uncapped too).
+
+The overflow fix is real and committed. A second, deeper, *not* fixed
+issue remains open: even with the overflow gone, the tune `textview`'s
+reported desired height is itself wildly width-sensitive — a 5px change
+in the offered column width (428→433) flips the keyboard's actual drawn
+height between a reasonable 202px and the same pathological ~16,000px,
+with no width-dependent change visible at the top-level query (`desh`
+stayed a constant 32991 throughout — the variance is entirely in how that
+one committed total gets redistributed through `lpair_ComputeSizes`'s
+percentage split, not in what's queried). Root cause not yet isolated;
+current best evidence points at a first-paint-vs-resize timing gap in
+`lpair_ComputeSizes` (`lpair_GetLogicalHeight`, not the `DesiredSize`
+result, drives the real pixel split, and only gets updated to the bad
+33,000px total sometime after first paint, not immediately) — see
+`revival.md`'s "Open issues" for the current state and a self-contained
+repro fixture (`revival/piano_isolated.ez`, the same arb/piano tree lifted
+out of the full demo message with the surrounding text stripped, so it's
+the very first and only thing laid out).

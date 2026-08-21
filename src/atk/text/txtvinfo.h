@@ -42,7 +42,18 @@ enum li_Type {
 
 struct viewitem {
     struct view *view;          /* Pointer to view object */
-    short width, height;        /* Space allocated in text */
+    /* long, not short (1988 original): a deeply-nested embedded view's
+       real DesiredSize can legitimately exceed a signed short's 32767
+       range (confirmed live -- an arb/piano widget's summed height came
+       back as 32991, wrapping to -32545 here and collapsing every leaf
+       view's draw call to 0x0). MAXSANEHEIGHT (lpair.c) was raised from
+       2048 to 1000000 on 2026-08-18 to fix a different bug (tall content
+       collapsing when paired with a small fixed-pixel decoration); that
+       incidentally removed the only thing keeping values here under the
+       short's range. Widening here is the real fix -- shrinking
+       MAXSANEHEIGHT back down would just reintroduce the earlier bug.
+       2026-08-21. */
+    long width, height;         /* Space allocated in text */
 };
 
 struct textitem {

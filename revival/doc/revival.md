@@ -714,6 +714,32 @@ next step, not yet done:
   clamped into range rather than trusted not to ever read one pixel
   past the source buffer).
 
+- **An interactive demo's own display size was a `short` for 35 years,
+  and the clamp that happened to protect it got raised out from under
+  it.** One of ATK's original arb-object demos — an on-screen piano
+  keyboard, embedded via `arbiter`/`arbiterview` in a sample mail
+  message — rendered as nothing: no box, no error, just zero space
+  reserved where it should have appeared. Its layout tree, queried for
+  its real desired height, genuinely comes out around 33,000 pixels
+  tall (a nested `textview` showing the tune as 68 lines of raw note
+  data explodes once squeezed into a narrow column). `struct viewitem`
+  in `txtvinfo.h` — the struct a line of text uses to remember how much
+  space an embedded view was given — still declared that height as a
+  plain 1988 `short`, so 32991 silently wrapped to -32545, and that
+  negative height is what actually got reserved: nothing. The reason
+  this had never surfaced before is almost more interesting than the
+  bug itself — a size-clamp in `lpair.c`, raised from 2048 to 1,000,000
+  a few days earlier to fix an unrelated, legitimate problem (tall HTML
+  table content under-reporting its height), had for decades been
+  silently *mis-sizing* this same piano a different way: the clamp's
+  old, lower threshold made it pick the wrong sibling's height instead
+  of erroring, so the tune display had presumably never been fully
+  visible on any machine this demo ever ran on. Fixing the real bug
+  (widening the `short` to `long`, matching every other size
+  computation in the same call chain) reopened the question the old,
+  buggy clamp had been accidentally answering — see "Open issues"
+  below.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
@@ -997,6 +1023,29 @@ upstream fix.
   untouched by any declaration or typing fix — and predates this project;
   nobody has reported metamail working here at any point. Root cause
   identified; not yet fixed.
+- **The arb/piano demo's own display height is still wildly wrong,
+  independent of the `short`-overflow fix above.** With that overflow
+  fixed, the piano now draws instead of vanishing — but its actual size
+  is still pathological on anything but first paint: enlarging the
+  window (or any relayout after the first) makes the keyboard balloon
+  to ~16,000px tall, cropped to a few vertical lines with no visible
+  keys. The top-level desired-height query is a flat, width-independent
+  32991 throughout (not itself wrong given the tune `textview`'s real
+  content), so the bug isn't in what gets queried — it's in
+  `lpair_ComputeSizes`'s percentage split, which uses the pair's own
+  *current committed geometry* (`lpair_GetLogicalHeight`), not the
+  `DesiredSize` result, to divide space between siblings. Current best
+  evidence: that committed geometry starts out small (whatever the
+  embedded view's initial default is, giving a reasonable first paint by
+  what looks like accident of timing) and only picks up the real,
+  pathological 32991 total sometime between first paint and the first
+  resize — after which every relayout divides a 33,000px pie instead of
+  a sane one. Root cause of the tune `textview`'s own ~33,000px desired
+  height (why a narrow column explodes it this badly) also not yet
+  isolated. Reproducible standalone via `revival/piano_isolated.ez` (the
+  same arb/piano tree lifted out of the full demo message, with no
+  surrounding text, so it's laid out first and alone) — open the file
+  fresh, note the first paint looks reasonable, then enlarge the window.
 
 ## Further reading
 
