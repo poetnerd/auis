@@ -542,7 +542,7 @@ conditionally:
 
 | Rendering path | Status |
 |---|---|
-| Body text | Migrated to Xft (2026-07, phase 1 complete) |
+| Body text | Migrated to Xft (2026-07, phase 1 complete) -- antialiasing only, still resolved via the legacy X-core-font match; see "Update 2026-08-20" below |
 | Menus | Xft migration in progress (2026-07, phase 2) |
 | Symbol characters (bullets, math) | Andy `symba*.pcf` via X core — permanent |
 | Cursor shapes | Andy cursor PCF via X core — permanent |
@@ -558,6 +558,78 @@ exact invocation.
 - `atk/text/` — text measurement and drawing
 - `atk/support/` — style and font selection
 - `build/X11fonts/fonts.alias` — Andy→Adobe XLFD name mappings
+
+#### Update 2026-08-20: "migrated to Xft" still resolves fonts through the bitmap-era X core path
+
+Found live while adding real CSS font-size/font-family support to
+htmlatk.c's HTML-mail renderer (revival/doc/html-mail-rendering-design.md):
+wdc flagged rendered text as visibly ugly -- "I think we're interpolating
+Andrew bitmap fonts instead of scalable fonts" -- and traced it to
+confirm that's exactly right, despite body text supposedly being on the
+"Migrated to Xft" row of the table above.
+
+`xfontdesc_GetXftFont` (`xfontd.c:1004-1020`) never independently
+resolves a font by family/size through Xft/fontconfig. It calls
+`xfontdesc_LoadXFont` first, which is the *original, unmodified*
+X-core-font-protocol matching chain -- `XLoadQueryFont`/`XListFonts`
+against XLFD wildcard patterns (`xfontd.c:450-633`), the same lookup
+AUIS used before Xft existed. *Only after* a core font is matched does
+the code take *that* font's own XLFD and hand it to `XftFontOpenXlfd`
+(`xfontd.c:654-676`) to get an antialiased handle for the *same*
+resource. That's the whole "Xft migration": antialiasing bolted onto
+whichever core-font-protocol match won, not a real fontconfig
+family/size resolution.
+
+This matters because the X core font protocol and fontconfig are two
+separate font registries on a modern system. XQuartz's core-font path
+(what `XLoadQueryFont` searches) is the small set of classic bundled
+X11 fonts -- essentially just bitmap Adobe Helvetica/Times/Courier
+PCF/BDF resources at fixed traditional sizes (8, 10, 12, 14, 18, 24...).
+It does NOT expose the system's real TrueType/OpenType catalog --
+that's only reachable through `XftFontOpenName`, a different API this
+code never calls. `xfontdesc_LoadXFont` does attempt a scalable request
+first (`pixel_size=0` in the XLFD pattern, `xfontd.c:538-549`, "selects
+Type1/TrueType over bitmap PCFs" per its own comment -- an earlier
+session's attempt at this exact problem), but it can only succeed if
+XQuartz's core-font path happens to have a genuine scalable resource
+registered under that XLFD, which in practice it usually doesn't; the
+match falls through to one of the fixed-pixel-size bitmap attempts
+below it instead. `XftFontOpenXlfd` on a bitmap-only resource still
+returns a usable handle -- Xft can draw PCF/BDF glyphs -- it just
+can't make them genuinely scalable; a size that doesn't match one of
+the font's native bitmap sizes gets the nearest bitmap stretched to
+fit, which is the "ugly interpolated bitmap" look.
+
+Why this wasn't visible before today: the *only* pre-existing font-size
+input was the legacy `<font size="1".."7">` scale, mapped to a fixed
+table of exactly `{8, 10, 12, 14, 18, 24, 32}` points
+(`htmlatk.c`'s `FontSizeStyleFor`) -- not a coincidence; those are the
+traditional bitmap font sizes, so every request already landed on a
+native resource with no stretching. Today's session added real CSS
+`font-size` support (arbitrary px/pt values, converted to point sizes
+that essentially never land on that fixed set) specifically because
+that's how virtually all real HTML mail sets text size -- which is
+what turned a previously-invisible limitation into constantly-visible
+blocky text.
+
+**Recommended fix** (not implemented -- scoped here for a dedicated
+session, per wdc: "I should probably spawn a new instance, maybe even
+Fable to clean that up"): give `xfontdesc_GetXftFont` (or
+`xfontdesc_LoadXFont`) a genuine fontconfig-driven path that doesn't
+depend on the X-core-font match succeeding first -- build a fontconfig
+pattern string directly from the requested family/weight/slant/size
+(the same inputs `xfontdesc_LoadXFont` already computes as `xfamily`/
+`weight`/`slant`/`desiredSize`, `xfontd.c:502-536`) and call
+`XftFontOpenName` on it, letting fontconfig substitute against the
+real system font catalog the way every other modern Xft/fontconfig
+application does. The existing X-core-font chain would stay as the
+fallback for environments without Xft, and the Andy symbol/cursor PCF
+fonts are unaffected either way (no fontconfig equivalent, permanent
+X-core dependency per the table above). Scope note: `xfontd.c` is
+core, shared ATK code -- every application that draws text goes
+through it, not just messages/htmlatk.c, so this is a bigger and
+more widely-felt change than anything in this HTML-rendering
+project so far.
 
 ### 10. Messages with IMAP backend
 

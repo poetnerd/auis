@@ -99,7 +99,8 @@
 
 	style="..." is parsed for a small fixed property allowlist --
 	color, background-color, font-weight, font-style,
-	text-decoration -- everything else in the value is dropped.
+	text-decoration, display, visibility, font-size, font-family --
+	everything else in the value is dropped.
 	No selectors, no cascade, no !important: it's a flat per-
 	element property bag, canonicalized into that fixed property
 	order (not source order) with last-value-wins if a property is
@@ -204,7 +205,8 @@ const char *htmlpart_GetAttr(const struct htmlnode *n, const char *propname);
 /* Convenience accessor for a single property out of an already-
    filtered style="..." attribute (see the allowlist above). propname
    must be one of "color", "background-color", "font-weight",
-   "font-style", "text-decoration" (case-sensitive, matching
+   "font-style", "text-decoration", "display", "visibility",
+   "font-size", "font-family" (case-sensitive, matching
    htmlpart_Parse's canonical lowercase output); anything else always
    returns NULL. Returns a malloc'd, NUL-terminated copy of the
    property's value (caller frees -- unlike htmlpart_GetAttr, this one
