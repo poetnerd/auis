@@ -1969,3 +1969,42 @@ result, drives the real pixel split, and only gets updated to the bad
 repro fixture (`revival/piano_isolated.ez`, the same arb/piano tree lifted
 out of the full demo message with the surrounding text stripped, so it's
 the very first and only thing laid out).
+
+### 2026-08-21 — Xft rollout follow-up: X BadValue root-caused, a second live-metrics gap (vertical line spacing) found and fixed
+
+Two more issues found live after the fixes in the entry above were
+already committed. Full analysis in `porting-assessment.md` §9, "Update
+2026-08-21 (cont.)".
+
+- **`X error 2-BadValue ... operation 45:0` root-caused and fixed.**
+  Instrumented every `XLoadQueryFont` call site in `xfontd.c`'s legacy
+  X-naming-convention cascade to log the exact XLFD pattern; reproduced
+  live. Fires specifically on `-*-courier-medium-r-*-*-0-<size>-96-96-
+  p-*-*-*` -- the "scalable font at actual DPI" `pixel_size=0` attempt
+  -- for the `courier` family, which apparently has no genuine scalable
+  resource under XQuartz's core-font path (only bitmap PCFs), unlike
+  `times`/`helvetica` where the identical pattern shape succeeds. Fixed
+  by skipping this whole 7-step guessing cascade once fontconfig has
+  already resolved a font above it -- drawing no longer depends on this
+  cascade succeeding, only a few lower-traffic metrics methods still
+  read its result as an approximation. The two `GetClosestFont` searches
+  below it were deliberately left running (real `XListFonts` enumeration,
+  not this cascade's synthetic patterns) to keep giving those methods a
+  reasonably-matched fallback font. A separate hypothesis that this same
+  `BadValue` was the cause of the piano inset disappearing (see the
+  entry above) was tested and ruled out live -- unrelated bugs that
+  happened to be on the same test message.
+- **`GetFontSummary` (`xfontd.c`) was a second, previously-missed live
+  consumer of core-only metrics.** Not `HeightTable` (confirmed dead
+  code, correctly left alone) but a *different* method: `newlineHeight`/
+  `maxHeight`, which `textv.c`/`drawtxtv.c`/`fnotev.c` actually use to
+  space line N+1 below line N, still came exclusively from the legacy
+  core font. Symptom: a large CSS emphasis run's ascender visibly
+  collided with the line above it -- the reserved line height came from
+  a small core-font fallback, the drawn glyph from the much larger
+  genuinely-scalable Xft font. Fixed by overriding `newlineHeight`/
+  `maxHeight`/`maxWidth`/`maxSpacing`/`maxBelow` from the resolved Xft
+  font's own metrics when one exists (Xft's `height` field turned out to
+  be a better `newlineHeight` source than the old `ascent+descent` sum).
+  `maxLeft` and the character-validity loop left on core metrics, no
+  clean Xft equivalent and no reported symptom there. Verified live.

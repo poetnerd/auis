@@ -703,11 +703,83 @@ a caption-wrapping complaint in `messages`).
 Verified live via `messages` against the Book Rack fixture
 (`revival/tests/bookrack.html`): Andy symbol glyphs (bullets) render
 correctly, default Andrew text and HTML-mail inset text (including
-Arial/Georgia) all render as genuinely scalable/antialiased, and a
-console flood of `X error 2-BadValue ... operation 45:0` (X core
-`OpenFont`) seen mid-rollout was gone after the fixes above (likely a
-side effect of #2's rejected fonts forcing repeated fallback-cascade
-core-font opens; not independently root-caused beyond that).
+Arial/Georgia) all render as genuinely scalable/antialiased. A console
+flood of `X error 2-BadValue ... operation 45:0` (X core `OpenFont`)
+seen mid-rollout was gone after the two fixes above for the families
+tested at the time -- but this was incomplete, not actually
+root-caused; see "Update 2026-08-21 (cont.)" below for what it actually
+was and the rest of the fix.
+
+#### Update 2026-08-21 (cont.): the X BadValue errors, and a second live-metrics gap (vertical line spacing)
+
+Two more issues found live in the same rollout, after the fixes above
+were already committed:
+
+**The `X error 2-BadValue ... operation 45:0` (X core `OpenFont`)
+console noise, actually root-caused.** Re-instrumented every
+`XLoadQueryFont` call site in the legacy X-naming-convention cascade
+(`xfontd.c`, the ~7-step guessing sequence below the fontconfig call)
+to log the exact XLFD pattern and result, then reproduced live. The
+error fires specifically on `-*-courier-medium-r-*-*-0-<size>-96-96-p-
+*-*-*` -- the "try a scalable font at actual screen DPI" attempt
+(`pixel_size=0`, meant to select an outline resource) -- for the
+`courier` family specifically; the identical pattern for `times`
+succeeds cleanly. Apparently XQuartz's core-font path has *some*
+genuine scalable resource registered under `times`/`helvetica` but only
+bitmap PCFs under `courier`, and asking its font matcher for
+`pixel_size=0` against a family with no scalable resource at all is
+what triggers the protocol-level rejection (rather than just "no
+match"). This cascade is 100% pre-existing legacy code, untouched
+by this project until now -- the error almost certainly fired before
+this session too, just less visibly (arbitrary CSS sizes make it easy
+to hit; the old fixed size-bucket scheme may have mostly dodged it).
+
+**Fix:** since drawing no longer depends on this cascade succeeding
+(`xgraphic_DrawChars` paints from the resolved fontconfig font, not
+from whatever this cascade finds), skip the noisy 7-step block entirely
+once fontconfig has already resolved a font. The two `GetClosestFont`
+searches below it are deliberately left running -- they're a real
+`XListFonts`-driven best-match rather than this cascade's synthetic
+`pixel_size=0` patterns, so they're both safer and give a better-
+matched fallback font for the handful of methods
+(`WidthTable`'s range-gating, `CharSummary`, `StringSize`/`TextSize`,
+`xgraphic.c`'s horizontal-centering `XTextWidth` call) that still read
+the core `font` as an approximate metrics source even when Xft is
+doing the actual drawing. Verified the console noise gone live.
+
+**Separately, and initially conflated with the above:** a real vertical
+line-spacing bug, unrelated to `BadValue`. `GetFontSummary` (`xfontd.c`)
+computes `newlineHeight`/`maxHeight` -- the metrics `textv.c`/
+`drawtxtv.c`/`fnotev.c` actually use to space line N+1 below line N --
+exclusively from the legacy core font, same class of gap as everything
+else in this update, but in a method not covered by the original
+`HeightTable`/`StringSize`/etc. scope note (that one really is dead
+code; `GetFontSummary` is not). Symptom: a large CSS-driven emphasis
+run's ascender visibly collided with the descender of the line above it
+-- the *reserved* line height came from whatever small core-font
+fallback matched (especially likely to be wrong-sized after the
+cascade-skip fix above, since large/unusual sizes are exactly what the
+core protocol is least likely to have a matching resource for), while
+the *drawn* glyph came from the actual, much larger, genuinely-scalable
+Xft font. Fixed by overriding `newlineHeight`/`maxHeight`/`maxWidth`/
+`maxSpacing`/`maxBelow` from the resolved Xft font's own metrics when
+one exists (Xft's `height` field, FreeType's own recommended line
+spacing, turned out to be a better `newlineHeight` source than the old
+`ascent+descent` sum). `maxLeft` and the character-validity loop
+deliberately left on core metrics -- no clean Xft equivalent for left
+bearing, no reported symptom for character range. Verified live:
+reported vertical spacing correct after this fix.
+
+A third, initially-plausible-looking lead did **not** pan out and is
+worth recording so it isn't retried: a separate, concurrent
+investigation into a piano inset (`pianov.c`/`arbiterview`) disappearing
+in an `amsdemo` document hypothesized that `arbiterview` might blank a
+child inset on any X protocol error occurring during its render pass,
+which would make this same `BadValue` the direct cause. Retested after
+the cascade-skip fix eliminated the `BadValue` noise: the piano inset
+was still missing. That theory is ruled out; the piano disappearance is
+a separate bug, being tracked independently on the `pianov.c`/
+`arbiterview` side.
 
 ### 10. Messages with IMAP backend
 
