@@ -1024,28 +1024,58 @@ upstream fix.
   nobody has reported metamail working here at any point. Root cause
   identified; not yet fixed.
 - **The arb/piano demo's own display height is still wildly wrong,
-  independent of the `short`-overflow fix above.** With that overflow
-  fixed, the piano now draws instead of vanishing — but its actual size
-  is still pathological on anything but first paint: enlarging the
-  window (or any relayout after the first) makes the keyboard balloon
-  to ~16,000px tall, cropped to a few vertical lines with no visible
-  keys. The top-level desired-height query is a flat, width-independent
-  32991 throughout (not itself wrong given the tune `textview`'s real
-  content), so the bug isn't in what gets queried — it's in
-  `lpair_ComputeSizes`'s percentage split, which uses the pair's own
-  *current committed geometry* (`lpair_GetLogicalHeight`), not the
-  `DesiredSize` result, to divide space between siblings. Current best
-  evidence: that committed geometry starts out small (whatever the
-  embedded view's initial default is, giving a reasonable first paint by
-  what looks like accident of timing) and only picks up the real,
-  pathological 32991 total sometime between first paint and the first
-  resize — after which every relayout divides a 33,000px pie instead of
-  a sane one. Root cause of the tune `textview`'s own ~33,000px desired
-  height (why a narrow column explodes it this badly) also not yet
-  isolated. Reproducible standalone via `revival/piano_isolated.ez` (the
-  same arb/piano tree lifted out of the full demo message, with no
-  surrounding text, so it's laid out first and alone) — open the file
-  fresh, note the first paint looks reasonable, then enlarge the window.
+  independent of the `short`-overflow fix above, and traced now to two
+  separate, independent leaf-level bugs, not a timing gap.** With the
+  overflow fixed, the piano draws instead of vanishing, but usually still
+  renders as a blank window or, once visibly drawn, balloons to ~16,000px
+  tall on relayout (cropped to a few vertical lines, no visible keys).
+
+  A fuller instrumentation pass (`lpair_ComputeSizes`/
+  `ComputeSizesFromTotal`, `celview_DesiredSize`, `celview_WantNewSize`,
+  and the `AllocateLineItem`→`InsertView` commit point — all temporary,
+  removed before commit) disproved the earlier "first-paint-vs-resize
+  timing gap" theory: the pair that gives the embedded piano *itself*
+  100% of whatever total height it's handed (`objsize=[0,100]`, matching
+  the "Objects/Views"-selector-wheel-row-vs-piano split, `pct=100` in the
+  datastream) is not a bug — it's a correct, faithful percentage split.
+  The actual defects are upstream, in what total that split is fed. Two
+  independent leaves both inflate it:
+  1. **The tune `textview`** (68 lines of raw note data,
+     `1,16,659.241394 E` etc.) genuinely computes ~33,000px of wrapped
+     content height in a narrow column — not a garbage number, an
+     honest one — and `textview__DesiredSize` (`textv.c`) has no upper
+     bound on it at all, unlike the base `view__DesiredSize` fallback,
+     which caps at 2048. A data-file fix (giving the wrapping `cel` an
+     explicit `desh`) does work at the `celview__DesiredSize` level —
+     confirmed live, traced down to the exact early-return line — but a
+     blanket cap inside `textview__DesiredSize` itself is too broad a
+     fix: the same function computes the real message body's height,
+     which real pagination (see Book Rack, above) depends on being
+     accurate for genuinely long documents.
+  2. **The tree's two empty spacer `lset` leaves** (blank filler cells
+     near the "rest" button and the "speed"/"duration" controls,
+     `OBJ<`/`VIEW<` left blank in the datastream) independently inflate
+     the total *even with the tune fixed*: a leaf `lset` with no child
+     view falls through `lsetview__DesiredSize` into `lpair__DesiredSize`'s
+     final catch-all (`*desiredheight = (height > MAXSANEHEIGHT) ?
+     STARTHEIGHT : height`) — and since `MAXSANEHEIGHT` is now
+     1,000,000 (raised 2026-08-18 for an unrelated, legitimate fix, see
+     above), an empty spacer with *no content at all* just echoes back
+     whatever height it happens to be offered (traced live: exactly
+     `16384 − 2`, matching `AllocateLineItem`'s unconstrained offer)
+     instead of wanting something small, the way a spacer should.
+
+  Neither is fixed yet. The tune-textview fix needs a home that doesn't
+  risk Book Rack-style regressions (candidates: a real bounded/scrolling
+  wrapper for the score panel, or a way to mark this specific
+  `DesiredSize` call as "advisory, cap it" without touching the shared
+  function's general behavior); the empty-spacer fix likely wants a
+  real, small default (matching `STARTHEIGHT`, or 0) for a childless
+  leaf, rather than echoing the offered height at all. Reproducible
+  standalone via `revival/piano_isolated.ez` (the arb/piano tree lifted
+  out of the full demo message, no surrounding text, so it's laid out
+  first and alone) — a fresh `ez revival/piano_isolated.ez` is enough,
+  no resize needed to see the bug now that both leaves are understood.
 
 ## Further reading
 

@@ -2008,3 +2008,78 @@ already committed. Full analysis in `porting-assessment.md` §9, "Update
   be a better `newlineHeight` source than the old `ascent+descent` sum).
   `maxLeft` and the character-validity loop left on core metrics, no
   clean Xft equivalent and no reported symptom there. Verified live.
+
+### 2026-08-21 (follow-up) — `arb`/piano demo: the "first-paint-vs-resize timing gap" theory disproved, two independent leaf-level bugs found instead, both still open
+
+Resumed the arb/piano investigation from earlier the same day (the
+`short`-overflow fix, already committed, is unaffected by any of this).
+Set up fresh temporary tracing — `lpair_ComputeSizes`/
+`ComputeSizesFromTotal` (`lpair.c`), `celview_DesiredSize`/
+`celview_WantNewSize` (`celv.c`), and the `AllocateLineItem`→
+`InsertView` commit point (`drawtxtv.c`) — all writing to one shared
+`/tmp` log with a call counter, all removed before this commit.
+
+Disproved the earlier theory (logged in `revival.md` after the first
+session) that a first-paint-vs-resize timing gap in when
+`lpair_ComputeSizes` picks up the real committed geometry was the bug.
+It isn't: `vi_height=32991` is committed via `InsertView` on the very
+first `textview_FullLineRedraw` pass, before any resize. The apparent
+"first paint looks fine" from the earlier session was a full re-test
+artifact (almost certainly a stale `ez` window being reused instead of
+re-reading the edited file — the same trap hit twice more this session
+before being recognized: always confirm via `ps` that no other `ez`
+process is running before treating a result as clean).
+
+Traced the real chain instead: the split that gives the piano itself
+100% of its parent's height (`objsize=[0,100]`, the "Objects/Views"-
+wheel-row-vs-piano split) is a correct, faithful percentage division —
+not a bug. The actual defects are two independent leaves inflating the
+total that split divides:
+
+1. **The tune `textview`** (`REF< score`, 68 lines of raw note data)
+   has a real, honestly-computed ~33,000px wrapped-content height in a
+   narrow column, and `textview__DesiredSize` (`textv.c`) has no upper
+   bound on it, unlike the base `view__DesiredSize` fallback's 2048
+   cap. Confirmed fixable at the data level: giving the wrapping `cel`
+   an explicit `desh` (e.g. 150) does correctly short-circuit
+   `celview__DesiredSize`'s `view_WidthSet` case, traced live down to
+   the exact `*dHeight = self->desh; return view_Fixed;` line actually
+   executing. `celview__WantNewSize`'s existing reset-on-resize logic
+   (which unconditionally clears a cel's explicit `desw`/`desh` back to
+   `UNSET` whenever anything wants a new size — apparently meant to
+   release a user's manual cel-drag-resize) was suspected of wiping this
+   fix on relayout; traced and ruled out — it never actually fires for
+   this cel in this scenario. Not committed as a real fix: a hardcoded
+   `desh` in the datastream is fragile in principle (exactly the kind of
+   value `WantNewSize` exists to clear under other circumstances) and,
+   more importantly, doesn't address why the underlying computation is
+   unbounded in the first place. `textview__DesiredSize` is also what
+   Book Rack's real pagination depends on for genuinely long documents,
+   so a blanket cap there risks reintroducing that bug's shape for a
+   different reason -- needs a fix scoped to *this* call site's "advisory,
+   OK to cap" nature, not `textview__DesiredSize` in general.
+
+2. **Two empty spacer `lset` leaves** (blank filler cells near the
+   "rest" button and the "speed"/"duration" controls — `OBJ<`/`VIEW<`
+   left blank in the datastream) independently inflate the total even
+   with the tune textview capped. A leaf `lset` with `self->child ==
+   NULL` falls through `lsetview__DesiredSize` into
+   `lpair__DesiredSize`'s final catch-all (`self->obj[0] &&
+   self->obj[1]` is false for a non-split leaf), which just echoes back
+   whatever height it was offered, clamped only to `MAXSANEHEIGHT`
+   (1,000,000, raised from 2048 on 2026-08-18 for an unrelated,
+   legitimate fix — see above). Traced live: exactly `16384 − 2`,
+   matching `AllocateLineItem`'s unconstrained offer verbatim, for a
+   leaf with *zero content*. This is the same "echo the offered size
+   instead of computing a real one" pattern already fixed once in
+   `lpair__DesiredSize`'s `HORIZONTAL`/stacked `pass != view_HeightSet`
+   branch on 2026-08-18 — this is a second, distinct instance of it, in
+   the childless-leaf catch-all rather than a real split branch.
+
+Neither fixed yet — see `revival.md` → "Open issues" for the current
+writeup and candidate fix directions. All temporary tracing reverted;
+`fossil status`/`fossil diff` confirmed clean before this commit.
+`revival/piano_isolated.ez` (added the same day, unaffected) remains
+the standalone repro — a fresh, guaranteed-not-reusing-a-stale-window
+`ez revival/piano_isolated.ez` is now sufficient on its own, no resize
+needed.
