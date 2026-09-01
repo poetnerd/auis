@@ -2083,3 +2083,94 @@ writeup and candidate fix directions. All temporary tracing reverted;
 the standalone repro — a fresh, guaranteed-not-reusing-a-stale-window
 `ez revival/piano_isolated.ez` is now sufficient on its own, no resize
 needed.
+
+### 2026-08-31–09-01 — `arb`/piano demo: empty-spacer leaf fixed and committed; a real `ANDREWDIR` build bug found along the way; overall sizing still open, root-caused to a deeper architectural mismatch
+
+Resumed the arb/piano investigation again. Set up fresh temporary
+tracing (`lpair_DesiredSize`/`ComputeSizes` in `lpair.c`,
+`AllocateLineItem`/`InsertView` in `drawtxtv.c`, `lsetview_DesiredSize`/
+`lsetview_Update` in `lsetv.c`, `celview_DesiredSize` in `celv.c` — all
+writing to one shared `/tmp` log, all removed before the commit below).
+
+**Fixed and committed:** the second of the two leaf-level bugs logged
+2026-08-21 (`revival.md`/above) — a childless `lset` spacer leaf
+(`lpair.c`'s final `DesiredSize` catch-all) now clamps to `STARTHEIGHT`
+instead of echoing back whatever height it was offered. Piano now draws
+correctly (not blank, not a 16,000px blowup) on first launch, no resize
+needed.
+
+**A real, separate, unrelated build bug found and fixed (locally):**
+early testing this session gave confusing, contradictory results —
+data-file `desh` edits that should have changed rendering had no effect
+at all. Root cause: `andrdir.h` (generated from `site.h`'s
+`DEFAULT_ANDREWDIR_ENV`, the ultimate fallback `AndrewDir()` uses when no
+`ANDREWDIR` env var or `AndrewSetup` file overrides it) was stale,
+pointing at a *different* checkout's `build/` tree. Its Makefile rule
+(`src/overhead/util/hdrs/Imakefile`) depends only on `system.h`, not on
+`site.h`, so `make` never regenerates it after a `site.h`-only change.
+This meant every dynamically-loaded class (`lsetview`, `celview`,
+everything under `adew`) was silently loading `.do` files from the wrong
+checkout, while statically-linked code (`lpair`, `text`) correctly
+reflected this checkout's own source — a hybrid that invalidated a good
+portion of this session's early live-testing before `lsof` on the
+running process's loaded `.do` files exposed it. Fixed for this checkout
+via `rm -f andrdir.h; make andrdir.h` (regenerate) plus `touch
+andrwdir.c; make dependInstall` (recompile) in
+`src/overhead/util/hdrs`/`lib` — nothing to commit (the fix lives
+entirely in a regenerated build artifact, not source), and the
+underlying Makefile dependency gap is undocumented and will recur after
+any future `site.h` change without a full `make Clean; make World`.
+Logged in `revival.md`'s Open Issues as a real, if narrow, gotcha.
+
+**Overall piano sizing: root-caused further, not fixed.** With both leaf
+bugs fixed, the piano renders correctly but noticeably larger than
+trunk's own rendering. Traced this to an architectural mismatch, not a
+simple bug: the 1988 data's percentage splits were tuned for the *old*
+engine, where a stacked split queried the way `drawtxtv.c` queries
+embedded views used to short-circuit to one flat `STARTHEIGHT`
+placeholder for an entire subtree, regardless of content. The
+2026-08-18 fix (needed elsewhere, for real HTML-table content) made
+stacked splits genuinely sum their children's real heights instead —
+correct, but it means old data tuned around the flat-placeholder
+shortcut no longer reproduces original proportions once real per-leaf
+sizes actually get summed.
+
+Two live-tested tuning approaches were explicitly rejected:
+lowering `valueview__DesiredSize`'s shared `75×75` fallback got the
+piano very close to trunk visually, but broke `GSC.ez`'s cookie-order
+sliders (confirmed live, side-by-side against trunk) — that default is
+shared by every value-type widget in AUIS and must not change. Giving
+`pianoV` its own larger, keyboard-shaped `DesiredSize` override made the
+total *worse* (331px → 577px, traced live) rather than better, since a
+more honest larger number for one leaf still feeds the same SUM that
+inflates everything else. Both reverted; `fossil diff` confirmed clean
+before the commit above.
+
+A third approach — bounding the whole widget via an explicit `desh` on
+the wrapping arbiter (the same pattern already proven to work for the
+tune `textview`) — was tried and had *zero* measurable effect, leading
+to a new, real, not-yet-fixed finding: `lsetview` has two distinct
+fields, `child` and `app` (`lsetv.ch`: `struct view *child, *app;`).
+`lsetview__DesiredSize`'s forwarding check
+(`self->mode != lsetview_IsSplit && self->child`) forwards the query to
+`self->child`, but the actually-displayed content for a leaf wrapping an
+application-layer object (this arbiter) is inserted via `self->app`
+(`lsetview__Update`'s `FirstUpdate`/`UpdateView` case), which
+`view_GetApplicationLayer()` can set to a different object than
+`self->child`. A live refname trace on `celview__DesiredSize` confirmed
+it: every other named leaf in the tree (`Read`, `score`, `kb-0`..`kb-3`,
+etc.) shows up in the trace; the arbiter's own refname (`ab1`) never
+does — its `DesiredSize` query never reaches `celview__DesiredSize` at
+all, so the `desh` set on its data is never read. Next session: decide
+whether the forwarding check should use `self->app` instead of (or
+alongside) `self->child`, and understand why the two differ for this
+leaf type specifically. Fixing this would likely also eliminate a
+separate, confirmed-bounded (not runaway) one-time "settle" resize on
+first interaction, since a `desh`-bounded `celview__DesiredSize` returns
+without querying children at all.
+
+`revival/piano_isolated.ez` reverted to its last-committed form (no
+`desh` edits kept — none were conclusively adopted); all temporary
+tracing across `lpair.c`/`drawtxtv.c`/`lsetv.c`/`celv.c` removed and
+confirmed via `fossil diff` before the empty-spacer fix was committed
+alone.
