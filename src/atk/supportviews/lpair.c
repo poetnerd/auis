@@ -422,6 +422,24 @@ enum view_DSattributes lpair__DesiredSize(struct lpair *self, long width, long h
 		}
 	}
 	*desiredwidth = width;
+	if (pass != view_HeightSet && !self->obj[0] && !self->obj[1]) {
+		/* A true leaf lpair with no children at all -- e.g. an empty
+		   lset spacer cell (lsetview__DesiredSize falls through to
+		   us when self->child is NULL). drawtxtv.c's embedded-view
+		   sizing query offers an effectively unconstrained height
+		   (16384) as "how tall do you actually want to be"; with no
+		   content, the honest answer is small, not an echo of
+		   whatever headroom the caller happened to be probing with.
+		   Confirmed live: this leaf was reporting back 16382 verbatim,
+		   inflating a piano/arb layout's total height even after the
+		   tune textview's own unbounded-height bug (textv.c) is
+		   worked around. pass==view_HeightSet is left alone -- that's
+		   a real imposed budget ("you WILL be exactly this tall"),
+		   not a query, and must still be honored regardless of
+		   content. 2026-08-31. */
+		*desiredheight = STARTHEIGHT;
+		return(view_Fixed);
+	}
 	*desiredheight = (height > MAXSANEHEIGHT) ? STARTHEIGHT : height;
 	return(view_Fixed);
 }
