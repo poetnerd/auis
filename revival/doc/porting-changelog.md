@@ -2174,3 +2174,69 @@ without querying children at all.
 tracing across `lpair.c`/`drawtxtv.c`/`lsetv.c`/`celv.c` removed and
 confirmed via `fossil diff` before the empty-spacer fix was committed
 alone.
+
+### 2026-09-02–09-03 — `arb`/piano demo: overall sizing and the settle-transition RESOLVED — the earlier `child`/`app` theory was a dead end, real cause was a single misidentified trailer field
+
+Picked the investigation back up from the 2026-08-31–09-01 entry's "next
+session" pointer. Re-added live tracing (`MAKEVIEW` in `lsetv.c`'s
+`makeview()`, `SETDATAOBJECT` and `CELVIEWDS` in `celv.c`'s
+`SetDataObject`/`DesiredSize` — again all temporary, removed before the
+commit below) and re-verified the previous session's leading theory
+against the actual code first, rather than trusting the carried-over
+conclusion.
+
+**The `child`/`app` theory didn't hold up.** `arbiterview` never
+overrides `GetApplicationLayer`, so it inherits `view__GetApplicationLayer`
+(`view.c`: `return self`) — meaning `lsetview::makeview()`'s
+`self->app = view_GetApplicationLayer(self->child)` always resolves to
+`self->app == self->child` for an arbiter leaf specifically. The
+`child`/`app` split is real in the `lsetview` struct, but it wasn't the
+mechanism blocking this bug.
+
+**What was actually happening: two different objects with two different
+trailer formats sit within a few lines of each other in the datastream,
+and the earlier `desh` edits landed on the wrong one.** The *lset slot*
+that wraps the arbiter (`lset,539486216`, refname `ab1`) has its own
+7-field trailer (`type pct nobar vcenter autoheight application did lid
+rid`-family fields, no `desh` at all). The *arbiter's own `cel`
+dataobject* (`cel,539486472`) has a completely separate 6-field trailer
+(`application did script desw desh mode`, written by `cel__Write`)
+sitting on the line immediately after the arbiter's nested content
+closes. Both trailers are plain space-separated numbers with no field
+labels, a few lines apart, and easy to conflate by eye. All of the
+previous session's `desh=150`/`desh=280` edits on "the outer arbiter,
+id 539486472" were applied to the *lset slot's* trailer line (`0 0 0
+539486472 0 0 0`, at the very end, right before that slot's own
+`\enddata{lset,539486216}`) — a field position with no `desh` semantics
+whatsoever — which fully explains the "zero measurable effect no matter
+what value was tried" result reported at the time.
+
+The earlier session's supporting trace evidence ("`celview__DesiredSize`
+never fires for refname `ab1`") was real but was answering a different
+question than it appeared to: `ab1` is the *lset slot's* refname field
+(`struct lset`'s own `char refname[64]`), not the arbiter dataobject's
+refname. The arbiter's own `cel.refname` field (a completely separate
+field, inherited by `arbiterview` from `cel`/`celview`) holds `ab2` in
+this data. `celview__DesiredSize` was firing the whole time — the trace
+was just filtering on a string (`ab1`) that was never going to appear
+there.
+
+**The fix:** `revival/piano_isolated.ez` line 819, changing
+`1 539486728 0 0 0 0` (the arbiter's own trailer — `application=1
+did=539486728 script=0 desw=0 desh=0 mode=0`) to `1 539486728 0 0 150
+0`, setting `desh=150`. Verified via trace before touching the render at
+all: `SETDATAOBJECT refname=ab2 ... desh=150` followed by repeated
+`CELVIEWDS refname=ab2 ... desh=150` confirmed the value now reaches
+`celview__DesiredSize` and its existing (and always-correct)
+`self->desh != UNSET` short-circuit. Live-confirmed by the user: both
+the oversized rendering and the one-time settle-transition are gone,
+`GSC.ez` (untouched by a purely data-local, single-file edit) still
+renders correctly, and the piano now looks slightly *better* than
+trunk's legacy rendering, purely from this branch's independently
+improved font selection. Committed alone (`fossil commit`, 2026-09-03)
+after confirming `lsetv.c`/`celv.c` were back to byte-identical
+(`fossil diff` empty) with tracing removed and `src/atk/adew` rebuilt
+clean. `revival.md`'s "Old bugs never found till now" narrative extended
+to the full resolution; the corresponding "Open issues" bullet removed
+(only the separately-real, still-unfixed `andrdir.h`/`site.h` Makefile
+dependency gap remains logged there).

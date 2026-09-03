@@ -737,8 +737,72 @@ next step, not yet done:
   visible on any machine this demo ever ran on. Fixing the real bug
   (widening the `short` to `long`, matching every other size
   computation in the same call chain) reopened the question the old,
-  buggy clamp had been accidentally answering — see "Open issues"
-  below.
+  buggy clamp had been accidentally answering: with the clamp no longer
+  silently rescuing it, the piano rendered but came out noticeably
+  larger than trunk's version, plus a one-time "settle" resize on first
+  interaction.
+
+  A second real bug turned up alongside it: an empty `lset` spacer leaf
+  (a childless cell used purely for layout padding) was echoing back
+  whatever height `drawtxtv.c`'s embedded-view query happened to offer
+  it — typically an effectively unconstrained 16,382 pixels — instead of
+  reporting its own, honestly small, desired height. Fixed in `lpair.c`
+  (committed 2026-09-01): a true leaf with no children at all now clamps
+  to `STARTHEIGHT` rather than echoing the offered headroom.
+
+  What remained after both of those — genuinely too-tall overall sizing
+  and the settle-transition — turned out not to be a bug at all, but an
+  architectural mismatch. The 1988 arb data's percentage splits were
+  authored for the *old* engine, which never genuinely summed stacked
+  children's real content height: a stacked split queried the way
+  `drawtxtv.c` queries embedded views used to short-circuit to a single
+  flat placeholder (`STARTHEIGHT`) for the *entire* subtree beneath it,
+  regardless of how many rows were inside. The 2026-08-18 fix (needed
+  for real HTML-table content elsewhere) made stacked splits genuinely
+  sum their children's real heights instead — correct, and necessary
+  elsewhere, but it means this old data's percentages, tuned around the
+  old flat-placeholder shortcut, no longer reproduce the original visual
+  proportions once real per-leaf sizes are actually being summed.
+
+  Two attempts to fix this by tuning a shared constant were tried and
+  rejected: lowering `valueview__DesiredSize`'s shared `75×75` fallback
+  (used by every button/slider/key-octave across *all* of AUIS that
+  doesn't define its own size) brought the piano close to trunk's
+  proportions but broke `GSC.ez`'s cookie-order sliders, which depend on
+  that same default staying `75×75`. Giving `pianoV` its own
+  `DesiredSize` override made the *total* worse, not better (traced
+  live: ~331px to 577px), because a bigger, more honest number for one
+  leaf still feeds directly into the same sum that inflates everything
+  else. Both were reverted.
+
+  The actual fix was a single, correctly-targeted data edit, not a code
+  change — but finding the right field took real archaeology. The
+  arbiter widget's *own* `cel` dataobject carries an `application did
+  script desw desh mode` trailer (`cel.c`'s `cel__Write`/`cel__Read`),
+  distinct from the *enclosing `lset` slot's* own `type pct nobar
+  vcenter autoheight application did lid rid` trailer — two different
+  structs, two different trailer formats, sitting a few lines apart in
+  the datastream and easy to conflate. An earlier attempt this session
+  to bound the arbiter's height by setting `desh` had edited the
+  *enclosing lset slot's* trailer line (which has no `desh` field at
+  all), not the arbiter's own — which is why it measurably had zero
+  effect no matter what value was tried, and why the trace evidence at
+  the time looked like `celview__DesiredSize` was never being reached
+  for this object (a red herring: the arbiter's own `cel.refname` field
+  turned out to hold `ab2`, not the `ab1` being searched for — `ab1` is
+  the *lset slot's* separate refname field, a different piece of data
+  entirely; the trace was filtering on the wrong string the whole
+  time). Once the correct trailer line was found
+  (`revival/piano_isolated.ez`, the `1 539486728 0 0 0 0` line
+  immediately following the arbiter's nested content) and its `desh`
+  field set to `150`, the fix worked immediately and completely:
+  `celview__DesiredSize`'s existing `self->desh != UNSET` short-circuit
+  (already correctly implemented, never the problem) now returns right
+  away without depending on child-linking timing, which fixed the
+  settle-transition as a side effect along with the oversized rendering.
+  Committed 2026-09-03. The result renders slightly *better* than
+  trunk's legacy piano, purely because of this branch's independently
+  improved font selection.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
@@ -1023,73 +1087,9 @@ upstream fix.
   untouched by any declaration or typing fix — and predates this project;
   nobody has reported metamail working here at any point. Root cause
   identified; not yet fixed.
-- **The arb/piano demo now renders (two real bugs fixed), but its overall
-  size is still noticeably too tall relative to trunk, and a residual
-  one-time "settle" resize on first interaction is unexplained.** Both the
-  `short`-overflow (`txtvinfo.h`) and the empty-spacer `lset` leaf
-  (`lpair.c`, committed 2026-09-01: a childless leaf now clamps to
-  `STARTHEIGHT` instead of echoing whatever height it was offered) are
-  fixed and committed. What's left is a harder, architectural problem,
-  not a simple bug:
-
-  The 1988 arb data's percentage splits were authored for the *old*
-  engine, which never genuinely summed stacked children's real content
-  height — a stacked split queried the way `drawtxtv.c` queries embedded
-  views (`pass=view_WidthSet`) used to short-circuit to a single flat
-  placeholder (`STARTHEIGHT`) for the *entire* subtree beneath it,
-  regardless of how many rows were inside. The 2026-08-18 fix (needed for
-  real HTML-table content elsewhere) made stacked splits genuinely sum
-  their children's real heights instead. That's correct, and necessary
-  elsewhere — but it means this old data's percentages, tuned around the
-  old flat-placeholder shortcut, no longer reproduce the original visual
-  proportions once real per-leaf sizes are actually being summed.
-
-  Two tuning approaches were tried live and rejected:
-  - Lowering `valueview__DesiredSize`'s shared `75×75` fallback (used by
-    every button/slider/key-octave across *all* of AUIS that doesn't
-    define its own size) brought the piano very close to trunk's
-    proportions, but broke `GSC.ez`'s cookie-order sliders, which depend
-    on that same shared default staying `75×75`. Reverted — this default
-    must not change.
-  - Giving `pianoV` its own `DesiredSize` override (a taller, more
-    keyboard-appropriate default than the generic `75×75`) made the
-    *total* worse, not better (traced live: total went from ~331px to
-    577px), because a bigger, more honest number for one leaf still
-    feeds directly into the same SUM that inflates everything else.
-    Reverted.
-  - Setting an explicit `desh` on the arbiter wrapping the whole widget
-    (the same pattern that works for the tune `textview`, see below)
-    was tried and had *no effect at all* — traced down to a real, not
-    yet understood, separate bug: `lsetview` has two distinct fields,
-    `child` and `app` (`struct view *child, *app;`, `lsetv.ch`).
-    `lsetview__DesiredSize`'s forwarding check
-    (`if (self->mode != lsetview_IsSplit && self->child)`) forwards to
-    `self->child`, but the actually-displayed content for a leaf that
-    wraps an application-layer object (like this arbiter) is inserted
-    via `self->app` (`lsetview__Update`'s `FirstUpdate`/`UpdateView`
-    case: `view_InsertView(self->app, self, &rr)`), which
-    `view_GetApplicationLayer()` can set to a *different* object than
-    `self->child`. Consistent with the evidence: `celview__DesiredSize`
-    never fires at all for this leaf (confirmed via a live refname
-    trace — every other named leaf, `Read`/`score`/`kb-0`/etc., shows
-    up; `ab1`, the arbiter's own refname, never does), and an explicit
-    `desh` set directly on the arbiter's own data measurably had zero
-    effect on the query result. **Next step for a fresh session:**
-    determine whether `DesiredSize`'s forwarding check should use
-    `self->app` instead of (or in addition to) `self->child`, and why
-    the two differ for this leaf type specifically.
-  - A separate, one-time "settle" resize (confirmed bounded, not a
-    runaway loop — a second interaction after the first doesn't grow it
-    further) happens on the first redraw after initial paint, most
-    likely because not every leaf has finished linking/reporting its
-    real content size at the very first draw. A `desh`-bounded arbiter
-    should eliminate this too, once the `child`/`app` bug above is
-    understood — `celview__DesiredSize` returns immediately without
-    querying children at all when `desh` is set, so the query would stop
-    depending on child-linking timing entirely.
-
-  A separate, unrelated build-system bug was found and fixed while
-  investigating this: `andrdir.h` (generated from `site.h`'s
+- **A build-system bug was found and fixed while investigating the
+  arb/piano demo (see "Old bugs never found till now" above for that
+  investigation's full outcome):** `andrdir.h` (generated from `site.h`'s
   `DEFAULT_ANDREWDIR_ENV`, feeding `AndrewDir()`'s ultimate fallback when
   no environment variable or `AndrewSetup` file overrides it) had gone
   stale, still pointing at a *different* checkout's build tree from
@@ -1106,11 +1106,6 @@ upstream fix.
   but only locally — the underlying Makefile dependency gap is still
   unfixed and will silently recur after any future `site.h` change
   without a full `make Clean; make World`.
-
-  Reproducible standalone via `revival/piano_isolated.ez` (the arb/piano
-  tree lifted out of the full demo message) — `ez revival/piano_isolated.ez`
-  renders correctly now (no more blank window or 16,000px blowup), just
-  visibly larger than trunk's own rendering.
 
 ## Further reading
 
