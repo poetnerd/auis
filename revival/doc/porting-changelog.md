@@ -2240,3 +2240,17 @@ clean. `revival.md`'s "Old bugs never found till now" narrative extended
 to the full resolution; the corresponding "Open issues" bullet removed
 (only the separately-real, still-unfixed `andrdir.h`/`site.h` Makefile
 dependency gap remains logged there).
+
+**Follow-up, same day:** the fix above only touched
+`revival/piano_isolated.ez`, a copy of the arb/piano tree lifted out of
+the actual amsdemo message for isolated testing — it did not fix
+anyone else's use of the same piano data. Found and fixed the real
+source: `src/ams/demo/d7` (the "Mail for your Ears" amsdemo message,
+`Subject:` confirmed via its companion `d7.heads`) carries the
+byte-for-byte same arb tree, including the same unset `desh` on the
+same trailer line. Applied the identical one-line edit there. Verified
+on a scratch copy (`ez` against a copy in `/tmp`, not the tracked file
+directly, to avoid any risk of `ez`'s own autosave touching the source
+before the fix was confirmed) before committing `src/ams/demo/d7`
+itself. No other tracked file in the source tree carries this arb data
+(checked via `grep` for the object's datastream IDs).
