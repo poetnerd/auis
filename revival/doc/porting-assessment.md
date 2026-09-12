@@ -3451,6 +3451,69 @@ instrument `MoveBackward`'s equivalent path for direct comparison
 against a forward trace from the same message — `MoveBackward` finding
 the true end that `MoveForward` doesn't is the whole signal here.
 
+#### s. `ez`, opened directly on a raw `.html` file, heap-corrupts in an unrelated pre-existing template class — and the crash is invisible under `lldb` by default
+
+Found live 2026-09-12 trying to re-confirm the repro steps for bug r.:
+`build/bin/ez revival/tests/bookrack.html` segfaults every time run
+directly, but appeared *not* to reproduce under `lldb` (`run
+revival/tests/bookrack.html` exited cleanly, status 0, no crash) — a
+false lead. Root cause of the non-reproduction: `lldb` disables ASLR by
+default (`target.disable-aslr` = `true`). `settings set
+target.disable-aslr false` reproduces the crash immediately under the
+debugger, with a full backtrace — confirming a real memory-corruption
+bug (`EXC_BAD_ACCESS` inside `mfm_alloc`, malloc's own internals,
+meaning something wrote out of bounds earlier) whose visibility depends
+on ASLR's randomized layout, masked by `lldb`'s deterministic one:
+
+```
+frame #0: libsystem_malloc.dylib`mfm_alloc
+frame #1: ez`stylesheet__Add
+frame #2: ez`stylesheet__Read
+frame #3: ez`text__ReadTemplate
+frame #4: html.do`html__InitializeObject
+frame #5: html.do`html__New
+frame #6: ez`class_NewObject
+frame #7: ez`bufferlist__CreateBuffer
+frame #8: ez`bufferlist__GetBufferOnFile
+frame #9: ez`ezapp__Start
+```
+
+More important than the ASLR wrinkle: this crash is **not** in the
+HTML-mail-rendering pipeline at all, and this was never the right way
+to reproduce bug r. `html.do` here is
+`src/contrib/srctext/html/html.c` — `ez`'s own pre-existing
+document template/style class (the `srctext` family, selected by file
+extension, like its C-source-editing templates), unrelated to
+`atkams/messages/lib/htmlatk.c` (the mail-rendering parser this whole
+project built). Opening a raw `.html` file directly with `ez` routes
+through *this* old class via `ez`'s extension-based template
+selection, not through the mail-rendering pipeline — so
+`revival/tests/bookrack.html` (a raw fixture, meant as *input* to
+`htmlatktest.test`, not something to hand to `ez` directly) was
+exercising the wrong code entirely. Not investigated further — a real,
+reproducible bug, but not on the critical path for bug r.
+
+**`htmlatktest.test writeds`/`writedsr`, the seemingly obvious
+alternative, turned out not to work either.** Tried immediately after
+finding this bug, on the theory that `writeds <fixture> <outfile>` (it
+renders the fixture through the real `htmlatk_Render()` path and writes
+a genuine ATK datastream via `text_Write()`) then `ez <outfile>` avoids
+the `srctext/html` class entirely by opening a real `.ez` datastream
+instead of raw HTML. It doesn't crash — but `ez` shows a blank buffer.
+Comparing against `htmlatktest.test dump` on the same fixture (which
+shows the renderer working correctly: real text runs, links, italic
+styling, hundreds of characters per cell) proved the problem is
+specific to the `writeds`/`text_Write` step: the `.ez` file it produces
+has every leaf `text` object completely empty and the `lset` scaffolding
+itself drastically truncated versus the real ~87-split/165-leaf
+structure `dump` shows. Not root-caused — possibly something
+`htmlatktest.c`'s minimal `InitATK()` never sets up that `text_Write`'s
+recursive descent depends on, but that's a guess, not a finding. Until
+this is understood, **the only confirmed-working repro for bug r. is
+live in `messages` against the real message**, as originally tested
+2026-08-20/21 — not `ez` on the raw fixture (this bug), and not `ez` on
+a `writeds` output (this paragraph).
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.

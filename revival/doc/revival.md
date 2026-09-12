@@ -1113,9 +1113,7 @@ upstream fix.
   the true end; backward paging reaches it fine.** Found live 2026-08-20/
   21 against the real "Book Rack" (Shelf Awareness) newsletter — a
   ~73KB HTML mail, deeply nested `lset`/`lpair` tree, saved as
-  `revival/tests/bookrack.html`. Tested live in `messages` itself (the
-  offline `htmlatktest.test` tool only dumps/round-trips the parse tree,
-  it doesn't page interactively): from the top, the space bar
+  `revival/tests/bookrack.html`. Tested live: from the top, the space bar
   (`textview_NextScreenCmd`) reaches 4 screenfuls before it stops
   advancing; from the true end, paging backward with `b`
   (`MoveBackward`) reaches 9 screenfuls back up to the top — roughly 5
@@ -1148,6 +1146,49 @@ upstream fix.
   get there is likely where the real answer is. Full detail:
   `html-mail-rendering-design.md`'s "Known open bugs"/"Planned next
   work" item 4.
+
+  **Repro vehicle, corrected again (2026-09-12):** don't open
+  `revival/tests/bookrack.html` directly with `ez` — it's a raw
+  fixture, meant as *input* to `htmlatktest.test`, not a file `ez`
+  itself should ever load; doing so exercises a real but unrelated bug
+  in `ez`'s own `srctext/html` template class (see below). The
+  natural-seeming alternative — `htmlatktest.test writeds
+  revival/tests/bookrack.html <outfile>` then `ez <outfile>` — does
+  NOT work either, despite `writeds` completing and the file opening
+  without a crash: `ez` shows a blank buffer, because `text_Write`
+  silently drops almost all actual content. `htmlatktest.test dump`
+  against the same fixture proves the renderer itself is fine (rich,
+  correct text runs, links, styles — hundreds of characters per cell);
+  the `.ez` file `writeds` produces instead has every leaf `text`
+  object completely empty and the `lset` scaffolding itself drastically
+  truncated compared to the real ~87-split/165-leaf structure `dump`
+  shows. This is a real, separate, not-yet-understood bug in the
+  `writeds` serialization path (or in something `htmlatktest.c`'s
+  minimal `InitATK()` never sets up that `text_Write` depends on) —
+  logged here rather than in the bug list below since it isn't
+  root-caused yet. **Until this is fixed, the only confirmed-working
+  repro for this bug is live in `messages` against the real message,**
+  as originally tested 2026-08-20/21.
+- **`ez`, opened directly on a raw `.html` file, heap-corrupts in an
+  unrelated pre-existing template class — and the crash is invisible
+  under `lldb` by default.** Found live 2026-09-12 trying to re-confirm
+  the repro above: `build/bin/ez revival/tests/bookrack.html` segfaults
+  every time run directly, but appeared not to reproduce under `lldb`
+  (exited cleanly, status 0) — a false lead. Root cause of the
+  non-reproduction: `lldb` disables ASLR by default
+  (`target.disable-aslr` = `true`); `settings set target.disable-aslr
+  false` reproduces the crash immediately with a full backtrace,
+  confirming a real memory-corruption bug (`EXC_BAD_ACCESS` inside
+  `mfm_alloc`, malloc's own internals) whose visibility depends on
+  ASLR's randomized layout. More important than the ASLR wrinkle: the
+  crash isn't in the HTML-mail-rendering pipeline at all — `html.do`
+  here is `src/contrib/srctext/html/html.c`, `ez`'s own pre-existing,
+  extension-selected document template class (unrelated to
+  `atkams/messages/lib/htmlatk.c`), so opening a raw `.html` file
+  directly with `ez` was never a valid way to exercise the mail
+  renderer. Not investigated further — a real, reproducible bug, but
+  off the critical path. Full detail and backtrace:
+  `porting-assessment.md` item s.
 
 ## Further reading
 
