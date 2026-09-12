@@ -3417,6 +3417,40 @@ pick up next session. Also not yet addressed: `<td style=
 "background-color:...">` isn't honored at all (noticed via a
 Thunderbird comparison of the gas-meter icon's cell background).
 
+#### r. Forward paging through a long HTML message stops short of the true end; backward paging reaches it fine
+
+Found live 2026-08-20/21 against the real "Book Rack" (Shelf Awareness)
+newsletter — a ~73KB HTML mail, deeply nested `lset`/`lpair` tree, saved
+as `revival/tests/bookrack.html`. Tested live in `messages` (not
+`htmlatktest.test`, which only dumps/round-trips the parse tree, no
+interactive paging): from the top, the space bar reaches 4 screenfuls
+before it stops advancing; from the true end, paging backward with `b`
+reaches 9 screenfuls back up to the top — roughly 5 screenfuls of real
+content forward paging never shows. Distinct from item h. above (an
+already-fixed, different `MoveForward` bug — blanking the screen at
+end-of-document — this is not a recurrence of that).
+
+**Partially diagnosed, not fixed.** Temporary tracing
+(`textview__MoveForward`'s "last line" cap branch, `textv.c` ~2176–2210;
+`AllocateLineItem`'s embedded-view `DesiredSize` query, `drawtxtv.c`
+~330 — both reverted, `fossil diff` confirmed clean) showed the cap
+arithmetic itself is internally consistent: `pixelsComingOffTop` climbed
+0→223→816→2002→4374→6468, clamping exactly at
+`cap = viewHeight(6887) − viewportHeight(419)` — spacebar paging *does*
+eventually reach the full height it was told the content has. Not yet
+confirmed: whether that queried `viewHeight` (6887px) itself under-
+reports the document's true rendered height — the open question this
+bug turns on. The trace used to check this was too noisy to answer it
+(gated on `pos == 0`, wrongly assumed unique to the one giant top-level
+embedded view; every nested `lset` leaf's own private text buffer also
+starts its own layout at `pos == 0`, firing ~25,000 times across the
+whole nested tree instead of once). Next diagnostic step: re-trace with
+tighter gating (match the specific top-level view object's pointer or
+`dataobject_UniqueID`, not a bare `pos == 0` coincidence), and/or
+instrument `MoveBackward`'s equivalent path for direct comparison
+against a forward trace from the same message — `MoveBackward` finding
+the true end that `MoveForward` doesn't is the whole signal here.
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.
