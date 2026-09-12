@@ -1109,6 +1109,45 @@ upstream fix.
   untouched by any declaration or typing fix — and predates this project;
   nobody has reported metamail working here at any point. Root cause
   identified; not yet fixed.
+- **Forward paging through a long HTML mail message stops well short of
+  the true end; backward paging reaches it fine.** Found live 2026-08-20/
+  21 against the real "Book Rack" (Shelf Awareness) newsletter — a
+  ~73KB HTML mail, deeply nested `lset`/`lpair` tree, saved as
+  `revival/tests/bookrack.html`. Tested live in `messages` itself (the
+  offline `htmlatktest.test` tool only dumps/round-trips the parse tree,
+  it doesn't page interactively): from the top, the space bar
+  (`textview_NextScreenCmd`) reaches 4 screenfuls before it stops
+  advancing; from the true end, paging backward with `b`
+  (`MoveBackward`) reaches 9 screenfuls back up to the top — roughly 5
+  screenfuls of real, rendered content that forward paging never shows
+  at all. Distinct from (and found after) an already-fixed, different
+  `MoveForward` bug — see "Old bugs never found till now" above for the
+  end-of-document blank-screen fix, which this is not a recurrence of.
+
+  Partially diagnosed, not fixed. Temporary tracing (`textview__MoveForward`'s
+  "last line" cap branch, `textv.c` ~2176–2210; `AllocateLineItem`'s
+  embedded-view `DesiredSize` query, `drawtxtv.c` ~330 — both reverted,
+  `fossil diff` confirmed clean) showed the cap arithmetic itself is
+  internally consistent: `pixelsComingOffTop` climbed
+  0→223→816→2002→4374→6468, clamping exactly at
+  `cap = viewHeight(6887) − viewportHeight(419)` — spacebar paging *does*
+  eventually reach the full height it was told the content has. **Not yet
+  confirmed: whether that queried `viewHeight` (6887px) itself under-
+  reports the document's true rendered height** — the open question this
+  bug turns on. The `AllocateLineItem` trace used to check this was too
+  noisy to answer it (gated on `pos == 0`, wrongly assumed unique to the
+  one giant top-level embedded view; every nested `lset` leaf's own
+  private text buffer also starts its own layout at `pos == 0`, so it
+  fired ~25,000 times across the whole nested tree instead of once).
+  **Next diagnostic step:** re-trace with tighter gating (match the
+  specific top-level view object's pointer or `dataobject_UniqueID`, not
+  a bare `pos == 0` coincidence), and/or instrument `MoveBackward`'s
+  equivalent path for direct comparison against a forward trace from the
+  same message — `MoveBackward` finding the true end that `MoveForward`
+  doesn't is the whole signal here, so whatever it does differently to
+  get there is likely where the real answer is. Full detail:
+  `html-mail-rendering-design.md`'s "Known open bugs"/"Planned next
+  work" item 4.
 
 ## Further reading
 

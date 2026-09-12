@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Last updated: 2026-08-17
+Last updated: 2026-09-12
 
 This document is intended primarily for AUIS revival participants,
 with a summary of what's running, what's active, what's next, and the
@@ -106,6 +106,13 @@ being front-loaded here.
   can't decode PNG, so real mail's PNG logos/graphics — the single
   most common inline-image format — always showed as a text
   placeholder). Confirmed live against real-world mail images.
+- **Open:** forward paging through a long HTML message (space bar)
+  stops well short of the true end; backward paging (`b`) reaches it
+  fine — found live 2026-08-20/21 against the real "Book Rack"
+  newsletter fixture (`revival/tests/bookrack.html`), partially
+  diagnosed, not yet fixed. See `revival.md` → "Open issues" and
+  `porting-assessment.md` item r. for full detail; this is the current
+  active investigation.
 - **Next step:** *Optional, later:* retarget `htmlview`'s own
   standalone viewer onto the same shared parser, so there's one HTML
   engine in the tree rather than two. `htmlview`'s composition/
