@@ -2277,3 +2277,48 @@ is genuine GNU Make 3.81), regenerating `Makefile` and then rebuilding
 manual `rm -f andrdir.h` workaround needed. `make dependInstall`
 confirmed clean afterward. `revival.md`'s "Old bugs never found till
 now" section updated to log this as resolved.
+
+### 2026-09-12 — Forward-paging bug (item r.) logged properly; wrong repro vehicle discovered (twice) while re-confirming it
+
+Before resuming the forward-paging investigation (item r., found
+2026-08-20/21, not fixed), realized it had never been logged in
+`revival.md`/`porting-assessment.md` — only in
+`html-mail-rendering-design.md`. Added it to both (`porting-assessment.md`
+item r., `revival.md`'s Open issues), and refreshed `roadmap.md`'s stale
+2026-08-17 date.
+
+Re-confirming the repro then surfaced two dead ends, both now logged
+(`porting-assessment.md` item s., `revival.md`'s Open issues):
+
+1. `build/bin/ez revival/tests/bookrack.html` (opening the raw fixture
+   directly) segfaults reliably — but appeared not to reproduce under
+   `lldb`. Root cause: `lldb` disables ASLR by default; re-enabling it
+   (`settings set target.disable-aslr false`) reproduces the crash
+   immediately with a full backtrace (`EXC_BAD_ACCESS` in
+   `mfm_alloc`←`stylesheet__Add`←`stylesheet__Read`←`text__ReadTemplate`
+   ←`html__InitializeObject`, `html.do` = `src/contrib/srctext/html/
+   html.c`). More importantly, this crash is in `ez`'s own pre-existing,
+   extension-selected document-template class, entirely unrelated to
+   `atkams/messages/lib/htmlatk.c` — opening a raw `.html` file directly
+   with `ez` was never a valid way to exercise the mail renderer.
+   `revival/tests/bookrack.html` is input to `htmlatktest.test`, not
+   something to hand to `ez`.
+2. The seemingly obvious fix — `htmlatktest.test writeds <fixture>
+   <outfile>` then `ez <outfile>`, avoiding the `srctext/html` class by
+   opening a real `.ez` datastream — doesn't crash, but `ez` shows a
+   blank buffer. Initially reported as "confirmed working" based only
+   on the process staying alive (no crash) — wdc caught this
+   immediately, correctly pointing out that surviving isn't the same as
+   rendering anything. Investigated properly: `htmlatktest.test dump`
+   on the same fixture proves the renderer itself is fine (rich, real
+   text runs, links, italics). The `.ez` file `writeds` produces instead
+   has every leaf `text` object completely empty and the `lset`
+   scaffolding drastically truncated versus the real ~87-split/165-leaf
+   structure `dump` shows — a real, separate, not-yet-root-caused bug
+   in the `writeds`/`text_Write` serialization path. Not investigated
+   further this session.
+
+Net result: the only confirmed-working repro for the forward-paging bug
+remains live in `messages` against the real message, exactly as
+originally tested 2026-08-20/21 — not `ez` on the raw fixture, and not
+`ez` on a `writeds` output.
