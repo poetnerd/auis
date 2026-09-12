@@ -804,6 +804,28 @@ next step, not yet done:
   trunk's legacy piano, purely because of this branch's independently
   improved font selection.
 
+**A real, separate build bug turned up along the way and is now fixed.**
+`andrdir.h` (generated from `site.h`'s `DEFAULT_ANDREWDIR_ENV`, the
+fallback `AndrewDir()` uses when no `ANDREWDIR` env var or
+`AndrewSetup` file overrides it) was found stale, still pointing at a
+different checkout's `build/` tree — silently loading every
+dynamically-loaded class's `.do` files from the wrong place while
+statically-linked code correctly reflected this checkout, a confusing
+hybrid that invalidated a chunk of this session's early live-testing
+before `lsof` on the running process exposed it. The generating rule
+(`src/overhead/util/hdrs/Imakefile`) only depended on `system.h`, but
+the recipe (`GENHDR_CMD`) actually bakes in values from `site.h`
+transitively via `andyenv.h`, `allsys.h`, `allsys.mcr`, `site.rls`,
+`site.mcr`, and the per-platform `$(SYSTEM_H_FILE)` — none of which
+were listed, so a `site.h`-only change (exactly what happens when
+setting up a new branch) never triggered regeneration. Fixed by making
+`andrdir.h` depend on `Makefile` itself instead of enumerating each
+upstream input individually: `Makefile`'s own self-rebuild rule already
+depends on all of them, so this one edge transitively covers the known
+bug and any future one in the same family, at the cost of occasionally
+rebuilding `andrdir.h` on a config change that doesn't actually touch
+`DEFAULT_ANDREWDIR_ENV` — cheap and harmless. Committed 2026-09-03.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
@@ -1087,25 +1109,6 @@ upstream fix.
   untouched by any declaration or typing fix — and predates this project;
   nobody has reported metamail working here at any point. Root cause
   identified; not yet fixed.
-- **A build-system bug was found and fixed while investigating the
-  arb/piano demo (see "Old bugs never found till now" above for that
-  investigation's full outcome):** `andrdir.h` (generated from `site.h`'s
-  `DEFAULT_ANDREWDIR_ENV`, feeding `AndrewDir()`'s ultimate fallback when
-  no environment variable or `AndrewSetup` file overrides it) had gone
-  stale, still pointing at a *different* checkout's build tree from
-  whenever it was first generated — its Makefile rule
-  (`src/overhead/util/hdrs/Imakefile`) depends on `system.h`, not on
-  `site.h`, so it's never regenerated when only `site.h` changes. This
-  silently made every dynamically-loaded class (`lsetview`, `celview`,
-  everything under `adew`) load `.do` files from the wrong checkout's
-  `build/dlib/atk`, while statically-linked code (`lpair`, `text`)
-  correctly reflected the current source — a confusing hybrid that
-  invalidated a good portion of this session's early live-testing before
-  being found. Regenerating `andrdir.h` (`rm -f andrdir.h; make
-  andrdir.h`) and recompiling `andrwdir.c` fixed it for this checkout,
-  but only locally — the underlying Makefile dependency gap is still
-  unfixed and will silently recur after any future `site.h` change
-  without a full `make Clean; make World`.
 
 ## Further reading
 
