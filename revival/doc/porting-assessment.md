@@ -3494,25 +3494,31 @@ exercising the wrong code entirely. Not investigated further — a real,
 reproducible bug, but not on the critical path for bug r.
 
 **`htmlatktest.test writeds`/`writedsr`, the seemingly obvious
-alternative, turned out not to work either.** Tried immediately after
-finding this bug, on the theory that `writeds <fixture> <outfile>` (it
-renders the fixture through the real `htmlatk_Render()` path and writes
-a genuine ATK datastream via `text_Write()`) then `ez <outfile>` avoids
-the `srctext/html` class entirely by opening a real `.ez` datastream
-instead of raw HTML. It doesn't crash — but `ez` shows a blank buffer.
-Comparing against `htmlatktest.test dump` on the same fixture (which
-shows the renderer working correctly: real text runs, links, italic
-styling, hundreds of characters per cell) proved the problem is
-specific to the `writeds`/`text_Write` step: the `.ez` file it produces
-has every leaf `text` object completely empty and the `lset` scaffolding
-itself drastically truncated versus the real ~87-split/165-leaf
-structure `dump` shows. Not root-caused — possibly something
-`htmlatktest.c`'s minimal `InitATK()` never sets up that `text_Write`'s
-recursive descent depends on, but that's a guess, not a finding. Until
-this is understood, **the only confirmed-working repro for bug r. is
-live in `messages` against the real message**, as originally tested
-2026-08-20/21 — not `ez` on the raw fixture (this bug), and not `ez` on
-a `writeds` output (this paragraph).
+alternative, does work — an earlier "it doesn't" finding here was
+wrong.** Tried immediately after finding the bug above, on the theory
+that `writeds <fixture> <outfile>` (renders the fixture through the
+real `htmlatk_Render()` path and writes a genuine ATK datastream via
+`text_Write()`) then `ez <outfile>` avoids the `srctext/html` class
+entirely by opening a real `.ez` datastream instead of raw HTML. It was
+first reported as producing a blank buffer, with every leaf `text`
+object showing empty and the `lset` scaffolding drastically truncated
+versus `dump`'s output on the same fixture. That comparison was run
+through this shell's `grep`, which turns out to be shadowed by a
+wrapper function (`exec -a ugrep ...`) that silently mis-reports
+matches/counts instead of failing loudly — re-running the identical
+comparison with `command grep` shows the `.ez` file `writeds` produces
+has balanced `begindata`/`enddata` pairs (191 `text`, 313 `lset`) and
+real fixture text throughout, and `htmlatktest.test roundtrip` against
+that file reproduces the same 190-leaf/120-non-empty split `dump`
+shows on the original fixture. wdc confirmed 2026-09-12 that the
+`writeds` output opens in `ez` with the text correctly rendered (no
+image resolver is wired in this mode, so images are placeholders as
+expected), **and reproduces the forward/backward paging asymmetry**:
+`^V` forward reaches an apparent end in 4 screenfuls; `<ESC>V` backward
+from there takes 10 to reach the true top. **`writeds` is now the
+standing repro for bug r.** — fast and fully offline; live `messages`
+against the real message (originally tested 2026-08-20/21) remains a
+valid fallback but is no longer required.
 
 ## Primary build environment: macOS/Darwin
 

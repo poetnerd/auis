@@ -2322,3 +2322,40 @@ Net result: the only confirmed-working repro for the forward-paging bug
 remains live in `messages` against the real message, exactly as
 originally tested 2026-08-20/21 — not `ez` on the raw fixture, and not
 `ez` on a `writeds` output.
+
+### 2026-09-12 (follow-up) — `writeds` was never broken; found and fixed a `grep`-wrapper tooling trap, and `writeds` is now the standing repro for bug r.
+
+Revisited item 2 above (`writeds`/`text_Write` "silently drops almost
+all content") before starting to fix it. Re-ran the exact same
+`dump`-vs-file-content comparison and got the opposite answer: the
+`.ez` file `writeds` produces has balanced `begindata`/`enddata` pairs
+(191 `text`, 313 `lset`) and real fixture text throughout ("Shahrnush
+Parsipur", "George Martin", "Shelf Awareness"). The difference: this
+shell's `grep` is shadowed by a wrapper function (invokes a `ugrep`-
+based tool via `exec -a ugrep ...`) that silently under-counts or
+mis-errors on some patterns instead of failing loudly — that's what
+produced the false "everything is empty" result both times (this
+session's re-check, and the original finding in item 2). `command
+grep` bypasses the wrapper and gives correct counts. Lesson for any
+future investigation in this repo: if a `grep`-based finding looks
+suspiciously total (0 matches, or *everything* broken), re-check with
+`command grep` before trusting it.
+
+Cross-checked independently of `grep` entirely: `htmlatktest.test
+roundtrip` on the `writeds` output reproduces the identical
+190-leaf/120-non-empty content split that `dump` shows against the
+original fixture — the write and read paths are both sound. wdc then
+opened the `writeds` output directly in `ez`: text rendered correctly
+(images didn't, as expected — `writeds` wires no image resolver), and
+**the forward/backward paging asymmetry reproduced on this fully
+offline file**: `^V` forward reaches an apparent end in 4 screenfuls;
+`<ESC>V` backward from there takes 10 screenfuls to reach the true top,
+surfacing text forward paging never showed — matching the original
+live-`messages` measurement (4 forward / 9 back) to within one
+screenful.
+
+`writeds` is now the standing repro for bug r.: fast, fully offline, no
+live `messages`/mbox setup needed. Live `messages` against the real
+message remains a valid fallback but is no longer required. Docs
+corrected: `porting-assessment.md`'s item r. writeup, `revival.md`'s
+Open issues entry for this bug.

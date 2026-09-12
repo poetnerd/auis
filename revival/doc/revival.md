@@ -1147,28 +1147,36 @@ upstream fix.
   `html-mail-rendering-design.md`'s "Known open bugs"/"Planned next
   work" item 4.
 
-  **Repro vehicle, corrected again (2026-09-12):** don't open
+  **Repro vehicle, corrected a third time (2026-09-12):** don't open
   `revival/tests/bookrack.html` directly with `ez` — it's a raw
   fixture, meant as *input* to `htmlatktest.test`, not a file `ez`
   itself should ever load; doing so exercises a real but unrelated bug
   in `ez`'s own `srctext/html` template class (see below). The
   natural-seeming alternative — `htmlatktest.test writeds
-  revival/tests/bookrack.html <outfile>` then `ez <outfile>` — does
-  NOT work either, despite `writeds` completing and the file opening
-  without a crash: `ez` shows a blank buffer, because `text_Write`
-  silently drops almost all actual content. `htmlatktest.test dump`
-  against the same fixture proves the renderer itself is fine (rich,
-  correct text runs, links, styles — hundreds of characters per cell);
-  the `.ez` file `writeds` produces instead has every leaf `text`
-  object completely empty and the `lset` scaffolding itself drastically
-  truncated compared to the real ~87-split/165-leaf structure `dump`
-  shows. This is a real, separate, not-yet-understood bug in the
-  `writeds` serialization path (or in something `htmlatktest.c`'s
-  minimal `InitATK()` never sets up that `text_Write` depends on) —
-  logged here rather than in the bug list below since it isn't
-  root-caused yet. **Until this is fixed, the only confirmed-working
-  repro for this bug is live in `messages` against the real message,**
-  as originally tested 2026-08-20/21.
+  revival/tests/bookrack.html <outfile>` then `ez <outfile>` —
+  **does work**, and is now the preferred repro: it's fast, fully
+  offline, and needs no live `messages`/mbox setup. It was briefly
+  logged here as broken ("every leaf `text` object completely empty");
+  that finding was itself wrong, caused by this shell's `grep` being
+  shadowed by a wrapper function (`exec -a ugrep ...`) that silently
+  under-reported or mis-errored on matches instead of failing loudly.
+  Re-checked with `command grep`: the `.ez` file `writeds` produces has
+  balanced `begindata`/`enddata` pairs (191 `text`, 313 `lset`) and real
+  fixture text throughout ("Shahrnush Parsipur", "George Martin",
+  "Shelf Awareness"), and `htmlatktest.test roundtrip` on that same file
+  reproduces the identical 190-leaf/120-non-empty content split `dump`
+  shows against the original fixture — the write and read paths are
+  both sound. Confirmed 2026-09-12 (wdc) opening the `writeds` output
+  directly in `ez`: text renders correctly (images don't, as expected —
+  `writeds` uses no image resolver), **and the forward/backward paging
+  asymmetry reproduces on this fully offline file**: `^V` (forward)
+  reaches an apparent end after 4 screenfuls; `<ESC>V` (backward) from
+  there takes 10 screenfuls to reach the true top, surfacing text
+  forward paging never showed — consistent with the original live-
+  `messages` measurement (4 forward / 9 back) to within one screenful.
+  This is now the standing repro for the bug below; live `messages`
+  against the real message remains a valid fallback but is no longer
+  required.
 - **`ez`, opened directly on a raw `.html` file, heap-corrupts in an
   unrelated pre-existing template class — and the crash is invisible
   under `lldb` by default.** Found live 2026-09-12 trying to re-confirm
