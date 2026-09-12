@@ -2254,3 +2254,26 @@ directly, to avoid any risk of `ez`'s own autosave touching the source
 before the fix was confirmed) before committing `src/ams/demo/d7`
 itself. No other tracked file in the source tree carries this arb data
 (checked via `grep` for the object's datastream IDs).
+
+### 2026-09-11 — `andrdir.h` Makefile dependency gap fixed
+
+Closed the one still-open item from the 2026-08-31–09-01 entry.
+`GENHDR_CMD` (the recipe that bakes `DEFAULT_ANDREWDIR_ENV` into
+`andrdir.h`) actually depends on `site.h` transitively via `andyenv.h`,
+`allsys.h`, `allsys.mcr`, `site.rls`, `site.mcr`, and the per-platform
+`$(SYSTEM_H_FILE)` — but `andrdir.h`'s rule
+(`src/overhead/util/hdrs/Imakefile`) only listed `system.h` as a
+prerequisite. Fixed by depending on `Makefile` itself instead of
+enumerating each upstream input: `Makefile`'s own self-rebuild rule
+(`MakefileTarget()`, `andrew.rls`) already depends on all of them, so
+this one edge transitively covers the known bug and any future one in
+the same family, at the cost of occasionally rebuilding `andrdir.h` on
+a config change that doesn't actually touch `DEFAULT_ANDREWDIR_ENV` —
+cheap and harmless. Verified live: touching `Imakefile` and running
+plain `make` in `src/overhead/util/hdrs` correctly triggered GNU Make's
+"remake the Makefiles first" behavior (confirmed `/usr/bin/make` here
+is genuine GNU Make 3.81), regenerating `Makefile` and then rebuilding
+`andrdir.h` with the correct path in the same invocation, with no
+manual `rm -f andrdir.h` workaround needed. `make dependInstall`
+confirmed clean afterward. `revival.md`'s "Old bugs never found till
+now" section updated to log this as resolved.
