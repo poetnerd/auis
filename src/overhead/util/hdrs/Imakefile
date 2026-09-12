@@ -52,7 +52,7 @@ ProgramTarget(genhdr, genhdr.o, ,)
 
 all::	andrdir.h
 
-andrdir.h:	$(DESTDIR)/include/system.h ./genhdr
+andrdir.h:	$(DESTDIR)/include/system.h ./genhdr Makefile
 	-rm -f andrdir.h1
 	echo '/* ********************************************************************** *' > andrdir.h1
 	echo ' *         Copyright IBM Corporation 1988,1989 - All Rights Reserved      *' >> andrdir.h1
