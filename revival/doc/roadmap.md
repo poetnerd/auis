@@ -106,19 +106,49 @@ being front-loaded here.
   can't decode PNG, so real mail's PNG logos/graphics — the single
   most common inline-image format — always showed as a text
   placeholder). Confirmed live against real-world mail images.
-- **Fixed 2026-09-13:** forward paging through a long HTML message
-  (`^V`) used to stop well short of the true end while backward paging
-  (`<ESC>V`) reached it fine — found live 2026-08-20/21 against the
-  real "Book Rack" newsletter fixture (`revival/tests/bookrack.html`).
-  Root-caused via a live `lldb` session (a double-count in
-  `textview__MoveForward`'s "last line" cap branch, `textv.c`) and
-  fixed. See `revival.md` → "Old bugs never found till now" and
-  `porting-assessment.md` item r. for full detail.
-- **Next step:** *Optional, later:* retarget `htmlview`'s own
-  standalone viewer onto the same shared parser, so there's one HTML
-  engine in the tree rather than two. `htmlview`'s composition/
-  authoring side (hand-building a document, not parsing untrusted wire
-  HTML) is a separate concern and doesn't need to change.
+- **Open items** (this is the canonical list — add here when found,
+  remove when fixed; detailed root-cause writeups live elsewhere and
+  are linked below, but status itself lives only here):
+  1. Smart punctuation (curly quotes, en/em dash, ellipsis) renders as
+     `?` — `mimepart_Utf8ToLatin1` maps anything past Latin-1 to `?`
+     with no small-set exception. Design doc → "Known issues and
+     planned work" #1.
+  2. Link clicks don't do anything live — `htmlatk_LinkAt`/
+     `LaunchURL` are built and tested, but the `Hit()`-override wiring
+     into `messages`'s message view was never written. Design doc →
+     "Known issues and planned work" #2.
+  3. `cid:` embedded-image resolution isn't implemented — remote
+     `http(s)://` fetching is done (2026-08-19), `cid:` needs
+     Content-ID parsing `mimepart.c` doesn't have yet. Design doc →
+     "Known issues and planned work" #3.
+  4. Window resize doesn't reflow `lset`-rendered HTML tables —
+     ordinary paragraph text reflows to a widened window, table
+     content stays laid out for the old width. `porting-assessment.md`
+     item q.'s trailing note.
+  5. `<td style="background-color:...">` isn't honored at all.
+     `porting-assessment.md` item q.'s trailing note.
+  6. Paging isn't pixel-accurate — landing positions are approximate,
+     not exact. Distinct from the forward-paging double-count bug
+     fixed 2026-09-13 (`porting-assessment.md` item r.) — this is the
+     underlying character-count-based positioning model's residual
+     imprecision, present even with that fixed, only mitigated by the
+     table strategy's "peeling" heuristic, not fixed at the root.
+  7. Three National Grid header-row cosmetic issues, not yet
+     investigated: a link sits too high above its divider bar, that
+     link uses the wrong font/weight, and the divider bar is top-
+     rather than vertically-centered against its icon row.
+  8. *Optional, low priority:* retarget `htmlview`'s own standalone
+     viewer onto this same shared parser, so there's one HTML engine
+     in the tree rather than two. `htmlview`'s composition/authoring
+     side (hand-building a document, not parsing untrusted wire HTML)
+     is a separate concern and doesn't need to change.
+
+  Structural gaps, not bugs to fix — logged in the design doc's "Open
+  questions" rather than here since they're undecided direction, not
+  todo items: non-Latin scripts (need a real Unicode text model), SVG
+  image support, no embedded image can render truly invisibly (border +
+  no transparency), image cache isn't persistent across reopens,
+  whether `font`-element support is worth its own code path.
   With core rendering done and verified, the open question is whether
   to keep hardening on the `html` branch or merge it back into `trunk`
   at its current, already-useful state (the `andrew-6.4` precedent) and
