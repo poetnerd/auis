@@ -2198,7 +2198,28 @@ long textview__MoveForward(struct textview *self, long pos, long units, enum tex
                 if (cap < 0) {
                     cap = 0;
                 }
-                newOffTop = self->pixelsComingOffTop + (units - i);
+                /* (units - i) alone is already the correct distance from
+                   the true top of this line to the new scroll position --
+                   i was seeded to -self->pixelsComingOffTop above
+                   specifically so it would net out that already-scrolled
+                   amount; walking whole lines before reaching this branch
+                   also resets self->pixelsComingOffTop to 0 along the way,
+                   which is why adding it back in here happened to be
+                   harmless in the ordinary multi-line case. But when the
+                   very first line is already the last one -- this
+                   renderer's whole-message-as-one-giant-embedded-view
+                   shape, routine for HTML mail -- this branch is reached
+                   on the loop's first iteration, before any such reset,
+                   with self->pixelsComingOffTop still holding the same
+                   value i was seeded from. Adding it a second time here
+                   doubled the effective advance on every repeated forward
+                   page (confirmed live via lldb 2026-09-13: pixelsComingOffTop
+                   climbed 0->367->1101->2569->5505 for four successive
+                   367px page requests, matching 2*prev+367 exactly, capping
+                   after 5 presses instead of the ~18 a real per-press
+                   linear advance would need) -- the forward-paging-stops-
+                   short bug (porting-assessment.md item r.). */
+                newOffTop = units - i;
                 if (newOffTop > cap) {
                     newOffTop = cap;
                 }

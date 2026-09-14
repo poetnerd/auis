@@ -3430,6 +3430,60 @@ content forward paging never shows. Distinct from item h. above (an
 already-fixed, different `MoveForward` bug — blanking the screen at
 end-of-document — this is not a recurrence of that).
 
+**RESOLVED 2026-09-13.** Earlier passes (quoted below, kept for the
+history) suspected the total content-height query itself
+(`AllocateLineItem`'s `view_DesiredSize` call) might under-report —
+it doesn't. The real bug is an arithmetic double-count in
+`textview__MoveForward`'s "last line" cap branch (`textv.c`, the
+`pos + info.lineLength == textlen` case, ~line 2201), root-caused via
+a live `lldb` session driven directly against the `htmlatktest.test
+writeds` output (see item's repro note above — `writeds` turned out to
+work fine; this is what unblocked a fast, fully offline repro for this
+investigation).
+
+The branch computed:
+```c
+newOffTop = self->pixelsComingOffTop + (units - i);
+```
+`i` is seeded to `-self->pixelsComingOffTop` at the top of the function
+specifically so that `(units - i)` alone already nets out however much
+of the current line was already scrolled past — correct on its own. In
+the ordinary multi-line case, every whole line consumed before reaching
+this branch resets `self->pixelsComingOffTop` to 0 along the way, so
+adding it back in here contributes nothing and the bug is invisible.
+But this renderer's whole-message-as-one-giant-embedded-view shape
+means the very first line examined is *also* the last one — this
+branch is hit on the loop's very first iteration, before any such
+reset, with `self->pixelsComingOffTop` still holding the same value `i`
+was seeded from. Adding it a second time doubles the effective advance
+on every repeated forward-page command.
+
+Confirmed live via `lldb` (breaking on `textview__LineRedraw` to
+capture the buffer's live `textview*`, then calling
+`textview__MoveForward`/`textview__SetTopOffTop` directly via `expr`,
+reading `pixelsComingOffTop` at a struct offset — `+0x190` — recovered
+from disassembly since the build carries no DWARF): four successive
+367px page-forward requests against the `writeds` output produced
+`pixelsComingOffTop` = 367 → 1101 → 2569 → 5505, matching
+`2×previous + 367` exactly, capping at 6616 after 5 requests instead of
+the ~18 a real linear per-request advance should need. The backward
+direction (`BackSpace`, `textview__MoveBack`'s callee) has no
+equivalent double-count — 19 successive 367px page-backward requests
+from the same capped position decremented linearly (6616 → 6249 → 5882
+→ … → 0), which is exactly why backward paging correctly reaches
+content forward paging skips.
+
+Fixed by dropping the erroneous re-add — `newOffTop = units - i;` — and
+relinking (`text` is statically linked into `runapp`/`ez`, see
+`quickstart.md`'s incremental-rebuild notes). Re-ran the identical
+`lldb` sequence post-fix: forward now advances linearly too (367 → 734
+→ 1101 → … → 6606, capping at 6616 after 18 requests), matching
+backward's own 19 — the asymmetry is gone. `porting-changelog.md` has
+the full session log.
+
+<details>
+<summary>Earlier partial-diagnosis passes (superseded, kept for history)</summary>
+
 **Partially diagnosed, not fixed.** Temporary tracing
 (`textview__MoveForward`'s "last line" cap branch, `textv.c` ~2176–2210;
 `AllocateLineItem`'s embedded-view `DesiredSize` query, `drawtxtv.c`
@@ -3450,6 +3504,8 @@ tighter gating (match the specific top-level view object's pointer or
 instrument `MoveBackward`'s equivalent path for direct comparison
 against a forward trace from the same message — `MoveBackward` finding
 the true end that `MoveForward` doesn't is the whole signal here.
+
+</details>
 
 #### s. `ez`, opened directly on a raw `.html` file, heap-corrupts in an unrelated pre-existing template class — and the crash is invisible under `lldb` by default
 
