@@ -634,7 +634,7 @@ confirmed via `htmlatktest.test linkat`. But the `Hit()`-override half
 was never actually written: grepping the live `messages`/`text822.c`
 path (2026-08-17) turned up zero callers of either function outside
 the offline test tool. Clicking a link in a real rendered message
-today does nothing. See Planned next work below.
+today does nothing. See "Known issues and planned work" below.
 
 ## Implementation
 
@@ -796,43 +796,15 @@ than one screen:
   (`ICONCELL_MAXFIXEDPX`) after an uncapped first attempt let a 350px
   decorative divider image starve its row sibling.
 
-**Known open bugs:**
-- Forward/backward paging (`^v`/`Escape-v`) and the scrollbar's elevator
-  position are still not pixel-accurate — landing positions are
-  approximately but not exactly where a precise scroll would put them.
-  Not a scrollbar-click bug like the ones above (those are fixed), and
-  distinct from the gross forward-paging double-count bug fixed
-  2026-09-13 (item 4 below) — that was a `MoveForward` arithmetic bug
-  that stopped paging far short of the end; this is the underlying
-  character-count-based positioning model's residual imprecision,
-  present even with that fixed, still only mitigated by peeling, not
-  fixed at the root.
-- Five layout/styling issues found live 2026-08-19 against the National
-  Grid fixture's "National Grid" header row. (1) and (2) are fixed
-  (see above, 2026-08-19/20); (3)-(5) not yet investigated: (3) the
-  "National Grid" text link sits too high above the blue divider bar;
-  (4) that same text renders in the default body font/weight instead
-  of larger, bold, sans-serif — possibly a `style=`/CSS-to-ATK-style
-  mapping gap; (5) the blue divider bar itself is top-aligned within
-  its row instead of vertically centered against the icon row beside
-  it.
-- Found live 2026-08-20, testing the icon-column fix above: widening
-  the message window lets ordinary paragraph text reflow to fill the
-  new width, but content inside an `lset`-rendered HTML table (the
-  same floated-pair row included) stays visibly narrow, as if still
-  laid out for the window's earlier, narrower size. Not investigated
-  yet — logged to pick up next session.
-- `<td style="background-color:...">` isn't honored at all — noticed
-  via a Thunderbird comparison of the gas-meter icon's cell (its
-  white-matted transparent PNG background blends invisibly into our
-  plain-white page but shows as a distinct white square against
-  Thunderbird's actual `#f0f0f0` cell background). Not investigated.
+## Known issues and planned work
 
-## Planned next work
-
-Three gaps found live against the real National Grid message
-(2026-08-17), agreed sequencing below — unlike Open questions further
-down, these aren't undecided, just not yet done.
+**The current, canonical open-items list lives in `roadmap.md`'s "HTML
+mail rendering" project entry — check there for what's left and its
+status.** This section keeps only the design-level *reasoning* behind
+a few of those items, where the why is worth having next to the rest
+of this document's architecture discussion; it does not track status
+(open/fixed) itself, to avoid the two drifting out of sync the way they
+already once did.
 
 1. **Smart punctuation renders as `?`.** `mimepart_Utf8ToLatin1`
    (`mimepart.c`, shared with plain-text mail bodies, not
@@ -860,34 +832,14 @@ down, these aren't undecided, just not yet done.
    actual message view was never written. Needs figuring out where
    `text822.c`'s displayed content handles mouse clicks today (or
    whether a wrapper view needs adding) before the override can go in.
-3. ~~**Remote image fetching isn't implemented at all.**~~ **Done
-   (2026-08-19)**, http(s):// only — see the Images section above for
-   the full implementation (`httpimg.c`, the `ams.loadremoteimages`
-   preference + per-message override, the `im.c` SIGCHLD fix, the
-   content-sniffing fallback). `cid:` resolution is still the open
-   half: needs Content-ID parsing `mimepart.c` doesn't have yet.
-
-4. ~~**Forward paging (space bar) stops well short of the true end of a
-   long HTML message; backward paging (`b`) reaches it fine.**~~ **Done
-   (2026-09-13).** Found live 2026-08-20/21 against the real Book Rack
-   fixture (~73KB, deeply nested lset/lpair tree): 4 screenfuls
-   reachable via space bar from the top, but 9 via `b` from the bottom
-   back up. Root cause: `textview__MoveForward`'s "last line" cap
-   branch (`textv.c`, added `de73971e25` per the Implementation section
-   above to fix a different bug) double-counted the already-scrolled
-   offset on every repeated forward page, roughly doubling the apparent
-   advance each time; backward paging has no equivalent double-count.
-   Root-caused and fixed via a live `lldb` session driven directly
-   against an `htmlatktest.test writeds` output (no live `messages`/
-   mbox needed) — full mechanism, the disassembly-recovered struct
-   offset, and the exact `lldb` trace numbers are in
-   `porting-assessment.md` item r. wdc confirmed the fix live: forward
-   and backward paging now take a comparable number of presses to
-   traverse the same message.
-
-Agreed order: (1) first — small, self-contained, no open design
-questions. (2) second — bigger, but nothing left to decide. (3) done,
-`cid:` half still open. (4) done, see above.
+3. **Remote image fetching** — done 2026-08-19, http(s):// only; see
+   the Images section above for the implementation. `cid:` resolution
+   is still open (needs Content-ID parsing `mimepart.c` doesn't have
+   yet) — tracked in `roadmap.md`.
+4. **Forward paging stopping short of the true end** — fixed
+   2026-09-13, a `textview__MoveForward` double-count; full mechanism
+   and the `lldb` trace that found it are in `porting-assessment.md`
+   item r.
 
 ## Open questions
 
