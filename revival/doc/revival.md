@@ -861,6 +861,40 @@ carry an initializer at all, so the 1988 author most likely reached for
 `static` only to make the `= "?"` syntax legal, not because persistence
 across calls was ever wanted.
 
+**Forward paging through a long HTML mail message stopped well short of
+the true end (2026-09-13) — not an ancient bug, a self-inflicted one.**
+The buggy code (`textview__MoveForward`'s "last line" cap branch,
+`textv.c`) didn't exist in the original ATK; it was added by *this*
+project on 2026-08-18 (`de73971e25`, item h. in `porting-assessment.md`)
+to fix a different bug — `^v` blanking the screen at end-of-document.
+That fix introduced this one, caught 3.5 weeks later. Long open as a
+partial diagnosis (previous theory: the total content-height query
+might under-report — it doesn't; see `porting-assessment.md` item r.
+for the full superseded trace). Root-caused via a live `lldb` session
+driven directly against an
+`htmlatktest.test writeds` output — no live `messages`/mbox needed. The
+bug: `textview__MoveForward`'s "last line" cap branch (`textv.c`)
+computed `newOffTop = self->pixelsComingOffTop + (units - i)`, but
+`(units - i)` alone was already the correct answer — `i` is seeded to
+`-self->pixelsComingOffTop` for exactly that reason. Adding
+`self->pixelsComingOffTop` back in is harmless in the ordinary
+multi-line case (every whole line consumed along the way resets it to
+0 first), but this renderer's whole-message-as-one-giant-embedded-view
+shape means the very first line examined is also the last, so this
+branch runs on the loop's first iteration, before any such reset,
+double-counting the already-scrolled amount. Confirmed live: four
+successive 367px page-forward requests produced `pixelsComingOffTop` =
+367→1101→2569→5505, exactly `2×previous + 367`, capping after 5
+requests instead of the ~18 a linear advance needs — while the same
+367px page-*backward* requests (no equivalent double-count) decremented
+linearly, 19 requests to unwind the same range. That's the entire
+"forward reaches an apparent end in a handful of presses, backward
+needs several times as many to get back to content forward never
+showed" bug. Fixed by dropping the erroneous re-add
+(`newOffTop = units - i;`); re-ran the identical trace post-fix and
+forward now advances linearly too (18 requests to cap, matching
+backward's 19). Committed 2026-09-13.
+
 ## Word size issues
 
 The largest, most systemic category of defect came from a single
@@ -1109,74 +1143,6 @@ upstream fix.
   untouched by any declaration or typing fix — and predates this project;
   nobody has reported metamail working here at any point. Root cause
   identified; not yet fixed.
-- **Forward paging through a long HTML mail message stops well short of
-  the true end; backward paging reaches it fine.** Found live 2026-08-20/
-  21 against the real "Book Rack" (Shelf Awareness) newsletter — a
-  ~73KB HTML mail, deeply nested `lset`/`lpair` tree, saved as
-  `revival/tests/bookrack.html`. Tested live: from the top, the space bar
-  (`textview_NextScreenCmd`) reaches 4 screenfuls before it stops
-  advancing; from the true end, paging backward with `b`
-  (`MoveBackward`) reaches 9 screenfuls back up to the top — roughly 5
-  screenfuls of real, rendered content that forward paging never shows
-  at all. Distinct from (and found after) an already-fixed, different
-  `MoveForward` bug — see "Old bugs never found till now" above for the
-  end-of-document blank-screen fix, which this is not a recurrence of.
-
-  Partially diagnosed, not fixed. Temporary tracing (`textview__MoveForward`'s
-  "last line" cap branch, `textv.c` ~2176–2210; `AllocateLineItem`'s
-  embedded-view `DesiredSize` query, `drawtxtv.c` ~330 — both reverted,
-  `fossil diff` confirmed clean) showed the cap arithmetic itself is
-  internally consistent: `pixelsComingOffTop` climbed
-  0→223→816→2002→4374→6468, clamping exactly at
-  `cap = viewHeight(6887) − viewportHeight(419)` — spacebar paging *does*
-  eventually reach the full height it was told the content has. **Not yet
-  confirmed: whether that queried `viewHeight` (6887px) itself under-
-  reports the document's true rendered height** — the open question this
-  bug turns on. The `AllocateLineItem` trace used to check this was too
-  noisy to answer it (gated on `pos == 0`, wrongly assumed unique to the
-  one giant top-level embedded view; every nested `lset` leaf's own
-  private text buffer also starts its own layout at `pos == 0`, so it
-  fired ~25,000 times across the whole nested tree instead of once).
-  **Next diagnostic step:** re-trace with tighter gating (match the
-  specific top-level view object's pointer or `dataobject_UniqueID`, not
-  a bare `pos == 0` coincidence), and/or instrument `MoveBackward`'s
-  equivalent path for direct comparison against a forward trace from the
-  same message — `MoveBackward` finding the true end that `MoveForward`
-  doesn't is the whole signal here, so whatever it does differently to
-  get there is likely where the real answer is. Full detail:
-  `html-mail-rendering-design.md`'s "Known open bugs"/"Planned next
-  work" item 4.
-
-  **Repro vehicle, corrected a third time (2026-09-12):** don't open
-  `revival/tests/bookrack.html` directly with `ez` — it's a raw
-  fixture, meant as *input* to `htmlatktest.test`, not a file `ez`
-  itself should ever load; doing so exercises a real but unrelated bug
-  in `ez`'s own `srctext/html` template class (see below). The
-  natural-seeming alternative — `htmlatktest.test writeds
-  revival/tests/bookrack.html <outfile>` then `ez <outfile>` —
-  **does work**, and is now the preferred repro: it's fast, fully
-  offline, and needs no live `messages`/mbox setup. It was briefly
-  logged here as broken ("every leaf `text` object completely empty");
-  that finding was itself wrong, caused by this shell's `grep` being
-  shadowed by a wrapper function (`exec -a ugrep ...`) that silently
-  under-reported or mis-errored on matches instead of failing loudly.
-  Re-checked with `command grep`: the `.ez` file `writeds` produces has
-  balanced `begindata`/`enddata` pairs (191 `text`, 313 `lset`) and real
-  fixture text throughout ("Shahrnush Parsipur", "George Martin",
-  "Shelf Awareness"), and `htmlatktest.test roundtrip` on that same file
-  reproduces the identical 190-leaf/120-non-empty content split `dump`
-  shows against the original fixture — the write and read paths are
-  both sound. Confirmed 2026-09-12 (wdc) opening the `writeds` output
-  directly in `ez`: text renders correctly (images don't, as expected —
-  `writeds` uses no image resolver), **and the forward/backward paging
-  asymmetry reproduces on this fully offline file**: `^V` (forward)
-  reaches an apparent end after 4 screenfuls; `<ESC>V` (backward) from
-  there takes 10 screenfuls to reach the true top, surfacing text
-  forward paging never showed — consistent with the original live-
-  `messages` measurement (4 forward / 9 back) to within one screenful.
-  This is now the standing repro for the bug below; live `messages`
-  against the real message remains a valid fallback but is no longer
-  required.
 - **`ez`, opened directly on a raw `.html` file, heap-corrupts in an
   unrelated pre-existing template class — and the crash is invisible
   under `lldb` by default.** Found live 2026-09-12 trying to re-confirm

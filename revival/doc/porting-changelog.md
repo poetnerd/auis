@@ -2359,3 +2359,68 @@ live `messages`/mbox setup needed. Live `messages` against the real
 message remains a valid fallback but is no longer required. Docs
 corrected: `porting-assessment.md`'s item r. writeup, `revival.md`'s
 Open issues entry for this bug.
+
+### 2026-09-13 — Forward-paging bug (item r.) RESOLVED: root-caused and fixed via a live `lldb` session against the offline `writeds` repro
+
+wdc switched permission modes to let this session drive `lldb` directly
+(a prior attempt was flatly denied by the auto-mode command classifier,
+consistent with the "Auto Mode Permissions" pattern already noted
+elsewhere — Edit mode denied it too, since it turned out Edit mode
+grants no Bash execution at all; a later retry with absolute paths
+swapped for relative ones worked, so the denials were keyed to the
+literal command string, not the tool itself).
+
+**Setup snag, fixed:** the first `lldb`/`process launch` attempt
+against `build/bin/ez` "exited status 0" instantly with no breakpoints
+hit — `ez` daemonizes (double-forks) by default, so `lldb` was only
+ever watching the short-lived parent. `ez -d <file>` (the same `-d`
+that suppresses forking for `helpa`/`eza` per existing project notes)
+fixed it; `application__ParseArgs` (`atk/basics/common/app.c:131-134`)
+confirms a bare `-d` sets `self->fork = FALSE`.
+
+**Method:** broke on `textview__LineRedraw` to capture the live buffer's
+`textview*` the moment the window's initial paint begins (this is the
+one real interactive textview — nested `lset`-leaf cells get their own
+`textview`s only in the recursive `AllocateLineItem`/`view_DesiredSize`
+calls this same breakpoint also catches, never through `LineRedraw`
+itself); disassembled `textview__MoveForward` (no DWARF in this build)
+to find `self->pixelsComingOffTop` at struct offset `+0x190` (triple-
+confirmed against three separate store/load sites in the disassembly);
+then called `textview_NextScreenCmd`/`PrevScreenCmd` directly via
+`expr`, reading that offset after each call — exactly what a real
+`^V`/`<ESC>V` keypress does, with no X11 input automation needed. A
+first attempt calling the inner `textview__MoveForward`/`MoveBack`
+primitives directly (skipping the command wrapper) gave misleading
+results — skipping `textview_SetTopOffTop` meant `pixelsReadyToBeOffTop`
+never got promoted from `pixelsComingOffTop`, so `BackSpace`'s fast path
+(guarded on that field) never saw the prior forward scroll at all.
+
+**Finding:** 20 successive real 367px page-forward requests against the
+`writeds` output produced `pixelsComingOffTop` = 0 → 367 → 1101 → 2569 →
+5505 → 6616(capped) → 6616 × 15 more — each value exactly
+`2×previous + 367`, reaching the cap in 5 requests. 25 successive 367px
+page-*backward* requests from that capped position decremented
+linearly, 6616 → 6249 → 5882 → … → 0, taking 19. The doubling: 
+`textview__MoveForward`'s "last line" cap branch computes
+`newOffTop = self->pixelsComingOffTop + (units - i)`, but `(units - i)`
+alone is already correct — `i` is seeded to `-self->pixelsComingOffTop`
+for exactly that reason, and the multi-line case always resets
+`self->pixelsComingOffTop` to 0 before reaching this branch, masking the
+bug. This renderer's whole-message-as-one-giant-embedded-view shape
+means the very first (and only) line is also the last, so the branch
+runs on the loop's first iteration, before any reset — double-counting
+the already-scrolled amount on every repeated forward page.
+
+**Fix:** `textv.c`, drop the erroneous re-add:
+`newOffTop = units - i;`. Rebuilt `libtext.a` (`make textv.o` +
+`make dependInstall` in `src/atk/text`), relinked `runapp`
+(`make install` in `src/atk/apps` — `text` is statically linked, and
+`ez` is a plain `InstallLink` symlink to `runapp`, confirmed via its
+Imakefile, so relinking one fixes both). Re-ran the identical `lldb`
+sequence post-fix: forward now advances linearly too — 367 → 734 → 1101
+→ … → 6606 → 6616(capped), 18 requests to cap, matching backward's 19.
+The asymmetry is gone.
+
+Docs updated: `revival.md` (bullet moved from Open issues into "Old bugs
+never found till now," resolved), `porting-assessment.md` item r.
+(resolution + superseded trace kept in a collapsed `<details>` block).
