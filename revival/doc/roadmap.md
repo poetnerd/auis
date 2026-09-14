@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Last updated: 2026-09-13
+Last updated: 2026-09-14
 
 This document is intended primarily for AUIS revival participants,
 with a summary of what's running, what's active, what's next, and the
@@ -109,35 +109,31 @@ being front-loaded here.
 - **Open items** (this is the canonical list — add here when found,
   remove when fixed; detailed root-cause writeups live elsewhere and
   are linked below, but status itself lives only here):
-  1. Smart punctuation (curly quotes, en/em dash, ellipsis) renders as
-     `?` — `mimepart_Utf8ToLatin1` maps anything past Latin-1 to `?`
-     with no small-set exception. Design doc → "Known issues and
-     planned work" #1.
-  2. Link clicks don't do anything live — `htmlatk_LinkAt`/
+  1. Link clicks don't do anything live — `htmlatk_LinkAt`/
      `LaunchURL` are built and tested, but the `Hit()`-override wiring
      into `messages`'s message view was never written. Design doc →
      "Known issues and planned work" #2.
-  3. `cid:` embedded-image resolution isn't implemented — remote
+  2. `cid:` embedded-image resolution isn't implemented — remote
      `http(s)://` fetching is done (2026-08-19), `cid:` needs
      Content-ID parsing `mimepart.c` doesn't have yet. Design doc →
      "Known issues and planned work" #3.
-  4. Window resize doesn't reflow `lset`-rendered HTML tables —
+  3. Window resize doesn't reflow `lset`-rendered HTML tables —
      ordinary paragraph text reflows to a widened window, table
      content stays laid out for the old width. `porting-assessment.md`
      item q.'s trailing note.
-  5. `<td style="background-color:...">` isn't honored at all.
+  4. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
-  6. Paging isn't pixel-accurate — landing positions are approximate,
+  5. Paging isn't pixel-accurate — landing positions are approximate,
      not exact. Distinct from the forward-paging double-count bug
      fixed 2026-09-13 (`porting-assessment.md` item r.) — this is the
      underlying character-count-based positioning model's residual
      imprecision, present even with that fixed, only mitigated by the
      table strategy's "peeling" heuristic, not fixed at the root.
-  7. Three National Grid header-row cosmetic issues, not yet
+  6. Three National Grid header-row cosmetic issues, not yet
      investigated: a link sits too high above its divider bar, that
      link uses the wrong font/weight, and the divider bar is top-
      rather than vertically-centered against its icon row.
-  8. *Optional, low priority:* retarget `htmlview`'s own standalone
+  7. *Optional, low priority:* retarget `htmlview`'s own standalone
      viewer onto this same shared parser, so there's one HTML engine
      in the tree rather than two. `htmlview`'s composition/authoring
      side (hand-building a document, not parsing untrusted wire HTML)

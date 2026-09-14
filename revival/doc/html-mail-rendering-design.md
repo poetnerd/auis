@@ -806,26 +806,24 @@ of this document's architecture discussion; it does not track status
 (open/fixed) itself, to avoid the two drifting out of sync the way they
 already once did.
 
-1. **Smart punctuation renders as `?`.** `mimepart_Utf8ToLatin1`
-   (`mimepart.c`, shared with plain-text mail bodies, not
-   HTML-specific) exactly converts any codepoint ≤ 0xFF and turns
-   anything above into a literal `?`, same policy `htmlpart.c`'s own
-   numeric-entity decoding follows (see its comment). That's correct
-   for genuine Latin-1 gaps (there is no Latin-1 byte for, say, CJK
-   text), but real marketing HTML is saturated with a small, common
-   set of Unicode punctuation just *above* Latin-1 that has an obvious
-   ASCII fallback — curly single/double quotes (U+2018/2019/201C/201D),
-   en/em dash (U+2013/2014), ellipsis (U+2026) — and today all of
-   those become `?` too, which is most of what actually produces the
-   "ton of question marks" in a typical message. ATK's `compchar.c`
-   compose feature was considered and doesn't apply here: it's a
-   *keyboard-input* helper (accent-key + letter → composed glyph while
-   typing), not a rendering fallback, and can't display a codepoint
-   with no Latin-1 slot regardless. Fix: map that specific small
-   codepoint set to sane ASCII in `mimepart_Utf8ToLatin1` itself
-   (benefits plain-text mail too), instead of the blanket `?`.
-   **Scope boundary:** this fixes Western marketing-copy punctuation
-   only. It does not, and cannot, help with the much bigger gap below.
+1. **Smart punctuation renders as `?`** — fixed 2026-08-17. Real
+   marketing HTML is saturated with a small, common set of Unicode
+   punctuation just above Latin-1 with an obvious ASCII fallback —
+   curly single/double quotes (U+2018/2019/201C/201D), en/em dash
+   (U+2013/2014), ellipsis (U+2026) — which is most of what actually
+   produced the "ton of question marks" in a typical message. Both
+   paths that turn Unicode into Latin-1 now special-case that set
+   instead of the blanket `?`: the raw-UTF-8 path
+   (`mimepart_Utf8ToLatin1`'s `emit_smart_punct`, `mimepart.c`, shared
+   with plain-text mail bodies) and the HTML-entity path
+   (`htmlpart.c`'s `try_smart_punct`, for `&rsquo;`/`&mdash;`/etc.).
+   ATK's `compchar.c` compose feature was considered and doesn't
+   apply: it's a *keyboard-input* helper (accent-key + letter →
+   composed glyph while typing), not a rendering fallback, and can't
+   display a codepoint with no Latin-1 slot regardless. **Scope
+   boundary:** this fixes Western marketing-copy punctuation only —
+   it does not, and cannot, help with the much bigger gap of
+   genuinely non-Latin scripts (see Open questions below).
 2. **Link clicks don't do anything live.** See the Links section
    above — the library half (`htmlatk_LinkAt`/`htmlatk_LaunchURL`) is
    built and tested; the `Hit()`-override wiring into `messages`'s
