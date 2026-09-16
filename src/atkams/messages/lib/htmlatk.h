@@ -1183,6 +1183,20 @@ boolean htmlatk_Render(struct text *dest, long pos,
    share its rootEnvironment) that htmlatk_Render() inserted into. */
 char *htmlatk_LinkAt(struct text *t, long pos);
 
+/* TRUE if any position in t carries an href style run, FALSE otherwise
+   (including t==NULL). Walks run-by-run via environment_GetNextChange()
+   (each run checked the same way htmlatk_LinkAt() checks one position),
+   not character-by-character, so cost is proportional to the number of
+   style runs, not the text length. Used by htmllinkview (htmllinkv.c)
+   to decide whether a table cell's *whole* view should show a link
+   cursor at all -- a coarse, view-level gate, not per-character
+   precision: a cell that mixes an href run with plain text will still
+   show the cursor over its entire bounds, not just the link run. Real
+   per-run cursor rectangles need the same line-geometry work already
+   flagged as unscoped for inline text links in the main message body
+   (see roadmap.md's HTML mail rendering item 6). */
+boolean htmlatk_TextHasLink(struct text *t);
+
 /* Shell-safely launches url (already scheme-restricted to http/https/
    mailto by Stage 1, see this header's own popen-safety note above)
    via `open` (macOS LaunchServices), matching the design doc's Links

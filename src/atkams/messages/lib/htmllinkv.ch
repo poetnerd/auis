@@ -16,6 +16,19 @@
    t822view (message-specific machinery -- menus/keymaps/captions --
    that a bare table cell has no business carrying). */
 class htmllinkview[htmllinkv]: textview[textv] {
+    classprocedures:
+      InitializeObject(struct htmllinkview *self) returns boolean;
     overrides:
       Hit(enum view_MouseAction action, long x, long y, long numberOfClicks) returns struct view *;
+      FullUpdate(enum view_UpdateType type, long left, long top, long width, long height);
+    data:
+      /* There's no view-level "default cursor" field in the base ATK
+         view/im classes -- what looks like one (e.g. the image pane's
+         arrow, the header pane's left-pointer) is each view class
+         owning a struct cursor and re-posting it over its own bounds
+         from FullUpdate, retracting on removal. imagev.c and
+         pshbttnv.c (hyplink's pushbutton view) both already do exactly
+         this; we follow the same idiom here so a link inset shows a
+         distinct cursor while the pointer is over it. */
+      struct cursor *cursor;
 };
