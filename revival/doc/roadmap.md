@@ -142,27 +142,48 @@ being front-loaded here.
      investigated: a link sits too high above its divider bar, that
      link uses the wrong font/weight, and the divider bar is top-
      rather than vertically-centered against its icon row.
-  6. Hovering a link doesn't change the cursor (no visual affordance
-     that text/an image under the pointer is clickable) — requested
-     2026-09-16, partly scoped, not yet implemented. The mechanism is
-     found and needs no core-ATK change: `im_PostCursor(im, &rect,
-     cursor)`/`RetractCursor` (`im.c`/`xim.c`) already does exactly
-     this — `xim__PostCursor` creates a small invisible child X window
-     over the given rectangle with that cursor shape assigned via
-     X11's native per-window cursor property, so the X server displays
-     it automatically as the pointer enters/exits, no motion-event
-     polling needed. Already used today (confirmed live: the header
-     pane, message pane, and an image each show a different cursor
-     already — the image's crosshair is `imagev__Hit`'s own
-     `PostCursor(self, Cursor_CrossHairs)` call). What's NOT yet
-     scoped: for an image link this is trivial (one view, one
-     rectangle); for an inline *text* link, the rectangle needed is
-     the on-screen bounds of a character range that can wrap across
-     multiple visual lines and changes on every reflow (resize,
-     scroll, content change) — needs the same line-geometry machinery
-     `textview_Locate`/`LineRedraw` use, and a hook into the view's
-     own `Update()`/redraw path to re-post as it reflows. Not
-     investigated further before this session ended (context budget).
+  6. Hovering a link posts a distinctive cursor (`Cursor_Gunsight`,
+     the same one hyplink's pushbutton view uses) for table-cell links
+     — both image-wrapped and plain-text — fixed 2026-09-16 using
+     `im_PostCursor`/`RetractCursor` (`im.c`/`xim.c`), the same idiom
+     `imagev.c` and `pshbttnv.c` already use for their own cursors:
+     `xim__PostCursor` creates a small invisible child X window over
+     the given rectangle with that cursor shape assigned via X11's
+     native per-window cursor property, so the X server shows it
+     automatically as the pointer enters/exits, no motion-event
+     polling needed. `htmllinkview` (`htmllinkv.c`) now owns a
+     `struct cursor *` and re-posts it over its own bounds from
+     `FullUpdate`, gated by the new `htmlatk_TextHasLink()`
+     (`htmlatk.c`) so a cell with no link in it at all gets no cursor
+     change (initial version applied the cursor to every table cell
+     unconditionally — reported live, fixed same day).
+
+     Known remaining imprecision, deliberately deferred (not a
+     fundamental limitation — see below): `htmlatk_TextHasLink()` is a
+     *view-level* gate, not per-run. A table cell that mixes an href
+     run with plain text (e.g. the "schedule an appointment" paragraph
+     — only the underlined phrase is a link) shows the cursor over the
+     *whole* cell, not just the link run. A whole-paragraph link (e.g.
+     "National Grid") is unaffected since the view's bounds and the
+     link's bounds coincide. The exact fix is scoped, not just
+     theorized: `DrawBar()` in `src/atk/text/drawtxtv.c` (~line 922)
+     already computes the precise per-run on-screen rectangle used to
+     draw that same underline (`bx, by, width` plus font ascent/
+     descent) — hooking that to also post a cursor when the run's
+     style carries our "href" attribute would give pixel-exact
+     coverage. Deferred because it means editing core text-rendering
+     code (drawtxtv.c, shared by every ATK app) rather than this
+     project's own `htmlatk.c`/`htmllinkv.c`, and a link that wraps
+     across multiple visual lines would need one `struct cursor` per
+     line-segment (each `PostCursor` call only tracks one rectangle) —
+     meaningfully bigger scope than anything else in this item.
+
+     Separately, inline text links in the *main message body*
+     (`t822view`, not a table cell) still have no hover cursor at all
+     — they're a character range inside one large view, not their own
+     view, so even the coarse whole-view gate doesn't apply; that case
+     needs the same `DrawBar()` hook described above to be fixed at
+     all, not just made precise.
   7. *Optional, low priority:* retarget `htmlview`'s own standalone
      viewer onto this same shared parser, so there's one HTML engine
      in the tree rather than two. `htmlview`'s composition/authoring

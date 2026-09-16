@@ -3138,6 +3138,26 @@ char *htmlatk_LinkAt(struct text *t, long pos)
     return NULL;
 }
 
+boolean htmlatk_TextHasLink(struct text *t)
+{
+    struct environment *env;
+    long pos, len, runlen = 0;
+
+    if (!t) return FALSE;
+    len = text_GetLength(t);
+    for (pos = 0; pos < len; pos += (runlen > 0 ? runlen : 1)) {
+        env = environment_GetInnerMost(t->rootEnvironment, pos);
+        while (env) {
+            if (env->type == environment_Style && env->data.style &&
+                style_GetAttribute(env->data.style, "href"))
+                return TRUE;
+            env = (struct environment *) environment_GetParent(env);
+        }
+        runlen = environment_GetNextChange(t->rootEnvironment, pos);
+    }
+    return FALSE;
+}
+
 void htmlatk_LaunchURL(const char *url)
 {
     char *cmd;
