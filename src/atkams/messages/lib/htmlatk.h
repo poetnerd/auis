@@ -1095,6 +1095,7 @@
 
 #include <htmlpart.h>
 #include <text.ih>
+#include <textv.ih>
 
 /* Resolves an <img>'s already-sanitized src attribute value (as-is
    from htmlpart_GetAttr(imgnode, "src") -- may be a "cid:..." URI, an
@@ -1191,5 +1192,95 @@ char *htmlatk_LinkAt(struct text *t, long pos);
    already adequate user feedback for that case, same as it would be
    for any other agent invoking `open`). NULL-safe (does nothing). */
 void htmlatk_LaunchURL(const char *url);
+
+/* Shared Hit()-override body for every view class that can show
+   htmlatk_Render()'d content and wants click-to-launch/copy behavior
+   -- t822view (text822v.c, the top-level message body) and
+   htmllinkview (htmllinkv.c, table-cell leaves; see BuildLsetCell/
+   MakeFillerLeaf in htmlatk.c, which give cell leaves this class
+   instead of the auto-derived plain "textview" specifically so this
+   reaches them). Each caller's own Hit() override still has to call
+   its own super_Hit first (classpp's super_ resolution is per-class,
+   can't be centralized) and pass the result here as hitResult, along
+   with the original action/x/y Hit() itself received.
+
+   Action:
+     Left  -- echo the URL to the message line and launch it
+              (htmlatk_LaunchURL()).
+     Right -- copy the URL to the X cut buffer (CUT_BUFFER0, via
+              im_ToCutBuffer()/im_CloseToCutBuffer() -- the same
+              primitive every ATK Copy command already uses, see
+              im.c/xim.c) instead of launching, and echo
+              "Copied:<url>" to the message line. Chosen over the
+              message line alone because the message line is a single
+              transient slot with no real priority queueing
+              (framemsg.c's USEDIALOG aside, equal-priority
+              DisplayString calls just overwrite each other) -- a
+              periodic status ping (e.g. "Checkpointing message
+              server state...") can and does stomp it seconds later,
+              so it's unsuitable for anything the user actually needs
+              to retrieve. The cut buffer is durable and pasteable
+              into any X client, not just this one.
+
+   *Which* action pair (Up vs. Down) this function acts on depends on
+   whether the click landed on plain text or an embedded view (e.g.
+   an <a href><img></a>'s image), because those two cases don't
+   deliver the same events the same way:
+
+   Plain text (hitResult == self): acts on LeftUp/RightUp, as you'd
+   expect. GetDotLength()==0 (checked only for the left button) still
+   guards against hijacking a genuine drag-select of the visible link
+   text -- there's no equivalent concern for the right button, since
+   textview__Hit's own RightDown handling doesn't place a zero-length
+   point the way LeftDown does, it EXTENDS the existing selection from
+   wherever the dot last was to the click point (the classic
+   3-button-mouse "left sets point, right extends/marks" convention),
+   so GetDotLength() after a real right click is almost never 0 and
+   isn't a usable signal there regardless.
+
+   An embedded view under the click (hitResult != self): acts on
+   LeftDown/RightDown instead -- found live 2026-09-16, tracing a
+   real image-link click end to end with lldb. textview__Hit
+   delegates a Down click straight into the embedded view's own
+   Hit(); for this renderer that's an "imagev" instance (core ATK,
+   src/atk/image/imagev.c, untouched by this project), whose own
+   Hit() requests input focus for itself on first click, and
+   something about that focus change means the matching ButtonRelease
+   never makes it back through xim__Hit's normal top-level redispatch
+   -- confirmed by breakpointing xim__Hit itself: the Down event's
+   full delegation chain fires exactly once as expected, then nothing
+   fires again for the click's Up half, not even xim__Hit. So for
+   this case, Down is the only event this function will ever see, and
+   it acts on it directly rather than waiting for an Up that never
+   comes. Safe unconditionally, no drag-guard needed: there's no
+   coherent "drag to select part of an image" the way there is for
+   text, and plain text never delegates to an embedded child on Down
+   in the first place, so this branch is simply never taken for an
+   ordinary text click/drag.
+
+   Position is found via textview_Locate(self, x, y, &vptr) in both
+   cases -- the raw click coordinates, not GetDotPosition() -- since
+   that's the only thing that reliably means "what's under this
+   click" independent of whatever side effect the click had on the
+   selection (right-click) or on focus (an embedded view). vptr
+   itself is not otherwise inspected: an href style wraps an embedded
+   view's one-character slot in the text exactly the way it wraps a
+   run of real characters for a text link (RenderImageInline's
+   text_AlwaysAddView() call runs inside the same open <a> marks
+   bracket as any other child), so htmlatk_LinkAt() finds it the same
+   way either way.
+
+   Left/Right rather than a transient context menu because ATK has no
+   such mechanism (dialog pop-ups only) -- see the design doc's Links
+   section. Does nothing (silently) for any other action, when pos
+   isn't inside a link run, or when the view is currently editable
+   (text_GetReadOnly() false -- e.g. the message pane toggled via
+   ESC-~). self must be the same view hitResult was computed against
+   (i.e. call this immediately after your own super_Hit, passing self
+   cast to struct textview * and the original action/x/y Hit() gave
+   you -- not just the ones this function ultimately acts on, since
+   which of Up/Down it wants depends on hitResult, determined inside). */
+void htmlatk_HandleLinkHit(struct textview *self, struct view *hitResult,
+    enum view_MouseAction action, long x, long y);
 
 #endif /* HTMLATK_H */

@@ -69,6 +69,7 @@
 #include <andrewos.h>
 #include <class.h>
 #include <text.ih>
+#include <textv.ih>
 #include <envrment.ih>
 #include <environ.ih>
 #include <style.ih>
@@ -77,6 +78,8 @@
 #include <image.ih>
 #include <lset.ih>
 #include <lsetv.ih>
+#include <message.ih>
+#include <im.ih>
 
 #include <htmlpart.h>
 #include "htmlatk.h"
@@ -2156,8 +2159,30 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
             if (!htmlatk_RenderAmbient(ct, 0, td->children, tableNode, td, st->resolver, st->resolverRock, &celllen))
                 st->hardfail = 1;
         }
+        /* A fresh "text" object defaults to editable
+           (simpletext__InitializeObject sets pendingReadOnly = FALSE,
+           smpltext.c) -- only the top-level message body ever gets
+           marked read-only (messwind.c/captions.c, when t822view_New()
+           builds it), never a nested cell's own text object. Found
+           live 2026-09-15: this silently defeated
+           htmlatk_HandleLinkHit()'s read-only gate for every
+           cell-based link (its "don't launch a browser out from under
+           an in-progress edit" check has no ESC-~ equivalent for a
+           cell, and without this call was simply always false) --
+           clicks placed the caret exactly like plain text, but never
+           reached the launch/copy action. */
+        text_SetReadOnly(ct, TRUE);
         leaf->dobj = (struct dataobject *) ct;
-        strcpy(leaf->viewname, dataobject_ViewName((struct dataobject *) ct));
+        /* "htmllinkview" (htmllinkv.ch/.c), not the auto-derived
+           plain "textview" (dataobject_ViewName()'s default for a
+           bare "text" object) -- so a click on link text inside this
+           cell reaches htmlatk_HandleLinkHit() the same way a click
+           in the top-level message body does (t822view__Hit,
+           text822v.c). Found live 2026-09-14: National Grid's one
+           plain-text link ("National Grid" in the header) sits four
+           <table>s deep in exactly this kind of cell, and was
+           unreachable by t822view's own Hit() override alone. */
+        strcpy(leaf->viewname, "htmllinkview");
         strcpy(leaf->dataname, "text");
     } else {
         /* class_NewObject("text") failed -- a real ATK object-
@@ -3142,4 +3167,88 @@ void htmlatk_LaunchURL(const char *url)
     fp = popen(cmd, "r");
     if (fp) pclose(fp);
     free(cmd);
+}
+
+void htmlatk_HandleLinkHit(struct textview *self, struct view *hitResult,
+                            enum view_MouseAction action, long x, long y)
+{
+    struct im *im;
+    struct view *vptr = NULL;
+    long pos;
+    char *href;
+    char msgbuf[512];
+    boolean onEmbeddedView = (hitResult != (struct view *) self);
+    boolean isLeft;
+
+    if (!text_GetReadOnly((struct text *) textview_GetDataObject(self))) return;
+
+    /* Two different click shapes, acted on at two different stages of
+       the gesture:
+
+       Plain text (hitResult==self, the ordinary case): act on
+       LeftUp/RightUp, same as ever -- GetDotLength()==0 still guards
+       against hijacking a genuine drag-select of the visible link
+       text on the left button (see this file's history for why); no
+       equivalent guard exists or is needed for the right button (see
+       this function's declaration comment in htmlatk.h).
+
+       An embedded view under the click (hitResult!=self -- e.g. an
+       <a href><img></a>'s image): act on LeftDown/RightDown instead.
+       Found live 2026-09-16 via lldb, tracing a real click end to
+       end: textview__Hit (textv.c) delegates a Down click straight
+       into the embedded view's own Hit() -- here, an "imagev"
+       instance (src/atk/image/imagev.c), whose own Hit() requests
+       input focus for itself on first click. Something about that
+       focus change means the X server's matching ButtonRelease never
+       makes it back through xim__Hit's normal view_Hit(topLevel,...)
+       redispatch -- confirmed by breakpointing xim__Hit itself: the
+       Down event's full delegation chain (xim__Hit -> t822view__Hit
+       or htmllinkview__Hit -> this function) fires exactly once as
+       expected, then nothing fires again for the click's Up half, not
+       even at the raw dispatch entry point. This is a pre-existing
+       core-ATK behavior (imagev.c, untouched by this project), not
+       something introduced here -- worked around, not fixed, by
+       acting on Down instead for this case. Safe to do unconditionally
+       (no drag-guard needed): there's no coherent "drag to select part
+       of an image" gesture the way there is for text, and plain text
+       never delegates to an embedded child on Down in the first place
+       (textview__Hit again), so this branch is simply never taken for
+       an ordinary text click/drag. */
+    if (onEmbeddedView) {
+        if (action != view_LeftDown && action != view_RightDown) return;
+    } else {
+        if (action != view_LeftUp && action != view_RightUp) return;
+        if (action == view_LeftUp && textview_GetDotLength(self) != 0) return;
+    }
+    isLeft = (action == view_LeftUp || action == view_LeftDown);
+
+    pos = textview_Locate(self, x, y, &vptr);
+
+    href = htmlatk_LinkAt((struct text *) textview_GetDataObject(self), pos);
+    if (!href) return;
+
+    if (isLeft) {
+        message_DisplayString((struct view *) self, 0, href);
+        htmlatk_LaunchURL(href);
+    } else {
+        im = view_GetIM((struct view *) self);
+        if (im) {
+            FILE *cf = im_ToCutBuffer(im);
+            if (cf) {
+                fputs(href, cf);
+                im_CloseToCutBuffer(im, cf);
+                /* No space after the colon: the message line is a
+                   single fixed-height line (frame.c's
+                   CalculateLineHeight has no content-driven growth
+                   path this feature exercises) that word-wraps rather
+                   than clips, so a long URL's own start already
+                   scrolls out of view below the visible line -- found
+                   live 2026-09-16. Every character saved before the
+                   URL starts is one more of it actually visible. */
+                snprintf(msgbuf, sizeof(msgbuf), "Copied:%s", href);
+                message_DisplayString((struct view *) self, 0, msgbuf);
+            }
+        }
+    }
+    free(href);
 }

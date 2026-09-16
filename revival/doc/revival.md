@@ -1163,6 +1163,29 @@ upstream fix.
   renderer. Not investigated further — a real, reproducible bug, but
   off the critical path. Full detail and backtrace:
   `porting-assessment.md` item s.
+- **An inline image silently eats its own button-release, for any ATK
+  application, not just this one.** Wiring up click-to-launch for
+  HTML mail links (2026-09-15/16) hit a wall on image-wrapped links
+  specifically — text links worked, but nothing happened for any
+  `<a href><img></a>`. Root-caused with a live `lldb` session attached
+  to the running `messages` process, breakpointing every relevant
+  `Hit()` override down to `xim__Hit` itself (the true top-level
+  entry point every mouse event redispatches through). The trace:
+  clicking an image correctly delegates all the way down to the
+  image's own `imagev__Hit` (core ATK, `src/atk/image/imagev.c`,
+  confirmed by hand-chasing the object's `classheader` pointer chain
+  in `lldb` to the literal string `"imagev"`), which requests input
+  focus for itself on first click — and the matching button-release
+  then simply never redispatches again. Not a bug this project
+  introduced: it reproduces for any embedded `imagev` in flowing
+  text, in any ATK app, and predates this work by decades. Worked
+  around rather than fixed at the root (core class, wide blast
+  radius for one feature): the click handler now acts on mouse-down
+  instead of mouse-up specifically for a click that resolved to an
+  embedded view, since that's the only event such a click will ever
+  produce. Full trace and the two other real bugs found along the
+  way (table-cell links reaching the wrong view class; a message-line
+  word-wrap visibility issue): `porting-assessment.md` item t.
 
 ## Further reading
 

@@ -3576,6 +3576,140 @@ standing repro for bug r.** — fast and fully offline; live `messages`
 against the real message (originally tested 2026-08-20/21) remains a
 valid fallback but is no longer required.
 
+#### t. Wiring up link clicks: table-cell links unreachable, then image-wrapped links unreachable for an unrelated core-ATK reason
+
+Design doc's Links section had the library half done
+(`htmlatk_LinkAt`/`htmlatk_LaunchURL`, tested via `htmlatktest.test
+linkat`) but no `Hit()`-override wiring at all. Landed 2026-09-15/16
+in three passes, each surfacing the next problem only once the
+previous one was fixed and tested live.
+
+**Pass 1 (2026-09-15): basic wiring.** Added `t822view__Hit`
+(`text822v.c`) calling a new shared `htmlatk_HandleLinkHit()`
+(`htmlatk.c`): left-click launches, right-click copies to the X cut
+buffer (`im_ToCutBuffer`/`im_CloseToCutBuffer`, the same primitive
+every ATK Copy command uses). Confirmed dead on arrival against the
+real National Grid fixture — every one of its links sits inside a
+`<table>` cell, and `BuildLsetCell` (`htmlatk.c`) builds each cell's
+content as a bare `class_NewObject("text")`, whose view class comes
+from `dataobject_ViewName()`'s naming convention (`"text"` →
+`"textview"`) — plain `textview`, not `t822view`, so cell content
+never reached the override at all.
+
+Fix: a new `htmllinkview` class (`htmllinkv.ch`/`.c`, a `textview`
+subclass with nothing but the same `Hit()` override), used as
+`BuildLsetCell`'s cell-leaf viewname instead of the auto-derived one
+(`lset` leaves accept any loadable view class compatible with their
+dataobject, no special registration needed — confirmed via
+`lsetv.c`'s `makeview()`, which just does `class_NewObject(viewname)`
+on whatever string the leaf carries).
+
+Tested live: left-click worked; right-click silently did nothing.
+Root cause: `textview__Hit`'s `RightDown` handling doesn't place a
+zero-length point the way `LeftDown` does, it *extends* the existing
+selection from wherever the dot last was to the click point (the
+classic 3-button-mouse "left sets point, right extends/marks"
+convention) — so after a real right click, `GetDotLength()` is
+almost never 0 and `GetDotPosition()` often isn't even inside the
+clicked link. Fixed by finding the click position via
+`textview_Locate(self, x, y, &vptr)` — the raw coordinates — instead
+of `GetDotPosition()`/`GetDotLength()`, for both buttons (left keeps
+a `GetDotLength()==0` drag guard on top, to avoid hijacking a
+genuine drag-select of the link's own visible text).
+
+Also fixed same day: a fresh `"text"` cell object defaults to
+*editable* (`simpletext__InitializeObject` sets `pendingReadOnly =
+FALSE`, `smpltext.c`) — only the top-level message body ever gets
+marked read-only (`messwind.c`/`captions.c`). `htmlatk_HandleLinkHit`
+requires `text_GetReadOnly()` true before acting, so every cell link
+was silently gated off until `BuildLsetCell` was given its own
+`text_SetReadOnly(ct, TRUE)` call.
+
+And: the right-click "Copied: `<url>`" message-line echo was itself
+invisible for a long URL — the message line is a single fixed-height
+line (`frame.c`'s `CalculateLineHeight` is pure font-metric, no
+content-driven growth path this call exercises) that word-wraps
+rather than clips, so the URL's own start scrolled out of view below
+the one visible line. Confirmed there *is* a real growth mechanism in
+`frame.c` (`frame__WantNewSize` → `frameview_DesiredSize` →
+`frame_VFixed`, gated by a `ResizableMessageLine` profile switch,
+default on) but chasing whether `DisplayString`'s path ever triggers
+it would mean touching core window chrome shared by every ATK
+application, for a one-line status echo — out of scope. Kludged
+instead: dropped the space after the colon (`"Copied:%s"`, not
+`"Copied: %s"`), so more of the URL's start survives before the wrap
+point.
+
+**Pass 2 (2026-09-16): image-wrapped links.** Real marketing mail is
+dominated by `<a href><img></a>`, not plain text links — National
+Grid has one plain-text link and nine image-wrapped ones. Initial
+design assumed these needed real new plumbing (href captured at
+render time onto the image's own leaf/dataobject, new `imagev`/
+`rasterview` subclasses) on the theory that `textview__Hit` hands an
+embedded-view click straight to that child, bypassing the containing
+view's own `Hit()` entirely.
+
+Re-reading `textview__Hit` (`textv.c`) directly disproved that: it
+only delegates to an embedded child on `LeftDown`/`RightDown`; for
+`LeftUp`/`RightUp` (the only actions `htmlatk_HandleLinkHit` acts on)
+it always returns `self` regardless of what's under the point. So
+`hitResult==self` was never actually distinguishing "plain text"
+from "click landed on an image" the way the code assumed — the
+`if (vptr != NULL) return;` guard added in Pass 1 was rejecting image
+clicks for no real reason. Removing it was expected to be the whole
+fix: an `<a href><img></a>`'s href style already wraps the image's
+one-character view-reference slot exactly the way it wraps a run of
+real characters (`RenderImageInline`'s `text_AlwaysAddView()` call
+runs inside the same open `<a>` marks bracket as any other child;
+confirmed directly via `htmlatktest.test dump`/`writeds` against the
+live fixture before touching any click-handling code).
+
+Tested live: still nothing. Root-caused with a live `lldb` session
+attached to the running `messages` process (`process attach --pid`,
+breakpoints on `htmlatk_HandleLinkHit`, `t822view__Hit`,
+`htmllinkview__Hit`, and finally `xim__Hit` itself — the true
+top-level entry point every mouse event redispatches through,
+`xim__Hit`'s own body is just `return view_Hit(self->header.im.topLevel,
+action, x, y, clicks);`). Traced one full click gesture: the Down
+event's entire delegation chain fires exactly as expected —
+`xim__Hit` → `t822view__Hit` → `htmllinkview__Hit` →
+`htmlatk_HandleLinkHit` (twice, once from each override, both
+correctly resolving `hitResult` to the embedded image view, confirmed
+by chasing its `classheader`/`classinfo`/`name` pointer chain by hand
+in `lldb` — no debug info, so raw `memory read` at each offset,
+landing on the literal string `"imagev"`). Then: nothing. Not another
+hit on any of the four breakpoints, including `xim__Hit` itself, for
+several seconds of live waiting and repeated `continue`s — the
+matching Up event for that gesture simply never redispatches at all.
+
+Root cause: `imagev__Hit` (`src/atk/image/imagev.c`, core ATK,
+untouched by this project) calls `imagev_WantInputFocus(self, self)`
+unconditionally on first click, before its own action `switch`. Some
+consequence of that focus change means the X server's matching
+`ButtonRelease` never makes it back through `xim__Hit`'s normal
+top-level redispatch. This reproduces for *any* click that lands on
+an embedded `imagev` in a flowing-text context, independent of the
+HTML-mail renderer entirely — a pre-existing core-ATK characteristic,
+not a bug this project introduced, and out of scope to fix at the
+`imagev.c` root (core class, wide blast radius) for one feature's
+sake.
+
+Worked around, not fixed: `htmlatk_HandleLinkHit` now branches on
+`hitResult != self` (true only when the click delegated to an
+embedded child) to decide *which* pair of events it acts on —
+`LeftDown`/`RightDown` for that case (the only events that will ever
+arrive for it), `LeftUp`/`RightUp` otherwise (plain text, unaffected,
+still proven working). No drag-guard needed for the embedded-view
+case: there's no coherent "drag to select part of an image," and
+plain text never delegates to an embedded child on Down in the first
+place, so the branch is simply never taken for an ordinary text
+click/drag.
+
+Confirmed live against all five of National Grid's plain-text links
+(footer `Unsubscribe`/`Privacy Policy`/`Contact Us`, the body
+"schedule an appointment" sentence, and the "National Grid" header
+wordmark) and all nine of its image-wrapped links, both buttons.
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.

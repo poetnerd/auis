@@ -34,6 +34,7 @@ class t822view[text822v]: messages {
       DeleteApplicationLayer(struct view *scrollbar);
       SetDataObject(struct dataobject *do);
       ObservedChanged(struct text *changed, long value);
+      Hit(enum view_MouseAction action, long x, long y, long numberOfClicks) returns struct view *;
     methods:
       ShowHelp(char *text);
       SetCaptions(struct captions *cap);

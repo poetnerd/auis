@@ -2424,3 +2424,82 @@ The asymmetry is gone.
 Docs updated: `revival.md` (bullet moved from Open issues into "Old bugs
 never found till now," resolved), `porting-assessment.md` item r.
 (resolution + superseded trace kept in a collapsed `<details>` block).
+
+### 2026-09-15–09-16 — Link clicks wired up (roadmap.md item 1): table-cell links, then image-wrapped links, three real bugs found live along the way
+
+Design doc's Links section had `htmlatk_LinkAt`/`htmlatk_LaunchURL`
+built and tested but no `Hit()`-override wiring at all — clicking a
+link in a real rendered message did nothing. Landed in two scoped
+phases (table-cell text links + cut-buffer copy; then image-wrapped
+links), each one exposing the next problem only once the previous fix
+was tested live against the real National Grid fixture rather than
+just the offline `htmlatktest.test` tool. Full mechanism for all of
+this is in `porting-assessment.md` item t.; this entry is the dated
+summary.
+
+**2026-09-15:**
+- `t822view__Hit` (`text822v.c`) + shared `htmlatk_HandleLinkHit()`
+  (`htmlatk.c`): left-click launches, right-click copies to the X cut
+  buffer. Tested live: no links in National Grid were reachable at
+  all — every one sits inside a `<table>` cell, and cells render via
+  plain `textview`, not `t822view`.
+- New `htmllinkview` class (`htmllinkv.ch`/`.c`) used as
+  `BuildLsetCell`'s cell viewname instead of the auto-derived one.
+  Tested live: left-click worked, right-click didn't —
+  `GetDotLength()`/`GetDotPosition()` aren't reliable after a right
+  click (`textview__Hit`'s `RightDown` extends the existing selection
+  toward the click point rather than placing a fresh zero-length
+  point the way `LeftDown` does). Fixed by using
+  `textview_Locate(self,x,y,&vptr)` — the raw click coordinates — for
+  both buttons instead.
+- Found + fixed live: cell `text` objects default to editable
+  (`text_SetReadOnly` was never called on them, unlike the top-level
+  message body), which silently defeated `htmlatk_HandleLinkHit`'s
+  read-only gate for every cell link regardless of click handling
+  being otherwise correct.
+- Found + fixed live: the right-click "Copied: `<url>`" echo was
+  itself invisible for a long URL — the message line is a single
+  fixed-height line that word-wraps rather than clips, so the URL's
+  own start scrolled out of view. Kludged: dropped the space after
+  the colon so more of the URL survives before the wrap point (a real
+  fix would mean touching `frame.c`'s shared, cross-application
+  message-line sizing — out of scope for this feature).
+
+**2026-09-16:**
+- Removed a `vptr != NULL` rejection in `htmlatk_HandleLinkHit`,
+  added Pass 1 on a wrong assumption about `textview__Hit`'s
+  click-delegation semantics. Structurally correct (confirmed via
+  `htmlatktest.test dump`/`writeds` that an image's href style wraps
+  its view-reference slot the same way it wraps real characters) but
+  tested live: still nothing.
+- Root-caused with a live `lldb` session attached to the running
+  `messages` process — breakpoints on `htmlatk_HandleLinkHit`,
+  `t822view__Hit`, `htmllinkview__Hit`, and `xim__Hit` (the true
+  top-level mouse-event entry point). Traced one full click: the Down
+  event's entire delegation chain fires exactly as expected and
+  correctly resolves the embedded image view (confirmed by hand-
+  chasing its `classheader`/`classinfo`/`name` pointer chain in
+  `lldb` to the literal string `"imagev"`) — then nothing. Not
+  another hit anywhere, including `xim__Hit` itself, for the click's
+  Up half.
+- Root cause: core ATK's `imagev__Hit` (`src/atk/image/imagev.c`,
+  untouched by this project) requests input focus for itself
+  unconditionally on first click; some consequence of that swallows
+  the matching `ButtonRelease` before it ever redispatches. Real,
+  pre-existing core-ATK behavior, reproducible for any embedded
+  `imagev` in flowing text, independent of this renderer — out of
+  scope to fix at the core-class root.
+- Worked around: `htmlatk_HandleLinkHit` now acts on
+  `LeftDown`/`RightDown` when the click resolved to an embedded child
+  view (that's the only event such a click will ever generate),
+  `LeftUp`/`RightUp` otherwise (plain text, unaffected).
+
+Confirmed live against all five of National Grid's plain-text links
+and all nine of its image-wrapped links, both mouse buttons.
+
+Docs updated: `roadmap.md` (item 1 removed, moved into the project's
+status narrative; new item added for a still-open cursor-hover
+affordance request), design doc (Links section's status note,
+"Known issues and planned work" #2), `porting-assessment.md` (new
+item t., full mechanism for all three sub-bugs plus the `lldb`
+trace).

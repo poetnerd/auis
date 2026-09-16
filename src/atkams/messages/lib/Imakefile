@@ -40,7 +40,8 @@ OBJS = 		stubs.o capaux.o foldaux.o sendaux.o messaux.o writeone.o htmlatk.o htt
 DOBJS = 		text822.do amsutil.do ams.do amsn.do $(S_DOBJS) \
 			fldtreev.do messages.do captions.do msgsa.do  \
 			sendmsg.do folders.do text822v.do options.do \
-			messwind.do nbutterv.do mailobj.do mailobjv.do
+			messwind.do nbutterv.do mailobj.do mailobjv.do \
+			htmllinkv.do
 
 IHFILES =		captions.ih \
 			folders.ih \
@@ -57,6 +58,7 @@ IHFILES =		captions.ih \
 			nbutterv.ih \
 			mailobj.ih \
 			mailobjv.ih \
+			htmllinkv.ih \
 			amsn.ih $(S_IHFILES)
 
 LIBS = 		$(BASEDIR)/lib/libmsshr.a \
@@ -95,6 +97,7 @@ DynamicMultiObject(messages.do, messages.o messaux.o,,$(LEXLIB))
    needs nothing added to $(LIBS) either. */
 DynamicMultiObject(text822.do, text822.o htmlatk.o httpimg.o, $(LIBS), $(LEXLIB))
 DynamicObject(text822v,,$(LEXLIB))
+DynamicObject(htmllinkv,,$(LEXLIB))
 DynamicObject(amsutil, $(LIBS), $(LEXLIB) $(BSDLIB))
 DynamicObject(ams, $(UTILLIB),$(LEXLIB))
 DynamicObject(options,,$(LEXLIB))

@@ -824,12 +824,23 @@ already once did.
    boundary:** this fixes Western marketing-copy punctuation only —
    it does not, and cannot, help with the much bigger gap of
    genuinely non-Latin scripts (see Open questions below).
-2. **Link clicks don't do anything live.** See the Links section
-   above — the library half (`htmlatk_LinkAt`/`htmlatk_LaunchURL`) is
-   built and tested; the `Hit()`-override wiring into `messages`'s
-   actual message view was never written. Needs figuring out where
-   `text822.c`'s displayed content handles mouse clicks today (or
-   whether a wrapper view needs adding) before the override can go in.
+2. **Link clicks** — fixed 2026-09-16. `htmlatk_HandleLinkHit()`
+   (`htmlatk.c`) is a shared `Hit()`-override body used by both
+   `t822view` (the message body) and a new `htmllinkview` class
+   (`htmllinkv.ch`/`.c`) that table-cell leaves now use instead of
+   plain `textview`, so link text reaches it whether it's top-level
+   or nested in a table. Left-click launches the URL
+   (`htmlatk_LaunchURL`); right-click copies it to the X cut buffer.
+   Image-wrapped links (`<a href><img></a>`) needed a second fix on
+   top of that: core ATK's `imagev` (`src/atk/image/imagev.c`)
+   requests input focus for itself on click, which swallows the
+   matching button-release before it ever redispatches — confirmed
+   live with `lldb`, tracing a real click through `xim__Hit`'s
+   top-level entry point and finding it simply never fires again for
+   that gesture's Up half. Worked around (not fixed in core ATK) by
+   acting on mouse-down instead of mouse-up specifically for a click
+   that resolved to an embedded view; plain text keeps using mouse-up,
+   unaffected. Full trace and mechanism in `porting-assessment.md`.
 3. **Remote image fetching** — done 2026-08-19, http(s):// only; see
    the Images section above for the implementation. `cid:` resolution
    is still open (needs Content-ID parsing `mimepart.c` doesn't have
