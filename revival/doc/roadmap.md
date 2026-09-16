@@ -144,7 +144,25 @@ being front-loaded here.
      rather than vertically-centered against its icon row.
   6. Hovering a link doesn't change the cursor (no visual affordance
      that text/an image under the pointer is clickable) — requested
-     2026-09-16, not yet designed.
+     2026-09-16, partly scoped, not yet implemented. The mechanism is
+     found and needs no core-ATK change: `im_PostCursor(im, &rect,
+     cursor)`/`RetractCursor` (`im.c`/`xim.c`) already does exactly
+     this — `xim__PostCursor` creates a small invisible child X window
+     over the given rectangle with that cursor shape assigned via
+     X11's native per-window cursor property, so the X server displays
+     it automatically as the pointer enters/exits, no motion-event
+     polling needed. Already used today (confirmed live: the header
+     pane, message pane, and an image each show a different cursor
+     already — the image's crosshair is `imagev__Hit`'s own
+     `PostCursor(self, Cursor_CrossHairs)` call). What's NOT yet
+     scoped: for an image link this is trivial (one view, one
+     rectangle); for an inline *text* link, the rectangle needed is
+     the on-screen bounds of a character range that can wrap across
+     multiple visual lines and changes on every reflow (resize,
+     scroll, content change) — needs the same line-geometry machinery
+     `textview_Locate`/`LineRedraw` use, and a hook into the view's
+     own `Update()`/redraw path to re-post as it reflows. Not
+     investigated further before this session ended (context budget).
   7. *Optional, low priority:* retarget `htmlview`'s own standalone
      viewer onto this same shared parser, so there's one HTML engine
      in the tree rather than two. `htmlview`'s composition/authoring
