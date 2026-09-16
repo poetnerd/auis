@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Last updated: 2026-09-14
+Last updated: 2026-09-16
 
 This document is intended primarily for AUIS revival participants,
 with a summary of what's running, what's active, what's next, and the
@@ -106,33 +106,45 @@ being front-loaded here.
   can't decode PNG, so real mail's PNG logos/graphics — the single
   most common inline-image format — always showed as a text
   placeholder). Confirmed live against real-world mail images.
+  **Link clicks now work, 2026-09-16** — a `Hit()` override
+  (`htmlatk_HandleLinkHit`, `htmlatk.c`) shared by `t822view`
+  (message body) and the new `htmllinkview` class (table-cell
+  leaves, `htmllinkv.ch`/`.c`) makes left-click launch a link's URL
+  and right-click copy it to the X cut buffer. Covers plain text
+  links (top-level and nested in tables) and `<a href><img></a>`
+  image links alike; the image case needed its own fix — core ATK's
+  `imagev` requests input focus on click, which swallows the
+  matching button-release, so that path acts on mouse-down instead
+  of mouse-up (see `porting-assessment.md` for the full mechanism).
+  Confirmed live against all five National Grid links (three footer
+  links, one body link, one header wordmark) and all nine of its
+  image-wrapped links.
 - **Open items** (this is the canonical list — add here when found,
   remove when fixed; detailed root-cause writeups live elsewhere and
   are linked below, but status itself lives only here):
-  1. Link clicks don't do anything live — `htmlatk_LinkAt`/
-     `LaunchURL` are built and tested, but the `Hit()`-override wiring
-     into `messages`'s message view was never written. Design doc →
-     "Known issues and planned work" #2.
-  2. `cid:` embedded-image resolution isn't implemented — remote
+  1. `cid:` embedded-image resolution isn't implemented — remote
      `http(s)://` fetching is done (2026-08-19), `cid:` needs
      Content-ID parsing `mimepart.c` doesn't have yet. Design doc →
      "Known issues and planned work" #3.
-  3. Window resize doesn't reflow `lset`-rendered HTML tables —
+  2. Window resize doesn't reflow `lset`-rendered HTML tables —
      ordinary paragraph text reflows to a widened window, table
      content stays laid out for the old width. `porting-assessment.md`
      item q.'s trailing note.
-  4. `<td style="background-color:...">` isn't honored at all.
+  3. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
-  5. Paging isn't pixel-accurate — landing positions are approximate,
+  4. Paging isn't pixel-accurate — landing positions are approximate,
      not exact. Distinct from the forward-paging double-count bug
      fixed 2026-09-13 (`porting-assessment.md` item r.) — this is the
      underlying character-count-based positioning model's residual
      imprecision, present even with that fixed, only mitigated by the
      table strategy's "peeling" heuristic, not fixed at the root.
-  6. Three National Grid header-row cosmetic issues, not yet
+  5. Three National Grid header-row cosmetic issues, not yet
      investigated: a link sits too high above its divider bar, that
      link uses the wrong font/weight, and the divider bar is top-
      rather than vertically-centered against its icon row.
+  6. Hovering a link doesn't change the cursor (no visual affordance
+     that text/an image under the pointer is clickable) — requested
+     2026-09-16, not yet designed.
   7. *Optional, low priority:* retarget `htmlview`'s own standalone
      viewer onto this same shared parser, so there's one HTML engine
      in the tree rather than two. `htmlview`'s composition/authoring

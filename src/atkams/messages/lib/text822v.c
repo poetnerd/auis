@@ -57,6 +57,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <sendmsg.ih>
 #undef dontDefineRoutinesFor_sendmessage
 #include <ams.ih>
+#include <htmlatk.h>
 static void DownFocus(struct t822view *self);
 static void UpFocus(struct t822view *self);
 
@@ -244,6 +245,21 @@ void t822view__SetDataObject(struct t822view *self, struct dataobject *dat)
     super_SetDataObject(self, dat);
     t822view_ShowHelp(self, NULL);
     self->PriorReadOnliness = text_GetReadOnly(Text(self));
+}
+
+/* Click-to-launch/copy for <a href> links rendered into the message
+   body by htmlatk_Render() (text822.c's RenderHtmlPart). The actual
+   logic (LeftUp launches, RightUp copies to the cut buffer, the
+   read-only/no-drag gating) lives in htmlatk_HandleLinkHit() --
+   shared with htmllinkview (htmllinkv.c), which gets the same
+   behavior for link text inside table cells (see htmlatk.c's
+   BuildLsetCell). See htmlatk.h for the full behavior writeup. */
+struct view *t822view__Hit(struct t822view *self, enum view_MouseAction action,
+                            long x, long y, long numberOfClicks)
+{
+    struct view *retv = super_Hit(self, action, x, y, numberOfClicks);
+    htmlatk_HandleLinkHit((struct textview *) self, retv, action, x, y);
+    return retv;
 }
 
 struct captions * t822view__NewCaptionsInNewWindow(struct t822view *self)
