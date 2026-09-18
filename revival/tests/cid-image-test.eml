@@ -1,0 +1,32 @@
+From: AUIS Test Sender <test@example.com>
+To: Test Recipient <test@example.com>
+Subject: AUIS cid: test -- embedded image
+Date: Thu, 17 Sep 2026 12:00:00 -0000
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="AUISCIDTEST"
+
+This is a multipart message in MIME format.
+
+--AUISCIDTEST
+Content-Type: text/html; charset=us-ascii
+
+<html><body>
+<p>This is a "cid:" embedded-image resolution test (roadmap.md item 1).</p>
+<p>The square below is embedded as its own MIME part, referenced via
+"cid:redsquare@auis.test" -- not fetched remotely. If cid: resolution
+is working, it renders as a small red/maroon square. If not, it shows
+the usual "image not loaded" placeholder.</p>
+<img src="cid:redsquare@auis.test">
+<p>End of test.</p>
+</body></html>
+
+--AUISCIDTEST
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-ID: <redsquare@auis.test>
+Content-Disposition: inline; filename="redsquare.png"
+
+iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGO4IycHRwzEcQDTIxGB
+FNCZswAAAABJRU5ErkJggg==
+
+--AUISCIDTEST--
