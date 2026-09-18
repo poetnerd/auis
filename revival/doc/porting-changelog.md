@@ -2503,3 +2503,62 @@ affordance request), design doc (Links section's status note,
 "Known issues and planned work" #2), `porting-assessment.md` (new
 item t., full mechanism for all three sub-bugs plus the `lldb`
 trace).
+
+### 2026-09-16 — Link-hover cursor (roadmap.md item 6, requested right after item 1 above): table-cell links now post a distinctive cursor, gated to avoid over-applying to non-link cells
+
+`htmllinkview` (`htmllinkv.ch`/`.c`) gained a `struct cursor *`,
+following the same idiom `imagev.c`/`pshbttnv.c` already use: post it
+over the view's own bounds (`im_PostCursor`/`RetractCursor`,
+`im.c`/`xim.c`, no core-ATK change needed) from `FullUpdate`, retract
+on removal. First version applied unconditionally to every table
+cell, link or not — reported live ("large chunks of rendered html"
+got the cursor) and fixed same day with a new `htmlatk_TextHasLink()`
+(`htmlatk.c`), gating the post on whether the cell has a link
+anywhere in it at all. Confirmed live: image links and whole-
+paragraph text links behave correctly; a mixed-content paragraph
+(link is only part of the text) still shows the cursor over the whole
+cell — real, scoped, deliberately deferred imprecision, not a bug in
+what shipped. `DrawBar()` (`src/atk/text/drawtxtv.c` ~line 922)
+already computes the exact per-run rectangle that would fix this
+precisely (it's what draws the underline), but hooking it means
+editing core text-rendering code and handling multi-line-wrapped
+links (one `struct cursor` per line-segment) — bigger scope than this
+change, logged in `roadmap.md` item 5 (renumbered from 6 once item 1
+below closed) rather than done now.
+
+### 2026-09-17 — `cid:` embedded-image resolution implemented (roadmap.md item 1): Content-ID parsing added to `mimepart.c`, plus scoping the right sibling-part search space in `text822.c`'s hand-rolled (non-tree) MIME handling
+
+`mimepart.c` never parsed Content-ID at all before this; `struct
+mimepart` gained a `contentid` field and `mimepart_FindByContentID()`
+for lookup. The real work was in `text822.c`: `RenderHtmlPart()` had
+no MIME-tree reference at all (just already-extracted HTML bytes),
+and the file's own hand-rolled multipart boundary scan produces
+independent per-part arrays (`AltParts[]`/`MixedParts[]`), not one
+linked tree — three call sites needed three different answers for
+what sibling-part scope (if any) actually has the embedded images,
+reasoned from real MIME structure: a bare `multipart/alternative` and
+a non-multipart top-level body have no siblings at all (empty scope);
+the real case — `multipart/related`-shaped mail, walked by this
+file's generic "mixed" path since it only special-cases alternative/
+digest — has the embedded images sitting in `MixedParts[]` right
+alongside the (possibly nested-alternative) text part. New
+`ResolveImage()` dispatcher tries `cid:` first, always (no opt-in —
+no network involved, unlike the existing `http(s)://` path it falls
+back to only when remote loading is on). Full mechanism in
+`porting-assessment.md` item u.
+
+Verified in two stages: a standalone harness against both a hand-
+built fixture and a new tracked one (`revival/tests/cid-image-test.
+eml`, `multipart/related` with a hand-built 4×4 PNG), then live
+against a *real* inbox message rather than injecting a synthetic one
+— found via `grep -rlia '^Content-ID:' ~/.IMAP | xargs grep -lia
+'src="cid:'` against the local IMAP mirror (`$HOME/.IMAP`, distinct
+from `$HOME/.MESSAGES`), which turned up 14 real candidates. A
+Microsoft Teams notification's circular sender-avatar image (`cid:`-
+referenced, `border-radius:50%`, VML fallback specifying `fill
+color="red"`) rendered correctly instead of a placeholder.
+
+Docs updated: `roadmap.md` (item 1 removed, folded into the project's
+status narrative; remaining items renumbered), design doc (`cid:`
+mentions in the Images section and "Known issues and planned work"
+#3), `porting-assessment.md` (new item u.).

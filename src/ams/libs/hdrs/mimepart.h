@@ -101,6 +101,20 @@ struct mimepart {
 				   NULL for a leaf part */
     struct mimepart *next;	/* next sibling at this nesting level;
 				   NULL after the last one */
+    char *contentid;		/* Content-ID header value, surrounding
+				   "<" ">" and whitespace stripped, or
+				   NULL if the header was absent. Matches
+				   an HTML "cid:" src/href with the "cid:"
+				   prefix removed -- see
+				   mimepart_FindByContentID(). Only parsed
+				   from a header block scanned by this
+				   file itself (mimepart_ParseMessageFile,
+				   or a multipart child via
+				   parse_one_part); mimepart_Parse()'s
+				   direct entry point (headers already
+				   extracted by the caller) never sets
+				   this, since it has no header block of
+				   its own to scan. */
 };
 
 /* Parses a body whose Content-Type/Content-Transfer-Encoding are
@@ -155,6 +169,18 @@ const char *mimepart_GetDispParam(const struct mimepart *p, const char *name);
    modify the tree or transfer ownership -- the returned pointer is
    still owned by alt. */
 const struct mimepart *mimepart_SelectAlternative(const struct mimepart *alt);
+
+/* Searches root and its whole children/next subtree (depth-first) for
+   a part whose contentid exactly matches cid (case-sensitive plain
+   strcmp -- a Content-ID is an opaque token, same posture every real
+   MUA takes towards it). cid is the bare id, with no "cid:" prefix and
+   no surrounding "<" ">" (strip both before calling -- an HTML
+   "cid:xxx" src already has the former; mimepart's own contentid
+   field already had the latter stripped at parse time, see struct
+   mimepart's own comment). Returns NULL if root is NULL, cid is NULL/
+   empty, or nothing matches. The returned pointer is still owned by
+   root -- do not free it separately. */
+const struct mimepart *mimepart_FindByContentID(const struct mimepart *root, const char *cid);
 
 /* ---- standalone decode/convert primitives ----
    Each of these is usable independently of parsing a part tree

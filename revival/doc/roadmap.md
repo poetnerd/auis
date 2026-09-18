@@ -119,30 +119,42 @@ being front-loaded here.
   Confirmed live against all five National Grid links (three footer
   links, one body link, one header wordmark) and all nine of its
   image-wrapped links.
+  **`cid:` embedded-image resolution now works, 2026-09-17** —
+  `mimepart.c` now parses each MIME part's `Content-ID` header
+  (`struct mimepart`'s new `contentid` field, stripped of `<>` and
+  whitespace) and exposes `mimepart_FindByContentID()` to look one up;
+  `text822.c`'s `RenderHtmlPart()` passes its sibling-part scope
+  through a new combined resolver (`ResolveImage()`) that tries `cid:`
+  first (always, no opt-in — the bytes are already in the message, no
+  network involved) and falls back to the existing `http(s)://`
+  resolver only when remote loading is on. Confirmed against a real
+  inbox message (Microsoft Teams sender-avatar notification: a 32×32
+  circular `cid:`-referenced image renders correctly instead of a
+  placeholder) — found via `grep -rlia '^Content-ID:' ~/.IMAP | xargs
+  grep -lia 'src="cid:'` against the local IMAP mirror, rather than
+  a synthetic test message. A synthetic fixture also exists,
+  `revival/tests/cid-image-test.eml` (`multipart/related`, one
+  embedded 4×4 PNG), for offline/regression use.
 - **Open items** (this is the canonical list — add here when found,
   remove when fixed; detailed root-cause writeups live elsewhere and
   are linked below, but status itself lives only here):
-  1. `cid:` embedded-image resolution isn't implemented — remote
-     `http(s)://` fetching is done (2026-08-19), `cid:` needs
-     Content-ID parsing `mimepart.c` doesn't have yet. Design doc →
-     "Known issues and planned work" #3.
-  2. Window resize doesn't reflow `lset`-rendered HTML tables —
+  1. Window resize doesn't reflow `lset`-rendered HTML tables —
      ordinary paragraph text reflows to a widened window, table
      content stays laid out for the old width. `porting-assessment.md`
      item q.'s trailing note.
-  3. `<td style="background-color:...">` isn't honored at all.
+  2. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
-  4. Paging isn't pixel-accurate — landing positions are approximate,
+  3. Paging isn't pixel-accurate — landing positions are approximate,
      not exact. Distinct from the forward-paging double-count bug
      fixed 2026-09-13 (`porting-assessment.md` item r.) — this is the
      underlying character-count-based positioning model's residual
      imprecision, present even with that fixed, only mitigated by the
      table strategy's "peeling" heuristic, not fixed at the root.
-  5. Three National Grid header-row cosmetic issues, not yet
+  4. Three National Grid header-row cosmetic issues, not yet
      investigated: a link sits too high above its divider bar, that
      link uses the wrong font/weight, and the divider bar is top-
      rather than vertically-centered against its icon row.
-  6. Hovering a link posts a distinctive cursor (`Cursor_Gunsight`,
+  5. Hovering a link posts a distinctive cursor (`Cursor_Gunsight`,
      the same one hyplink's pushbutton view uses) for table-cell links
      — both image-wrapped and plain-text — fixed 2026-09-16 using
      `im_PostCursor`/`RetractCursor` (`im.c`/`xim.c`), the same idiom
@@ -184,7 +196,7 @@ being front-loaded here.
      view, so even the coarse whole-view gate doesn't apply; that case
      needs the same `DrawBar()` hook described above to be fixed at
      all, not just made precise.
-  7. *Optional, low priority:* retarget `htmlview`'s own standalone
+  6. *Optional, low priority:* retarget `htmlview`'s own standalone
      viewer onto this same shared parser, so there's one HTML engine
      in the tree rather than two. `htmlview`'s composition/authoring
      side (hand-building a document, not parsing untrusted wire HTML)

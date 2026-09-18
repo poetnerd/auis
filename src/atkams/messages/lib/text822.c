@@ -235,7 +235,7 @@ static int PlainAsciiText(char *s, char *currentcharset);
 static int ForceMetamail(char *ctype);
 static int InsertDecodedText(struct text822 *d, int *ShowPos, unsigned char *bytes, long len, char *charset);
 static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename, char *ctype, long nbytes);
-static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain, boolean loadImagesOverride);
+static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain, boolean loadImagesOverride, struct mimepart **cidParts, int cidPartCount);
 
 boolean text822__InitializeObject(struct classheader *c, struct text822 *self)
 {
@@ -1016,7 +1016,15 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 		   ATK-styled rendering (Stage 3, htmlatk.h), with a
 		   whole-message fallback to Stage 2's plain-text
 		   renderer if it can't -- see RenderHtmlPart(). */
-		RenderHtmlPart(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0));
+		/* No sibling parts to resolve "cid:" images against here --
+		   a bare multipart/alternative's own children are all
+		   alternate renditions of the *same* content (text/plain,
+		   text/html, ...), never separate embedded images. Real
+		   mail with embedded images wraps that alternative one
+		   level deeper inside multipart/related, which reaches
+		   RenderHtmlPart() via the MixedParts[] call below instead
+		   (see mimepart_SelectAlternative() used there). */
+		RenderHtmlPart(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0), NULL, 0);
 	    } else if (winner && winner->body) {
 		/* Neither text/plain nor text/html was on offer (e.g.
 		   an alternative set of just an image and an audio
@@ -1094,7 +1102,18 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    }
 	    if (textpart && textpart->body) {
 		if (textIsHtml) {
-		    RenderHtmlPart(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0));
+		    /* MixedParts[] is this boundary scan's full sibling
+		       set -- for the common real-world shape (a
+		       multipart/related the sender's MUA labeled "mixed"
+		       is treated identically here, see this function's
+		       own opening comment on why alternative/digest are
+		       the only multipart subtypes special-cased), the
+		       embedded "cid:"-referenced images sit right here as
+		       MixedParts[] entries alongside (not inside) the
+		       nested multipart/alternative textpart was picked
+		       out of. See mimepart_FindByContentID()'s doc
+		       comment. */
+		    RenderHtmlPart(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0), MixedParts, MixedCount);
 		} else {
 		    InsertDecodedText(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"));
 		}
@@ -1150,7 +1169,10 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    rawlen += linelen;
 	}
 	if (rawbuf) {
-	    RenderHtmlPart(d, &ShowPos, (unsigned char *) rawbuf, rawlen, msgcharset, (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0));
+	    /* Bare top-level Content-Type: text/html, not multipart at
+	       all -- there is no sibling part a "cid:" reference could
+	       ever resolve against here. */
+	    RenderHtmlPart(d, &ShowPos, (unsigned char *) rawbuf, rawlen, msgcharset, (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0), NULL, 0);
 	    free(rawbuf);
 	}
     } else if (!AlternativeNumber && sfmttype
@@ -1981,7 +2003,58 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    actually populates the imageallowlist preference day to day;
    options.c's OT_SPECIAL_IMAGEALLOWLIST row is the manual editor for
    it. */
-static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain, boolean loadImagesOverride)
+/* Combined image-resolver rock: "cid:" lookups (always tried, no
+   opt-in needed -- the bytes are already sitting in this message, no
+   network involved, matching the design doc's "cid: are not remote"
+   posture) against cidParts/cidPartCount's sibling MIME parts, falling
+   back to httpimg's remote fetch (loadImages-gated, as before) for
+   everything else. See ResolveImage() just below. */
+struct text822_imgresolve_rock {
+    struct mimepart **cidParts;
+    int cidPartCount;
+    boolean loadImages;
+    struct httpimg_budget *imgBudget;
+};
+
+/* htmlatk_ImageResolver for RenderHtmlPart(). A "cid:" src is resolved
+   against cidParts (RenderHtmlPart()'s caller-supplied sibling-part
+   scope -- see its own call sites' comments for what that scope is per
+   message shape) via mimepart_FindByContentID(), copying the part's
+   already-CTE-decoded body/type (no network, no re-decoding: the bytes
+   and MIME type mimepart.c already extracted for this attachment are
+   exactly what an <img> needs). Any other src (in practice, http(s)://)
+   falls through to httpimg_ResolveImage() only when loadImages is set,
+   unchanged from before this function existed. */
+static boolean ResolveImage(void *rockv, const char *src,
+                             unsigned char **bytesOut, long *lenOut, char **mimetypeOut)
+{
+    struct text822_imgresolve_rock *rock = (struct text822_imgresolve_rock *) rockv;
+
+    if (!rock || !src) return FALSE;
+
+    if (!amsutil_lc2strncmp("cid:", src, 4)) {
+	const struct mimepart *found = NULL;
+	int i;
+	for (i = 0; i < rock->cidPartCount && !found; ++i) {
+	    if (rock->cidParts[i]) found = mimepart_FindByContentID(rock->cidParts[i], src + 4);
+	}
+	if (!found || !found->body || found->bodylen <= 0) return FALSE;
+	*bytesOut = (unsigned char *) malloc(found->bodylen);
+	if (!*bytesOut) return FALSE;
+	memcpy(*bytesOut, found->body, found->bodylen);
+	*mimetypeOut = (char *) malloc(strlen(found->type) + 1);
+	if (!*mimetypeOut) { free(*bytesOut); *bytesOut = NULL; return FALSE; }
+	strcpy(*mimetypeOut, found->type);
+	*lenOut = found->bodylen;
+	return TRUE;
+    }
+
+    if (rock->loadImages) return httpimg_ResolveImage(rock->imgBudget, src, bytesOut, lenOut, mimetypeOut);
+
+    return FALSE;
+}
+
+static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain, boolean loadImagesOverride, struct mimepart **cidParts, int cidPartCount)
 {
     struct htmlnode *tree;
     time_t t0, t1, t2;
@@ -2049,14 +2122,19 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
 	int imageMaxSeconds = environ_GetProfileInt("ams.imagefetchbudget", HTTPIMG_LOADIMAGES_MAXSECONDS_DEFAULT);
 	int imagePerFetchSeconds = environ_GetProfileInt("ams.imagefetchtimeout", HTTPIMG_PERFETCH_MAXSECONDS_DEFAULT);
 	struct httpimg_budget imgBudget;
+	struct text822_imgresolve_rock cidRock;
 	htmlatk_ImageResolver resolver = NULL;
 	void *resolverRock = NULL;
 	boolean ok;
 
+	cidRock.cidParts = cidParts;
+	cidRock.cidPartCount = cidPartCount;
+	cidRock.loadImages = loadImages;
+	cidRock.imgBudget = NULL;
+
 	if (loadImages) {
 	    httpimg_InitBudget(&imgBudget, imageMaxSeconds, imagePerFetchSeconds);
-	    resolver = httpimg_ResolveImage;
-	    resolverRock = &imgBudget;
+	    cidRock.imgBudget = &imgBudget;
 	    /* im's own SIGCHLD handling (im.c: cleanUpZombies, TRUE by
 	       default for every ATK app, per its own comment "very
 	       convenient for the messages system") reaps ANY exited child
@@ -2086,6 +2164,16 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
 	       httpimg.c (temporary, /tmp/httpimg-trace.log) added to
 	       observe it directly instead of guessing again. */
 	    im_SetCleanUpZombies(FALSE);
+	}
+
+	/* Resolver is live whenever there's anything at all to resolve
+	   against -- cid: siblings present (always tried, no opt-in) or
+	   remote loading on -- not just when loadImages is set, so a
+	   "cid:"-only message (the common embedded-logo case, remote
+	   fetch off by default) still gets its images. */
+	if (loadImages || cidPartCount > 0) {
+	    resolver = ResolveImage;
+	    resolverRock = &cidRock;
 	}
 
 	Trace822("RenderHtmlPart: loadImages=%d imageMaxSeconds=%d imagePerFetchSeconds=%d\n", loadImages, imageMaxSeconds, imagePerFetchSeconds);

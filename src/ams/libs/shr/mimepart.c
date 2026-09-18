@@ -71,6 +71,26 @@ static char *mp_strdup(const char *s)
     return r;
 }
 
+/* NUL-terminated raw Content-ID header value -> malloc'd copy with
+   surrounding whitespace and a single wrapping "<" ">" pair (if both
+   present) stripped, or NULL for an empty/all-whitespace value. Not
+   lowercased -- a Content-ID is an opaque token, unlike Content-Type/
+   Content-Disposition's keyword-ish values. */
+static char *strip_cid_brackets(const char *raw)
+{
+    const unsigned char *s;
+    long len;
+
+    if (!raw) return NULL;
+    s = (const unsigned char *) raw;
+    len = (long) strlen(raw);
+    while (len > 0 && isspace(s[0])) { ++s; --len; }
+    while (len > 0 && isspace(s[len-1])) --len;
+    if (len >= 2 && s[0] == '<' && s[len-1] == '>') { ++s; len -= 2; }
+    if (len <= 0) return NULL;
+    return trimdup(s, len, 0);
+}
+
 static int hdrnamecmp(const unsigned char *s, long slen, const char *name)
 {
     long nlen = (long) strlen(name);
@@ -351,22 +371,23 @@ static int next_line(const unsigned char *data, long len, long pos,
 
 /* Scans an RFC822-style header block starting at data[0], stopping at
    the first blank line or EOF. Only Content-Type, Content-Transfer-
-   Encoding and Content-Disposition are captured (into caller-supplied
-   HDRBUFSZ buffers, empty string if absent); *bodystart is set to the
-   offset of the first byte after the header block. */
+   Encoding, Content-Disposition and Content-ID are captured (into
+   caller-supplied HDRBUFSZ buffers, empty string if absent);
+   *bodystart is set to the offset of the first byte after the header
+   block. */
 static void split_headers_body(const unsigned char *data, long len, long *bodystart,
-                                char *ctypebuf, char *ctebuf, char *cdispbuf)
+                                char *ctypebuf, char *ctebuf, char *cdispbuf, char *cidbuf)
 {
     long pos = 0, lineend, nextpos;
-    int which = 0; /* 0=none, 1=ctype, 2=cte, 3=cdisp */
+    int which = 0; /* 0=none, 1=ctype, 2=cte, 3=cdisp, 4=cid */
 
-    ctypebuf[0] = ctebuf[0] = cdispbuf[0] = '\0';
+    ctypebuf[0] = ctebuf[0] = cdispbuf[0] = cidbuf[0] = '\0';
     while (next_line(data, len, pos, &lineend, &nextpos)) {
         long linestart = pos;
         if (lineend == linestart) { pos = nextpos; break; } /* blank line */
         if (data[linestart] == ' ' || data[linestart] == '\t') {
             char *dst = (which == 1) ? ctypebuf : (which == 2) ? ctebuf :
-                        (which == 3) ? cdispbuf : NULL;
+                        (which == 3) ? cdispbuf : (which == 4) ? cidbuf : NULL;
             if (dst) {
                 long used = (long) strlen(dst);
                 long avail = HDRBUFSZ - 1 - used;
@@ -390,6 +411,7 @@ static void split_headers_body(const unsigned char *data, long len, long *bodyst
                 if (hdrnamecmp(data + linestart, namelen, "content-type")) { which = 1; dst = ctypebuf; }
                 else if (hdrnamecmp(data + linestart, namelen, "content-transfer-encoding")) { which = 2; dst = ctebuf; }
                 else if (hdrnamecmp(data + linestart, namelen, "content-disposition")) { which = 3; dst = cdispbuf; }
+                else if (hdrnamecmp(data + linestart, namelen, "content-id")) { which = 4; dst = cidbuf; }
                 if (dst) {
                     take = vallen;
                     if (take > HDRBUFSZ - 1) take = HDRBUFSZ - 1;
@@ -476,15 +498,18 @@ static struct mimepart *split_multipart(const unsigned char *data, long len, con
 static struct mimepart *parse_one_part(const unsigned char *data, long len)
 {
     long bodystart;
-    char ctype[HDRBUFSZ], cte[HDRBUFSZ], cdisp[HDRBUFSZ];
+    char ctype[HDRBUFSZ], cte[HDRBUFSZ], cdisp[HDRBUFSZ], cid[HDRBUFSZ];
     struct mimepart *part;
 
     if (len < 0) len = 0;
-    split_headers_body(data, len, &bodystart, ctype, cte, cdisp);
+    split_headers_body(data, len, &bodystart, ctype, cte, cdisp, cid);
     part = mimepart_Parse(data + bodystart, len - bodystart,
                            ctype[0] ? ctype : NULL, cte[0] ? cte : NULL);
     if (part && cdisp[0]) {
         parse_typed_header(cdisp, &part->disposition, &part->dispparams);
+    }
+    if (part && cid[0]) {
+        part->contentid = strip_cid_brackets(cid);
     }
     return part;
 }
@@ -508,6 +533,7 @@ struct mimepart *mimepart_Parse(const unsigned char *data, long len,
     part->bodylen = 0;
     part->children = NULL;
     part->next = NULL;
+    part->contentid = NULL;
 
     if (len < 0) len = 0;
 
@@ -578,15 +604,18 @@ struct mimepart *mimepart_ParseMessageFile(FILE *fp)
 {
     long len, bodystart;
     unsigned char *data = read_all(fp, &len);
-    char ctype[HDRBUFSZ], cte[HDRBUFSZ], cdisp[HDRBUFSZ];
+    char ctype[HDRBUFSZ], cte[HDRBUFSZ], cdisp[HDRBUFSZ], cid[HDRBUFSZ];
     struct mimepart *part;
 
     if (!data) return NULL;
-    split_headers_body(data, len, &bodystart, ctype, cte, cdisp);
+    split_headers_body(data, len, &bodystart, ctype, cte, cdisp, cid);
     part = mimepart_Parse(data + bodystart, len - bodystart,
                            ctype[0] ? ctype : NULL, cte[0] ? cte : NULL);
     if (part && cdisp[0]) {
         parse_typed_header(cdisp, &part->disposition, &part->dispparams);
+    }
+    if (part && cid[0]) {
+        part->contentid = strip_cid_brackets(cid);
     }
     free(data);
     return part;
@@ -601,10 +630,25 @@ void mimepart_Free(struct mimepart *p)
         free(p->disposition);
         mimeparam_free(p->dispparams);
         free(p->body);
+        free(p->contentid);
         mimepart_Free(p->children);
         free(p);
         p = n;
     }
+}
+
+const struct mimepart *mimepart_FindByContentID(const struct mimepart *root, const char *cid)
+{
+    const struct mimepart *hit;
+
+    if (!root || !cid || !*cid) return NULL;
+    if (root->contentid && strcmp(root->contentid, cid) == 0) return root;
+    if (root->children) {
+        hit = mimepart_FindByContentID(root->children, cid);
+        if (hit) return hit;
+    }
+    if (root->next) return mimepart_FindByContentID(root->next, cid);
+    return NULL;
 }
 
 /* Default is HTML-preferred (Stage 3's ATK-styled renderer beats the

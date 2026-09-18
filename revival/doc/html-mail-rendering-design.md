@@ -128,9 +128,14 @@ headroom, not a guess — see `HTTPIMG_LOADIMAGES_MAXFETCHES`'s own
 comment in `text822.c` for the measurement), with a per-render-pass
 cache (`HTTPIMG_CACHE_SIZE`, `httpimg.h`) so a URL repeated across a
 message (chrome icons re-referenced once per table row in real
-newsletters) costs one fetch, not one per occurrence. `cid:` resolution
-remains unimplemented — `mimepart.c` still doesn't parse Content-ID —
-so that half of "resolve an image" is still open; see Open questions.
+newsletters) costs one fetch, not one per occurrence. **`cid:`
+resolution is implemented, 2026-09-17** — `mimepart.c` now parses each
+part's Content-ID header and `mimepart_FindByContentID()` looks one up
+against `text822.c`'s already-parsed sibling parts; unlike the
+`http(s)://` path this needs no opt-in (no network involved, matching
+this doc's own "`cid:` ... are not remote" framing above) and is
+confirmed against a real inbox message. See "Known issues and planned
+work" #3, below, for the full mechanism.
 
 **Why blocking curl, not something else.** Four options were weighed
 before `httpimg.c` was written, cheapest to most correct:
@@ -842,9 +847,32 @@ already once did.
    that resolved to an embedded view; plain text keeps using mouse-up,
    unaffected. Full trace and mechanism in `porting-assessment.md`.
 3. **Remote image fetching** — done 2026-08-19, http(s):// only; see
-   the Images section above for the implementation. `cid:` resolution
-   is still open (needs Content-ID parsing `mimepart.c` doesn't have
-   yet) — tracked in `roadmap.md`.
+   the Images section above for the implementation. **`cid:`
+   resolution — done 2026-09-17.** `struct mimepart` (`mimepart.h`)
+   gained a `contentid` field (Content-ID header value, `<>` and
+   whitespace stripped, parsed in `split_headers_body()`/
+   `parse_one_part()` alongside the existing Content-Type/-Disposition
+   capture) and `mimepart_FindByContentID()` (recursive children/next
+   walk, exact-string match — a Content-ID is treated as an opaque
+   token, same posture every real MUA takes). `text822.c`'s
+   `RenderHtmlPart()` gained a `ResolveImage()` dispatcher: tries
+   `cid:` first against the sibling-part scope its caller passed in
+   (the same `MixedParts[]`/`AltParts[]` arrays the multipart boundary
+   scan already built — a bare `multipart/alternative` or a top-level
+   `text/html` body has no siblings to resolve against, so those two
+   call sites pass an empty scope; the `multipart/mixed`-or-related
+   case, where real embedded images actually live, passes
+   `MixedParts`/`MixedCount`), falling back to the existing
+   `httpimg_ResolveImage()` only for anything else and only when
+   remote loading is on — unlike that path, `cid:` needs no opt-in,
+   since the bytes are already in the message. Confirmed against a
+   real inbox message (a Microsoft Teams notification's circular
+   sender-avatar image, found via `grep -rlia '^Content-ID:' ~/.IMAP |
+   xargs grep -lia 'src="cid:'` against the local IMAP mirror, not a
+   synthetic message) — renders correctly instead of the placeholder.
+   A synthetic fixture, `revival/tests/cid-image-test.eml`, also
+   exists for offline/regression use. Full mechanism in
+   `porting-assessment.md`.
 4. **Forward paging stopping short of the true end** — fixed
    2026-09-13, a `textview__MoveForward` double-count; full mechanism
    and the `lldb` trace that found it are in `porting-assessment.md`

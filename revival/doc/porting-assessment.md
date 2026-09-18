@@ -3710,6 +3710,122 @@ Confirmed live against all five of National Grid's plain-text links
 "schedule an appointment" sentence, and the "National Grid" header
 wordmark) and all nine of its image-wrapped links, both buttons.
 
+#### u. `cid:` embedded-image resolution: no Content-ID parsing existed at all, plus finding the right sibling-part scope for a hand-rolled (non-tree) MIME parser
+
+`roadmap.md`'s HTML-mail-rendering item 1, requested 2026-09-17 right
+after the link-hover-cursor work above. `<img src="cid:...">` is the
+standard way a sender embeds an image as its own MIME sibling part
+instead of linking to a URL — no network fetch needed, the bytes are
+already in the message, just like the `http(s)://` remote-fetch case
+done 2026-08-19 except the "fetch" is a local lookup instead of curl.
+`mimepart.c` (`src/ams/libs/shr/`) didn't parse Content-ID at all
+before this — only Content-Type/-Transfer-Encoding/-Disposition were
+captured out of a part's header block.
+
+**mimepart.c/.h changes.** `struct mimepart` gained a `contentid`
+field (`mimepart.h`) — the Content-ID header value with a single
+wrapping `<` `>` pair and surrounding whitespace stripped (RFC 2392:
+that's exactly what a `cid:` URI's value looks like with no scheme
+prefix). `split_headers_body()` (already capturing three headers into
+caller buffers) gained a fourth capture, `content-id`, with the same
+`which`-tagged continuation-line handling the existing three already
+had. Both of its call sites (`parse_one_part()`, for a multipart
+child; `mimepart_ParseMessageFile()`, for the top-level message) set
+the new field via a small `strip_cid_brackets()` helper built on the
+file's existing `trimdup()`. `mimepart_Parse()` itself — the
+already-know-the-headers entry point, used when a caller has already
+extracted Content-Type/-Encoding itself — does *not* set it, since it
+has no header block of its own left to scan; not a gap in practice,
+since a top-level message's own Content-ID (if any) is never a `cid:`
+resolution target anyway. `mimepart_FindByContentID()` is a plain
+depth-first `children`/`next` walk doing an exact `strcmp` (a
+Content-ID is an opaque token — same posture every real MUA takes,
+no case-folding). Verified standalone (a throwaway harness, not kept
+in the tree) against a hand-built `multipart/related` fixture before
+touching `text822.c` at all: parses, finds the part by id, returns the
+right bytes.
+
+**The harder part wasn't mimepart.c, it was finding where in
+`text822.c` a "sibling parts" scope even exists.** `RenderHtmlPart()`
+(the function that calls `htmlatk_Render()`) takes already-extracted
+`html`/`htmllen` bytes — no MIME tree reference at all, decoupled from
+where those bytes came from. And `text822.c`'s MIME handling isn't a
+single parsed tree in the first place: this file hand-rolls its own
+boundary scan (`fgets`-based, predates `mimepart.c`) that splits a
+multipart body into independent per-part temp files, each parsed
+separately via `mimepart_ParseMessageFile()` into `AltParts[]` (for
+`multipart/alternative`) or `MixedParts[]` (everything else — this
+file only special-cases alternative and digest, so a real
+`multipart/related` message, the shape virtually all embedded-image
+mail actually uses, is walked by the exact same "mixed" code path).
+Neither array is a real linked tree (`mimepart_ParseMessageFile()`
+returns each entry with `next == NULL`; the array indexing is this
+file's own bookkeeping, not `mimepart.c`'s `next` chain), so
+`mimepart_FindByContentID()` needs to be called once per array
+element, not once against a single root.
+
+Three call sites, three different answers for what scope (if any) has
+the embedded images, reasoned from real MIME structure rather than
+guessed:
+
+- The `multipart/alternative`-at-the-top branch (`winner`, picked from
+  `AltParts[]`): **no scope** (`NULL, 0`). A bare alternative's
+  children are by definition different rewrites of the *same*
+  content (plain-text/HTML/...); an embedded image can never
+  legitimately be one of them. Real mail with both an alternative
+  AND embedded images wraps the alternative one level deeper inside
+  `multipart/related` — which reaches this function via the next
+  bullet instead.
+- The nested-alternative-inside-"mixed" branch (`textpart`, selected
+  via `mimepart_SelectAlternative()` out of one `MixedParts[]` entry
+  that turned out to itself be a `multipart/alternative`): **scope is
+  `MixedParts`/`MixedCount`** — the full top-level array for this
+  boundary scan. This is the real case: for a
+  `multipart/related[ multipart/alternative[text/plain,text/html],
+  image1, image2 ]` message (or the identical shape under `mixed`,
+  since this parser doesn't distinguish them), the embedded images
+  parse as separate top-level entries in the very same array
+  `textpart` was pulled out of — siblings of the alternative
+  container, not descendants of it. Confirmed live: this is the path
+  the real "Dom Woody" Teams-notification test message takes.
+- The bare-top-level-`text/html`-no-multipart-at-all branch
+  (`rawbuf`): **no scope** (`NULL, 0`). Not multipart, no siblings
+  can exist.
+
+**Resolver wiring.** `RenderHtmlPart()` gained two new parameters
+(`cidParts`, `cidPartCount`) and a new `ResolveImage()` dispatcher
+(a `struct text822_imgresolve_rock` carrying both the cid scope and
+the existing `httpimg_budget`) replacing the old
+`resolver = loadImages ? httpimg_ResolveImage : NULL` logic.
+`ResolveImage()` tries `cid:` first — unconditionally, no
+`loadImages` gate, matching the design doc's original (until now
+aspirational) "`cid:` ... are not remote" framing — copying the
+matched part's already-CTE-decoded `body`/`type` (`malloc`+`memcpy`,
+no re-decoding: `mimepart.c` already did the QP/base64 work when it
+first parsed the part). Anything else falls through to the pre-
+existing `httpimg_ResolveImage()`, still gated on `loadImages` exactly
+as before. `resolver` is now non-NULL whenever *either* condition
+holds, not just when remote loading is on, so a `cid:`-only message
+(the common case — remote fetch is off by default) still gets its
+images.
+
+**Testing.** Standalone `mimepart.c` verification first (see above),
+then a synthetic fixture (`revival/tests/cid-image-test.eml`:
+`multipart/related`, a hand-built 4×4 PNG as the embedded part) parsed
+and resolved correctly via the same standalone harness pointed at the
+real file. Rather than inject that synthetic message into a live
+mailbox, live testing instead searched the *existing* local IMAP
+mirror for a real message already exercising this path: `grep -rlia
+'^Content-ID:' ~/.IMAP | xargs grep -lia 'src="cid:'` (the local IMAP
+mirror root is `$HOME/.IMAP`, distinct from `$HOME/.MESSAGES`'s
+non-IMAP `MS_TREEROOT` default — both exist on this system, only the
+former had real synced mail) found 14 real candidates out of 594
+messages carrying any Content-ID header at all. Confirmed against a
+Microsoft Teams "Dom Woody sent you a message" notification: the
+sender-initials avatar (a `cid:`-referenced 32×32 image inside a
+`border-radius:50%` mask, VML fallback specifying `fill color="red"`)
+renders as the expected pink circle instead of a placeholder.
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.
