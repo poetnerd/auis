@@ -135,7 +135,17 @@ class scroll : view {
     GetWindowPadding() returns long;
     SetViewPadding(long newPadding);
     GetViewPadding() returns long;
-    
+
+    /* Added 2026-09-22 for lsetscrollview (messages' HTML-table
+       scroller, src/atkams/messages/lib/lsetscrlv.c) to turn its own
+       border decoration off when it isn't showing a scrollbar --
+       previously drawborder (data:, below) was only ever set from the
+       global ScrollDrawBorders profile switch (InitPrefs, scroll.c),
+       with no per-instance override; a pure addition, no existing
+       caller's behavior changes. */
+    SetDrawBorder(boolean draw);
+    GetDrawBorder() returns boolean;
+
   classprocedures:
     InitializeClass() returns boolean;
 
@@ -199,5 +209,8 @@ class scroll : view {
     boolean emulation;
     boolean drawborder;
     boolean prefsready;
+    /* Added 2026-09-23 alongside SetDrawBorder -- see scroll.c's InitPrefs
+       for why this exists. */
+    boolean drawborderoverridden;
     struct cursor *barcursor[scroll_TYPES];
 };
