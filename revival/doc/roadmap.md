@@ -138,10 +138,36 @@ being front-loaded here.
 - **Open items** (this is the canonical list — add here when found,
   remove when fixed; detailed root-cause writeups live elsewhere and
   are linked below, but status itself lives only here):
-  1. Window resize doesn't reflow `lset`-rendered HTML tables —
-     ordinary paragraph text reflows to a widened window, table
-     content stays laid out for the old width. `porting-assessment.md`
-     item q.'s trailing note.
+  1. Superseded by a correct diagnosis (2026-09-22, `revival/doc/
+     html-scroll-plan.md`): a `<table>`'s own `width=` already declares
+     intent — `100%`/unset means "flow" (unchanged, still reflows), a
+     literal pixel value means the author wants that real width even
+     if it doesn't fit, matching Thunderbird. Implemented as two new
+     classes, `lsetscrollview`/`lsetscrollcontent`
+     (`src/atkams/messages/lib/lsetscrlv.c`/`lsetscrlc.c`), that wrap
+     just a pixel-width table's own outermost row in a self-contained
+     horizontally-scrollable inset — `lpair.c`/`textv.c`/`drawtxtv.c`
+     untouched. `lset.minwidth` (`lset.ch`) carries the bottom-up
+     natural width computation `htmlatk.c` needs to decide which
+     tables get wrapped. Border/scrollbar chrome show only when a
+     table doesn't fit, decided per-`FullUpdate` from real placed
+     geometry — this needed two small, generic additions to core
+     `scroll.ch`/`.c` (`SetDrawBorder`/`GetDrawBorder`, and a
+     `drawborderoverridden` flag so `scroll`'s own lazily-initialized
+     `InitPrefs` doesn't clobber an explicit per-instance override on
+     an object's first paint), both pure additions that only affect
+     instances that call them. bookrack.html's crash-during-page-
+     forward (recursing `DesiredSize` into an unlinked nested table,
+     landing in real color-allocation code) and a "two frames, one or
+     neither clears on navigation" chrome-flicker bug (view_Remove
+     teardown passes and the `InitPrefs` clobber above, respectively)
+     are both fixed and live-verified. **Still open:** national-
+     grid.html shows a large block of blank vertical space before and
+     after some table content that Thunderbird renders flush — not yet
+     root-caused; two fix attempts (keying `DesiredSize`'s reserved
+     chrome height off the offered-width parameter, then off placed
+     geometry) didn't resolve it. `porting-assessment.md` item q.'s
+     trailing note.
   2. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
   3. Paging isn't pixel-accurate — landing positions are approximate,
