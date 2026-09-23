@@ -41,7 +41,7 @@ DOBJS = 		text822.do amsutil.do ams.do amsn.do $(S_DOBJS) \
 			fldtreev.do messages.do captions.do msgsa.do  \
 			sendmsg.do folders.do text822v.do options.do \
 			messwind.do nbutterv.do mailobj.do mailobjv.do \
-			htmllinkv.do
+			htmllinkv.do lsetscrlc.do lsetscrlv.do
 
 IHFILES =		captions.ih \
 			folders.ih \
@@ -59,6 +59,8 @@ IHFILES =		captions.ih \
 			mailobj.ih \
 			mailobjv.ih \
 			htmllinkv.ih \
+			lsetscrlc.ih \
+			lsetscrlv.ih \
 			amsn.ih $(S_IHFILES)
 
 LIBS = 		$(BASEDIR)/lib/libmsshr.a \
@@ -98,6 +100,13 @@ DynamicMultiObject(messages.do, messages.o messaux.o,,$(LEXLIB))
 DynamicMultiObject(text822.do, text822.o htmlatk.o httpimg.o, $(LIBS), $(LEXLIB))
 DynamicObject(text822v,,$(LEXLIB))
 DynamicObject(htmllinkv,,$(LEXLIB))
+/* lsetscrlc/lsetscrlv (html-scroll-plan.md): tableau HTML table rows
+   (a nonzero composed minwidth, lset.ch) route to lsetscrollview
+   (lsetscrlv) instead of the auto-derived "lsetview" -- see both
+   classes' own header comments for why this is two separate small
+   classes rather than one. */
+DynamicObject(lsetscrlc,,$(LEXLIB))
+DynamicObject(lsetscrlv,,$(LEXLIB))
 DynamicObject(amsutil, $(LIBS), $(LEXLIB) $(BSDLIB))
 DynamicObject(ams, $(UTILLIB),$(LEXLIB))
 DynamicObject(options,,$(LEXLIB))
