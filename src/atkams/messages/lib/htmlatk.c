@@ -78,6 +78,7 @@
 #include <image.ih>
 #include <lset.ih>
 #include <lsetv.ih>
+#include <viewref.ih>
 #include <message.ih>
 #include <im.ih>
 
@@ -1774,17 +1775,33 @@ static int LsetChainPctWeighted(long remainingWeight, long thisWeight)
    Returns-FALSE note); does not free the leaves/subtrees already
    folded in, same best-effort-on-OOM posture as this file's other
    growable buffers. */
+/* A cell's own contribution to its chain's composed minwidth floor: the
+   larger of its fixedpx commitment (a <td width=NNN>/icon column, see
+   CellFixedPixelWidth) and whatever floor its own leaf/subtree already
+   carries (nonzero only when that leaf is itself a table-rooted lset
+   BuildLsetGrid previously stamped a minwidth onto -- a nested tableau
+   table spliced or inlined into this cell). Max, not either/or: a fixed
+   cell that also happens to wrap a wider nested tableau table needs at
+   least the wider of the two, not just its own declared pixel count. */
+static long CellMinwidth(struct wleaf *cell)
+{
+    return (cell->fixedpx > cell->leaf->minwidth) ? cell->fixedpx : cell->leaf->minwidth;
+}
+
 static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittype, int fixedsplittype, struct hax_state *st)
 {
     struct lset *rest;
     long i;
     long remainingWeight;
+    long restMinwidth;
 
     if (count <= 0) return NULL;
     rest = cells[count - 1].leaf;
     remainingWeight = (cells[count - 1].fixedpx > 0) ? 0 : cells[count - 1].weight;
+    restMinwidth = CellMinwidth(&cells[count - 1]);
     for (i = count - 2; i >= 0; --i) {
         struct lset *node = (struct lset *) class_NewObject("lset");
+        long thisMinwidth;
         if (!node) { st->hardfail = 1; return NULL; }
         /* A real browser never draws a resize bar between table cells
            -- lset/lpair's divider line is an ATK layout-tool artifact
@@ -1819,11 +1836,73 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
             node->type = splittype;
             node->pct = LsetChainPctWeighted(remainingWeight, thisWeight);
         }
+        thisMinwidth = CellMinwidth(&cells[i]);
+        /* splittype (not fixedsplittype -- a fixed cell here still sits
+           in the same side-by-side-vs-stacked arrangement as its
+           siblings, see this split's own type assignment just above)
+           decides sum vs. max: lsetview_MakeHorz cells sit side by side
+           (this split's own natural width is the sum of both children's),
+           lsetview_MakeVert cells stack top to bottom sharing the full
+           width (the split's natural width is whichever child needs
+           more, not their sum). Matches BuildLsetGrid's own row-stacking
+           use of this same function. */
+        node->minwidth = (splittype == lsetview_MakeHorz) ? (thisMinwidth + restMinwidth)
+            : ((thisMinwidth > restMinwidth) ? thisMinwidth : restMinwidth);
+        restMinwidth = node->minwidth;
         node->left = (struct dataobject *) cells[i].leaf;
         node->right = (struct dataobject *) rest;
         rest = node;
     }
+    /* count==1: the loop above never ran (nothing to fold against), so
+       rest is still cells[0].leaf itself, unchanged -- stamp its
+       composed minwidth directly rather than leaving it at whatever it
+       already carried (0 for a plain leaf; this still correctly folds
+       in a lone fixed-pixel cell's own commitment, see CellMinwidth). */
+    if (count == 1) rest->minwidth = restMinwidth;
     return rest;
+}
+
+/* CORRECTION (2026-09-22, found live-testing): BuildLsetGrid's row-
+   combining (below) originally reused BuildLsetChain above to fold
+   ALL of a table's rows into one MakeVert-stacked tree -- but
+   BuildLsetChain's fold is a LINEAR right-leaning chain, one lset/
+   lpair level per row. For a real newsletter with dozens of rows
+   (bookrack.html), that's dozens of C stack frames deep on every
+   layout/redraw pass (DesiredSize and FullUpdate both recurse down
+   the whole chain) -- confirmed live via a macOS crash report
+   (runapp-2026-09-22-225138.ips): 71 total stack frames, the
+   dominant pattern a recursive DoFullUpdate/lpair__FullUpdate pair
+   repeating many times, crashing (SIGSEGV) partway down in unrelated-
+   looking color-allocation code -- a classic deep-recursion/stack-
+   pressure signature, not a logic bug in the crash site itself. This
+   builds the SAME set of rows into a genuinely BALANCED binary tree
+   instead -- depth O(log2 count) rather than O(count) -- so even a
+   hundred-row table only adds ~7 stack levels, not 100. Rows don't
+   need BuildLsetChain's percentage/weight cascading at all: every
+   node this builds sets autoheight (matching BuildLsetChain's own
+   MakeVert nodes), which makes each child size to its own natural
+   height regardless of pct/weight -- so pct here is an arbitrary
+   constant, never consulted for real layout math. */
+static struct lset *BuildLsetBalancedVertStack(struct wleaf *cells, long lo, long hi, struct hax_state *st)
+{
+    struct lset *node, *left, *right;
+    long mid;
+    if (hi - lo == 1) return cells[lo].leaf;
+    mid = lo + (hi - lo) / 2;
+    left = BuildLsetBalancedVertStack(cells, lo, mid, st);
+    right = BuildLsetBalancedVertStack(cells, mid, hi, st);
+    if (!left || !right) { st->hardfail = 1; return NULL; }
+    node = (struct lset *) class_NewObject("lset");
+    if (!node) { st->hardfail = 1; return NULL; }
+    node->nobar = 1;
+    node->vcenter = 1;
+    node->autoheight = 1;
+    node->type = lsetview_MakeVert;
+    node->pct = 50;
+    node->minwidth = (left->minwidth > right->minwidth) ? left->minwidth : right->minwidth;
+    node->left = (struct dataobject *) left;
+    node->right = (struct dataobject *) right;
+    return node;
 }
 
 /* A leaf with real content but no text of its own to hold -- used to
@@ -2063,6 +2142,52 @@ static long CellFixedPixelWidth(const struct htmlnode *td)
     return 0;
 }
 
+/* A <td>'s content isn't always inlined directly as this cell's own
+   lset leaf (see BuildLsetCell's sole-nested-table fast path below) --
+   when it isn't (ordinary text content, or a nested table complex
+   enough to need its own real row-view(s)), that content gets rendered
+   into a plain "text" object via htmlatk_RenderAmbient and embedded as
+   view(s) INSIDE it, the same general mechanism RenderTableAsLset uses
+   for the top-level message body. A nested tableau table embedded this
+   way has its own correctly-composed minwidth sitting on ITS OWN lset
+   root -- but that root is now several objects removed from the CELL's
+   own wrapping leaf (buried inside this text object as an embedded
+   view, not exposed as a field), so it would otherwise be silently
+   lost from this cell's contribution to ITS OWN row's minwidth
+   composition (BuildLsetChain's CellMinwidth only ever looks at
+   cells[i].leaf->minwidth directly). Found live 2026-09-20 testing
+   bookrack.html against the new tableau row-combining logic: a
+   correctly-composed minwidth as high as 600 was visible several
+   levels deep in the htmlatktest.test dump, but the table's own
+   embedded root -- several BuildLsetCell general-path levels up --
+   still showed 0. This walks t's embedded views (same per-character
+   environment_View walk htmlatktest.c's own DumpViews/table-finder
+   already uses to locate embedded objects -- a plain per-character
+   loop rather than GetNextChange's run-length optimization, since a
+   view occupies exactly one character and this is only ever run over
+   one <td>'s own short cell text, not a whole message body) and
+   returns the largest minwidth found on any directly-embedded lset --
+   mirroring BuildLsetGrid's own stacked-rows-take-the-max rule, since
+   multiple embedded views within one cell's text are themselves
+   stacked vertically, line after line, not side by side. */
+static long TextMaxEmbeddedLsetMinwidth(struct text *t)
+{
+    long i, tlen, best = 0;
+    if (!t) return 0;
+    tlen = text_GetLength(t);
+    for (i = 0; i < tlen; ++i) {
+        struct environment *env = environment_GetInnerMost(t->rootEnvironment, i);
+        if (env && env->type == environment_View && env->data.viewref) {
+            struct dataobject *dob = env->data.viewref->dataObject;
+            if (dob && strcmp(class_GetTypeName(dob), "lset") == 0) {
+                long mw = ((struct lset *) dob)->minwidth;
+                if (mw > best) best = mw;
+            }
+        }
+    }
+    return best;
+}
+
 /* Builds one <td>/<th>'s lset leaf and reports its WEIGHT (its own
    colspan value, default 1 -- see TableColumnCount's comment above for
    why weight, not a boolean/count, is what cross-row alignment needs)
@@ -2184,6 +2309,7 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
            unreachable by t822view's own Hit() override alone. */
         strcpy(leaf->viewname, "htmllinkview");
         strcpy(leaf->dataname, "text");
+        leaf->minwidth = TextMaxEmbeddedLsetMinwidth(ct);
     } else {
         /* class_NewObject("text") failed -- a real ATK object-
            allocation failure (htmlatk.h's Returns-FALSE contract);
@@ -2379,6 +2505,56 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
            file), not "this one table/peek had nothing in it." */
         return FALSE;
     }
+    /* "Tableau" detection and row-combining: a table whose own <table
+       width=NNN> attribute declares a real pixel design width, or that
+       has -- anywhere among its own rows, including whatever nested
+       tableau tables got spliced/inlined into them above -- a nonzero
+       composed minwidth already, gets ALL its rows folded into one
+       MakeVert-stacked lset subtree (reusing BuildLsetChain, the same
+       row-stacking mechanism BuildLsetLeafFromFloatTable below already
+       uses) instead of being returned as N independently-embedded row
+       views. This is what lets Step 2 (the scrollable tableau wrapper
+       view, htmlatk.h/html-scroll-plan.md) treat the whole table as ONE
+       scrollable unit with every row staying column-aligned as the user
+       scrolls, rather than one independent (and un-synchronized)
+       scrollbar per row -- confirmed live 2026-09-20 that a plain
+       per-row approach would hit this for real: national-grid.html's
+       own width="750" table has 16 direct rows, only one of which
+       (the gas-meter icon row) is genuinely wide. A plain percentage-
+       only table (every row's composed minwidth is 0, no width=
+       attribute of its own) is untouched, returned exactly as built
+       above -- today's per-row embedding, unchanged. */
+    {
+        long tableWidth = ParseFixedPixelWidth(htmlpart_GetAttr(tablenode, "width"));
+        long floor = tableWidth;
+        long r2;
+        for (r2 = 0; r2 < outRows->count; ++r2)
+            if (outRows->items[r2]->minwidth > floor) floor = outRows->items[r2]->minwidth;
+        if (floor > 0) {
+            if (outRows->count == 1) {
+                outRows->items[0]->minwidth = floor;
+            } else {
+                struct wlvec rowCells;
+                struct lset *combined;
+                long r3;
+                wlvec_init(&rowCells);
+                for (r3 = 0; r3 < outRows->count; ++r3)
+                    wlvec_push(&rowCells, outRows->items[r3], 1, 0);
+                combined = BuildLsetBalancedVertStack(rowCells.items, 0, rowCells.count, st);
+                wlvec_free(&rowCells);
+                if (combined) {
+                    if (floor > combined->minwidth) combined->minwidth = floor;
+                    outRows->count = 0; /* original row pointers now live on as combined's own left/right subtree, not discarded */
+                    lsetvec_push(outRows, combined);
+                }
+                /* combined == NULL: allocation failure, st->hardfail
+                   already set by BuildLsetChain -- fall through leaving
+                   outRows as the original uncombined rows, same
+                   degrade-not-crash posture as this file's other OOM
+                   paths. */
+            }
+        }
+    }
     return TRUE;
 }
 
@@ -2544,7 +2720,12 @@ static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode
         wlvec_init(&cells);
         for (i = 0; i < rows.count; ++i) wlvec_push(&cells, rows.items[i], 1, 0);
         lsetvec_free(&rows);
-        leaf = BuildLsetChain(cells.items, cells.count, lsetview_MakeVert, lsetview_MakeVertFixed, st);
+        /* BuildLsetBalancedVertStack (see its own comment, above
+           BuildLsetChain), not BuildLsetChain(...,MakeVert,...) --
+           same deep-recursion reasoning applies here: a floated table
+           with many rows would otherwise fold into a linear chain just
+           like the one that crashed bookrack.html's main table. */
+        leaf = (cells.count > 0) ? BuildLsetBalancedVertStack(cells.items, 0, cells.count, st) : NULL;
         wlvec_free(&cells);
         return leaf ? leaf : MakeFillerLeaf(st);
     }
@@ -2585,8 +2766,19 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
     FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
     for (i = 0; i < rows.count; ++i) {
         struct lset *rowRoot = rows.items[i];
+        /* dataobject_ViewName (dataobj.c) always constructs "lsetview"
+           generically from the class name -- it never looks at an lset
+           instance's own ->viewname field (that field is a DIFFERENT,
+           lset-specific mechanism, only ever consulted by lsetview's own
+           makeview() for a LEAF's inner content, lsetv.c). So a tableau
+           row (BuildLsetGrid's own combining step above, nonzero
+           minwidth) has to be routed to the scrollable wrapper class
+           explicitly, right here at the embedding call, rather than by
+           setting rowRoot->viewname and expecting this lookup to honor
+           it -- it wouldn't. */
+        const char *rowViewName = (rowRoot->minwidth > 0) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) rowRoot);
         if (i > 0) EnsureLineBreak(st);
-        text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName((struct dataobject *) rowRoot), (struct dataobject *) rowRoot);
+        text_AlwaysAddView(st->dest, st->pos, rowViewName, (struct dataobject *) rowRoot);
         ++st->pos;
         /* EnsureLineBreak's own guard (trailingNL==0) has to see this
            reset on every iteration, not just once after the loop --
@@ -2729,7 +2921,24 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
     if (!row) return FALSE;
 
     FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
-    text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName((struct dataobject *) row), (struct dataobject *) row);
+    /* CORRECTION (2026-09-22, found live-testing): this is a THIRD
+       text_AlwaysAddView table-embedding site (RenderTableAsLset's own
+       row loop, above, is the other one that matters here) -- missed
+       when the lsetscrollview routing was added there, so a pair of
+       adjacent floated tables (e.g. two book-review blocks side by
+       side, each with its own cover image) kept falling through to
+       plain dataobject_ViewName(...) ("lsetview") regardless of
+       row->minwidth, meaning the width-forcing place_inner/lsetscrlc.c
+       mechanism never engaged for this shape -- confirmed live via
+       bookrack.html: row->minwidth was genuinely composed correctly
+       (580, verified via htmlatktest.test dump) but simply never
+       consulted here, so ordinary lpair/DesiredSize reflow crushed the
+       text column next to each cover image down to a handful of
+       pixels. Same routing rule as RenderTableAsLset's row loop. */
+    {
+        const char *rowViewName = (row->minwidth > 0) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) row);
+        text_AlwaysAddView(st->dest, st->pos, rowViewName, (struct dataobject *) row);
+    }
     ++st->pos;
     st->trailingNL = 0;
     st->anyContent = 1;
@@ -2962,6 +3171,20 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 const struct htmlnode *cellChildren;
                 const struct htmlnode *cellNode;
                 const char *floatAlign = TableFloatAlign(n);
+                /* A table with its own declared pixel width= is NOT a
+                   no-op wrapper either, same reasoning as floatAlign
+                   just below: real visual/layout intent, not a
+                   structural no-op. Found live 2026-09-20 testing the
+                   LinkedIn fixture: its whole-message "content well"
+                   table (<table width="512">, the ONLY pixel-width
+                   table anywhere in that message) is exactly a 1x1
+                   wrapper shape (one row, one cell) -- flattening it
+                   away here, before BuildLsetGrid/BuildLsetChain's own
+                   width=/minwidth composition ever runs, silently
+                   discarded the width declaration entirely, the same
+                   way it would silently discard align="left"/"right"
+                   without the floatAlign exemption right below. */
+                int tableHasPixelWidth = ParseFixedPixelWidth(htmlpart_GetAttr(n, "width")) > 0;
                 /* An align="left"/"right" table is NOT a no-op wrapper
                    even when it would otherwise structurally qualify
                    (single row/single cell, exactly the National Grid
@@ -2973,7 +3196,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                    this file's floated-adjacent-tables section header
                    comment (above BuildLsetLeafFromFloatTable) for the
                    full root-cause writeup. */
-                if (!floatAlign && TableIsTrivialWrapper(n, &cellChildren, &cellNode)) {
+                if (!floatAlign && !tableHasPixelWidth && TableIsTrivialWrapper(n, &cellChildren, &cellNode)) {
                     /* 1x1 no-op wrapper table -- see TableIsTrivialWrapper's
                        own comment. Inline its cell's children directly
                        instead of building an lset for it at all. n's and
