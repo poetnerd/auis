@@ -77,6 +77,21 @@ data:
 	   split, the original behavior) for \V <4 files and every other
 	   lset caller in the tree. */
 	int autoheight;
+	/* The pixel width this split's own subtree genuinely needs, bottom-up
+	   -- e.g. a real <table width="640"> declared by the HTML author, or
+	   the summed natural width of fixed-pixel-width descendants such as
+	   a nested <table width="200">. Zero means "no declared floor, keep
+	   dividing whatever width is offered by percentage" (every non-HTML-
+	   table lset caller, and any table with only width="100%"/no width
+	   at all). Added 2026-09-20 for htmlatk.c's fixed-width/scrollable
+	   "tableau" table rendering (see html-scroll-plan.md): consulted by
+	   lsetview__DesiredSize's split-node case to report a genuine natural
+	   width upward instead of always echoing back the offered width, and
+	   by the tableau wrapper view to learn how wide to make its inner
+	   lsetview regardless of what the surrounding text offered it.
+	   Persisted as of the on-disk \V 5 format (lset__Read/Write); defaults
+	   to 0 for \V <5 files and every other lset caller in the tree. */
+	int minwidth;
 	char dataname[32];
 	char viewname[32];
 	char refname[64];
