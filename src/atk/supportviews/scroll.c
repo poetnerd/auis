@@ -543,6 +543,27 @@ long scroll__GetViewPadding(struct scroll *self)
     return self->viewPadding;
 }
 
+/* See scroll.ch's own 2026-09-22 comment -- a pure addition alongside
+   the ScrollDrawBorders profile default, not a replacement: nothing
+   else calls this, so nothing else's behavior changes. */
+void scroll__SetDrawBorder(struct scroll *self, boolean draw)
+{
+    self->drawborder = draw;
+    /* See InitPrefs's own matching check (2026-09-23) -- once anything
+       has explicitly called this, InitPrefs's profile-default assignment
+       backs off permanently, so an override made before this instance's
+       first-ever FullUpdate (the common case for a subclass deciding its
+       border from construction-time/geometry data) isn't silently
+       clobbered the moment InitPrefs finally runs. */
+    self->drawborderoverridden = TRUE;
+    scroll_WantUpdate(self, self);
+}
+
+boolean scroll__GetDrawBorder(struct scroll *self)
+{
+    return self->drawborder;
+}
+
 void scroll__SetEndZoneLength(struct scroll *self, long newLength)
 {
     self->endzoneLength = newLength;
@@ -1239,7 +1260,16 @@ static void InitPrefs(struct scroll *self)
     graphicIsMono = graphic_DisplayClass(scroll_GetDrawable(self)) & graphic_Monochrome;
     mono = environ_GetProfileSwitch("MimicOldScrollbar", graphicIsMono ? TRUE : FALSE);
 
-    self->drawborder = environ_GetProfileSwitch("ScrollDrawBorders", mono ? MONODRAWBORDERS : COLORDRAWBORDERS);
+    /* CORRECTION (2026-09-23, found live-testing via lsetscrollview --
+       a subclass that calls SetDrawBorder before this instance's first
+       real paint had its choice silently overwritten right here, since
+       this runs unconditionally the first time FullUpdate ever executes
+       -- the "scrollbar/frame briefly shows then gets wiped, leaving
+       redraw artifacts" bug). Skip only when an explicit override has
+       already been recorded (scroll__SetDrawBorder); ordinary instances
+       that never call SetDrawBorder are completely unaffected. */
+    if (!self->drawborderoverridden)
+        self->drawborder = environ_GetProfileSwitch("ScrollDrawBorders", mono ? MONODRAWBORDERS : COLORDRAWBORDERS);
     self->prefs=sbutton_GetNewPrefs(scrollbar);
     if(self->prefs==NULL) return;
     if (mono) {
