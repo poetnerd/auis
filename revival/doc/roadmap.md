@@ -161,13 +161,40 @@ being front-loaded here.
      landing in real color-allocation code) and a "two frames, one or
      neither clears on navigation" chrome-flicker bug (view_Remove
      teardown passes and the `InitPrefs` clobber above, respectively)
-     are both fixed and live-verified. **Still open:** national-
-     grid.html shows a large block of blank vertical space before and
-     after some table content that Thunderbird renders flush — not yet
-     root-caused; two fix attempts (keying `DesiredSize`'s reserved
-     chrome height off the offered-width parameter, then off placed
-     geometry) didn't resolve it. `porting-assessment.md` item q.'s
-     trailing note.
+     are both fixed and live-verified. The national-grid.html "large
+     block of blank vertical space" bug (2026-09-23) was also fixed:
+     root cause was `htmlatk.c`'s `CellMinwidth` folding a purely local
+     icon-cell sizing hint (`fixedpx`) into the same signal
+     `BuildLsetGrid`'s tableau-floor detection uses, so any row with so
+     much as one icon `<td>` got wrongly treated as declaring a
+     table-wide pixel design width — crushing unrelated paragraph
+     content down to the icon's own width. Fixed by excluding `fixedpx`
+     from that composition; `fixedpx` still flows to `BuildLsetChain`'s
+     own split-sizing, unchanged, via its own independent field.
+
+     **Now open, found immediately after via the same live-testing
+     (2026-09-23/24, still in progress):** the document-wide vertical
+     scrollbar's **elevator drag** doesn't track correctly once a table
+     this large is on-screen — symptoms have included landing short of
+     the true top/bottom, mid-drag warps to the wrong position, the
+     elevator getting stuck, and (current form) "stuck at bottom,
+     dragging goes back to top" (partial improvement over earlier
+     attempts: header lines and the first message chunk are reachable,
+     not fully stuck). Root cause: `textv.c`'s `getinfo()`/`HandleThumbing`
+     (`scroll.c`) treat scrollbar position as proportional to
+     **character count**, which stops correlating with real pixel
+     position once a single "character" (one embedded HTML table) is
+     several thousand pixels tall — confirmed generalizable, not
+     HTML-specific: an ordinary `.ez` file with a large embedded raster
+     shows the same class of symptom via drag (though plain left/right
+     *click* scrolling, which uses a different, content-aware code path
+     in `textv.c`/`scroll.c`, was fixed clean and is confirmed working,
+     including exact per-pixel indexing into an oversized single view).
+     Full technical trail and current status live in `scroll.c`'s own
+     `HandleThumbing` comment (`src/atk/supportviews/scroll.c`) rather
+     than duplicated here, since it's mid-investigation and the code
+     comment is what a resuming session needs to read first.
+     `porting-assessment.md` item q.'s trailing note.
   2. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
   3. Paging isn't pixel-accurate — landing positions are approximate,
