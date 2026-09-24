@@ -1775,17 +1775,41 @@ static int LsetChainPctWeighted(long remainingWeight, long thisWeight)
    Returns-FALSE note); does not free the leaves/subtrees already
    folded in, same best-effort-on-OOM posture as this file's other
    growable buffers. */
-/* A cell's own contribution to its chain's composed minwidth floor: the
-   larger of its fixedpx commitment (a <td width=NNN>/icon column, see
-   CellFixedPixelWidth) and whatever floor its own leaf/subtree already
-   carries (nonzero only when that leaf is itself a table-rooted lset
-   BuildLsetGrid previously stamped a minwidth onto -- a nested tableau
-   table spliced or inlined into this cell). Max, not either/or: a fixed
-   cell that also happens to wrap a wider nested tableau table needs at
-   least the wider of the two, not just its own declared pixel count. */
+/* A cell's own contribution to its chain's composed minwidth floor --
+   deliberately just its own leaf/subtree's floor (nonzero only when
+   that leaf is itself a table-rooted lset BuildLsetGrid previously
+   stamped a minwidth onto -- a nested tableau table spliced or inlined
+   into this cell), NOT cell->fixedpx.
+
+   CORRECTION (2026-09-23, found live-testing -- the national-grid.html
+   "large block of blank vertical space" bug): this used to be
+   max(fixedpx, leaf->minwidth). fixedpx (CellFixedPixelWidth) is a
+   purely LOCAL row-layout hint -- "give this one icon/spacer column
+   its own pixel width when dividing up this row among its siblings"
+   -- already applied for exactly that, independently, via
+   cells[i].fixedpx directly in BuildLsetChain below (the fixedsplittype
+   branch). It was never meant to answer the DIFFERENT, table-wide
+   question BuildLsetGrid's own tableau-floor detection asks with this
+   composed minwidth: "did the author declare a real pixel DESIGN width
+   for this table, such that it's worth forcing a horizontal scrollbar
+   rather than reflowing?" Folding fixedpx into that signal meant ANY
+   row with so much as one icon <td> (CellFixedPixelWidth's sole-image
+   heuristic, e.g. a 81px logo -> fixedpx=87 with ICONCELL_WIDTH_PAD)
+   got treated as if its enclosing table had declared an 87px design
+   floor -- confirmed live: National Grid's icon+notice header row (the
+   81px logo beside the "schedule an appointment" paragraph) composed
+   minwidth=87 purely from the icon, propagated up through
+   TextMaxEmbeddedLsetMinwidth into an entirely unrelated outer table,
+   which then got wrapped in lsetscrollview and had its real content
+   forced to lay out at ~87px wide -- collapsing that paragraph into a
+   ~2800px-tall crushed column that reads as a huge blank gap. Genuine
+   tableau floors (a real `<table width=NNN>` or a nested tableau table
+   inlined via the sole-nested-table fast path/TextMaxEmbeddedLsetMinwidth)
+   still flow through leaf->minwidth untouched -- only the false-positive
+   icon/spacer-fixedpx contribution is excluded. */
 static long CellMinwidth(struct wleaf *cell)
 {
-    return (cell->fixedpx > cell->leaf->minwidth) ? cell->fixedpx : cell->leaf->minwidth;
+    return cell->leaf->minwidth;
 }
 
 static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittype, int fixedsplittype, struct hax_state *st)
