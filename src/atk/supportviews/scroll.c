@@ -47,6 +47,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <point.h>
 #include <rect.h>
 #include <scroll.eh>
+#include <stdarg.h>
+
+/* TEMPORARY (2026-09-23): elevator-drag-jumps-to-top investigation.
+   Removed before commit. */
+static void dbglog(const char *fmt, ...)
+{
+    FILE *f = fopen("/tmp/elevator-debug.log", "a");
+    va_list ap;
+    if (!f) return;
+    va_start(ap, fmt);
+    vfprintf(f, fmt, ap);
+    va_end(ap);
+    fclose(f);
+}
 static void CancelScrollEvent(struct scroll *self);
 static void CheckBars(struct scroll *self, enum view_MouseAction action, long x, long y);
 static boolean CheckEndZones(struct scroll *self, enum view_MouseAction action, long x, long y);
@@ -76,7 +90,7 @@ static void get_interface();
 static void getinfo();
 static void move_elevator();
 static void set_frame();
-static int what_is_at();
+static long what_is_at();
 
 #define ENDTOBARSPACE 4
 #define MINDOTLENGTH 6
@@ -616,6 +630,8 @@ static void getinfo(struct scroll *self, int type, struct range *total, struct r
         *seen = *total;
         dot->beg = dot->end = total->beg;
     }
+    dbglog("SCROLL getinfo type=%d total=%ld,%ld seen=%ld,%ld dot=%ld,%ld\n",
+           type, total->beg, total->end, seen->beg, seen->end, dot->beg, dot->end);
 }
 
 /* Calculation routines. */
@@ -670,7 +686,19 @@ static void endzone(struct scroll *self, int side, int end, enum view_MouseActio
     }
 }
 
-static int what_is_at(struct scroll *self, int side, int coord)
+/* CORRECTION (2026-09-24, found while routing HandleThumbing's drag
+   math through this function): declared/defined to return int, but
+   real_what is a long-returning function pointer -- silently truncated
+   on this LP64 platform (int=32, long=64 bits). Harmless for every
+   position value seen so far (this document's largest encoded position
+   is ~188M, well under INT_MAX), but a real latent bug for a
+   sufficiently long document, and now feeds HandleThumbing's drag
+   target directly rather than just an immediate set_frame() call, so
+   worth fixing at the same time rather than leaving a second
+   LP64-truncation site to rediscover later. coord widened to long to
+   match (was truncating callers' long track-pixel values down to int
+   on the way in, same class of issue, same fix). */
+static long what_is_at(struct scroll *self, int side, long coord)
 {
     long (*real_what)();
     int type = Type[side];
@@ -961,6 +989,7 @@ static long from_range_to_bar(struct scroll *self, int side, struct scrollbar *b
     else {
         retval = self->endbarSpace + ((long)(((double)(posn - bar->total.beg)) * (double)cords / ((double)(bar->total.end - bar->total.beg)) + .5));
     }
+    dbglog("SCROLL from_range_to_bar posn=%ld total=%ld,%ld cords=%ld -> %ld\n", posn, bar->total.beg, bar->total.end, cords, retval);
     return retval;
 }
 
@@ -979,6 +1008,7 @@ static long from_bar_to_range(struct scroll *self, int side, struct scrollbar *b
 			    ((double)(posn - self->endbarSpace))) / (double)cords)
 			  + .5));
     }
+    dbglog("SCROLL from_bar_to_range posn=%ld total=%ld,%ld cords=%ld -> %ld\n", posn, bar->total.beg, bar->total.end, cords, retval);
     return retval;
 }
 
@@ -1639,21 +1669,68 @@ static void HandleThumbing(struct scroll *self, enum view_MouseAction action, lo
     
     if (action == view_LeftMovement || action == view_RightMovement) {
 
+	/* CORRECTION (2026-09-24, superseding this session's own earlier
+	   2026-09-23/09-24 attempts -- see fossil history for the full
+	   trail, kept here only as the final diagnosis): what_is_at() was
+	   tried here and made things WORSE ("bounces around, doesn't
+	   correlate with the mouse, elevator gets stuck") -- it isn't a
+	   general "document position at this track coordinate" oracle, it
+	   only ever resolves pixels already present in the CURRENTLY
+	   rendered self->lines[]. Click/repeat (DoRepeatScroll) only gets
+	   away with it because self->hitcoord stays FIXED across many
+	   timer ticks while set_frame()+im_ForceUpdate() re-renders the
+	   view closer each tick -- a converging feedback loop, not a
+	   single lookup. A drag's `coord` changes every event with no such
+	   convergence, so each call was resolving an arbitrary pixel of
+	   whatever the PREVIOUS event happened to leave on screen, with no
+	   relation to where the mouse actually is along the whole track.
+
+	   from_bar_to_range() is the right tool after all -- confirmed via
+	   live trace (/tmp/elevator-debug.log) to be smooth and monotonic
+	   with coord throughout every capture, unlike what_is_at() here.
+	   Its only real problem was downstream: centering des->seen.beg on
+	   posn via `- self->seenLength/2` (and, briefly, clamping using
+	   self->seenLength again) pulled in seenLength -- captured once,
+	   at drag-start, from getinfo()'s character-count-based seen width
+	   wherever the drag happened to begin, and confirmed to vary by
+	   three orders of magnitude across this document depending on
+	   local content density (as little as ~1 character's worth over
+	   the huge embedded table, ~780 over the dense multi-language
+	   footer). Dropping the centering and using posn directly as the
+	   target -- exactly how click/repeat already uses its own resolved
+	   position directly, no centering -- removes seenLength from the
+	   navigation math entirely; it's still used below only for the
+	   elevator's own drawn/visual size, a cosmetic-only concern.
+
+	   STATUS (2026-09-24): STILL NOT CORRECT with this form, reported
+	   live against national-grid.html: "elevator stuck at bottom,
+	   dragging goes back to top" -- but a genuine partial improvement
+	   over the what_is_at() attempt (not fully stuck: drag can reach
+	   the header lines and first message chunk, which are normally
+	   scrolled off-screen on open). Separately, on revival/testing.ez
+	   (the big-raster .ez file) drag is reportedly back to normal/
+	   legacy behavior with this form -- so whatever's still wrong here
+	   is specific to the extreme density case again, not a general
+	   regression. Not yet root-caused with a live trace against this
+	   exact build (the trace above is from the what_is_at() attempt,
+	   not this one) -- that's the next step: reproduce with
+	   /tmp/elevator-debug.log freshly cleared and read the actual
+	   from_bar_to_range()/HandleThumbing values for this specific
+	   "stuck at bottom" case before changing this again. wdc's own
+	   read: "I think your understanding of how drag works is
+	   incomplete" -- true for the what_is_at() attempt (see above,
+	   now understood); may still be true here too, not yet confirmed
+	   either way. */
 	posn = from_bar_to_range(self, self->side, cur, coord);
-	if(ABS(posn-cur->seen.beg+self->seenLength/2)>=self->seenLength/10) {
+	dbglog("SCROLL HandleThumbing MOVE coord=%ld posn=%ld cur->seen=%ld,%ld seenLength=%ld total=%ld,%ld\n",
+	       coord, posn, cur->seen.beg, cur->seen.end, self->seenLength, cur->total.beg, cur->total.end);
+	if(ABS(posn-cur->seen.beg)>=MAX(1,self->seenLength/10) || posn==cur->total.beg || posn==cur->total.end) {
 	    int location=self->current.location;
-	    
-	    des->seen.beg = posn-self->seenLength/2;
-	    if (des->seen.beg < des->total.beg) {
-		des->seen.beg = des->total.beg;
-		des->seen.end = MIN(des->total.end, des->seen.beg + self->seenLength);
-	    }
-	    else if (des->seen.beg > des->total.end) {
-		des->seen.beg = des->total.end;
-		des->seen.end = des->total.end;
-	    }
-	    else
-		des->seen.end = MIN(des->total.end, des->seen.beg + self->seenLength);
+
+	    des->seen.beg = posn;
+	    if (des->seen.beg < des->total.beg) des->seen.beg = des->total.beg;
+	    else if (des->seen.beg > des->total.end) des->seen.beg = des->total.end;
+	    des->seen.end = MIN(des->total.end, des->seen.beg + self->seenLength);
 	    for (i = 0; i < scroll_SIDES; i++)  {
 		if ((location & (1<<i)) && Type[i] == Type[self->side])  {
 		    if (self->thumbScroll && (self->lastaction==view_LeftDown || (self->emulation && self->lastaction==view_RightDown)))  {
@@ -1667,14 +1744,19 @@ static void HandleThumbing(struct scroll *self, enum view_MouseAction action, lo
 	}
     } else { /* this is an up transition */
 	im_SetWindowCursor(self->header.view.imPtr, NULL);
-	
-	des->seen.beg =  from_bar_to_range(self, self->side, cur, coord) - self->seenLength/2;
+
+	/* Same fix as the MOVE branch above, same reasoning (2026-09-24) --
+	   see its own comment for the full story: from_bar_to_range(),
+	   used directly with no seenLength centering. */
+	des->seen.beg = from_bar_to_range(self, self->side, cur, coord);
 	if (des->seen.beg < des->total.beg)
 	    des->seen.beg = des->total.beg;
 	else if (des->seen.beg > des->total.end) {
 	    des->seen.beg = des->total.end;
 	}
 
+	dbglog("SCROLL HandleThumbing UP coord=%ld des->seen.beg=%ld seenLength=%ld total=%ld,%ld\n",
+	       coord, des->seen.beg, self->seenLength, des->total.beg, des->total.end);
 	set_frame(self, self->side, des->seen.beg, 0);
 	im_ForceUpdate();
     }
