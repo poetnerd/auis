@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <andrewos.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <class.h>
 #include <ctype.h>
 #include <dict.ih>
@@ -79,6 +80,19 @@ static int stringmatch(struct text *d, long pos, char *c);
 
 static struct graphic *pat;
 
+/* TEMPORARY (2026-09-23): elevator-drag-warps-to-top investigation.
+   Removed before commit. */
+static void dbglog(const char *fmt, ...)
+{
+    FILE *f = fopen("/tmp/elevator-debug.log", "a");
+    va_list ap;
+    if (!f) return;
+    va_start(ap, fmt);
+    vfprintf(f, fmt, ap);
+    va_end(ap);
+    fclose(f);
+}
+
 #define TEXT_VIEWREFCHAR '\377'  /* place holder character for viewrefs */
 #define textview_MOVEVIEW 99999999
 
@@ -91,8 +105,35 @@ static struct graphic *pat;
 #define MAXPARA 200
 #define REMOVEDCURSOR 32765
 #define TABBASE ((int) 'n')
-#define FINESCROLL 7
-#define FINEMASK 127 /* 2 ^ FINESCROLL - 1 */
+/* CORRECTION (2026-09-23, found live-testing messages' new HTML-table
+   scrollable-tableau feature): FINESCROLL/FINEMASK bounded the fine
+   (sub-line) component of the scrollbar elevator's position encoding
+   to 7 bits, i.e. FINEMASK(127)*FINEGRID(12) = 1524px of resolution
+   *within* a single line/view -- fine for ordinary text lines and
+   images, but this codebase now has a real case of one embedded view
+   several thousand pixels tall (a whole multi-row HTML table, kept as
+   one view so its horizontal scroll position stays in sync across
+   rows -- see html-scroll-plan.md). Positions beyond 1524px into such
+   a view all saturated to the same encoded value (position()'s own
+   "off > FINEMASK" clamp below), so the elevator's drag/click math --
+   which decodes this encoding to figure out where you dragged to --
+   could resolve two genuinely different scroll positions to the same
+   value, or dead-reckon the wrong one, producing exactly the
+   "dragging near the bottom jumps way back up" symptom reported live.
+   14 bits (16383) here raises that ceiling to 16383*12 =~ 196,000px,
+   comfortably past any real message content. Purely an internal
+   encoding width: grepped the whole tree, nothing outside this file
+   reads FINESCROLL/FINEMASK/FINEGRID -- the scroll-interface callers
+   (scroll.c) only ever see the resulting opaque `long` position
+   values, never these constants, so this is safe to widen without
+   touching anything else. Kept in textv.c despite this project's own
+   "lpair.c/textv.c/drawtxtv.c untouched" scoping (html-scroll-plan.md)
+   -- explicitly re-scoped in: this is the actual root cause, it's a
+   narrow encoding-width change, not the deeper pixel-accurate-paging
+   rewrite that scoping was written to avoid (see roadmap.md's own
+   open item on that separate, still-unfixed imprecision). */
+#define FINESCROLL 14
+#define FINEMASK 16383 /* 2 ^ FINESCROLL - 1 */
 #define FINEGRID 12
 
 static struct fontdesc *iconFont = NULL;
@@ -2406,10 +2447,11 @@ static long position(long pos, struct linedesc *theline, long coord)
 	if(off<0) off= -(theline->y+theline->height);
     }
     /* with FINEGRID at 12, this will break with
-       views taller than 1524 pixels */
+       views taller than FINEMASK*FINEGRID pixels (see FINESCROLL's
+       own 2026-09-23 comment, top of file) */
     off = (off + FINEGRID/2) / FINEGRID;
 
-    /* off has to fit in 7 bits */
+    /* off has to fit in FINESCROLL bits */
     if (off > FINEMASK) {
         off = FINEMASK;
     }
@@ -2475,17 +2517,24 @@ static void setframe(struct textview *self, long position, long numerator, long 
     long off;
     boolean forceup = FALSE;
 
+    long inposition = position;
+
     coord = numerator * textview_GetLogicalHeight(self);
     coord /= denominator;
 
     off = (position & FINEMASK) * FINEGRID;
     position >>= FINESCROLL;
 
+    dbglog("TEXTV setframe IN inposition=%ld numerator=%ld denominator=%ld coord=%ld decoded_position=%ld off=%ld tl=%ld\n",
+           inposition, numerator, denominator, coord, position, off, text_GetLength(Text(self)));
+
     newpos = textview_MoveBack(self, position, 0, textview_MoveByLines, 0, 0);
     if (newpos != position) {
         forceup = TRUE;
     }
+    dbglog("TEXTV setframe afterLinesSnap position=%ld newpos=%ld forceup=%d\n", position, newpos, (int) forceup);
     newpos = textview_MoveBack(self, newpos, coord, textview_MoveByPixels, &dist, &lines);
+    dbglog("TEXTV setframe afterPixelsMove newpos=%ld dist=%ld lines=%ld\n", newpos, dist, lines);
     if (newpos < textview_GetTopPosition(self) && self->scroll != textview_ScrollForward && self->scroll != textview_MultipleScroll)  {
 	if (dist == -1)  {
 	    self->scrollDist = -1;
@@ -2533,6 +2582,7 @@ static void setframe(struct textview *self, long position, long numerator, long 
             }
         }
     }
+    dbglog("TEXTV setframe SetTopOffTop newpos=%ld off=%ld\n", newpos, off);
     textview_SetTopOffTop(self, newpos, off);
 }
 
