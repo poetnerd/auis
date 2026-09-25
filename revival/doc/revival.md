@@ -1004,6 +1004,30 @@ strictly, width problems:
   converter's own output against itself on this platform until it finally
   was, byte-for-byte, against the original image.
 
+Related in spirit, though not in mechanism — a fixed width chosen once,
+long ago, that modern usage has simply outgrown — the screen-color cache
+underlying every image and colored table cell (`xcolormap`, one instance
+per X display connection, shared for the life of the process across
+every window and message) has counted its distinct allocated colors in a
+16-bit field since 1988. A live crash on 2026-09-25 traced this exactly:
+`nObservers` had reached 27,310 — comfortably past a `short`'s signed
+32,767 ceiling by the time it actually overflowed the field it shared
+with bookkeeping elsewhere in the structure — while displaying nothing
+more exotic than an ordinary sequence of photo-heavy HTML mail. Nothing
+about 1988's typical image made 32,767 distinct colors a meaningful
+limit at the time; a handful of richly-colored modern photos reaches it
+on their own. Widened to a plain `int`, which — since this field is
+embedded in a class inherited nearly everywhere in the tree — required a
+full rebuild rather than a targeted one, but removes the ceiling from
+practical reach. That fix addresses the crash, not the underlying
+growth: nothing currently releases a message's colors when a different
+message replaces it on screen, so the cache still only ever grows for as
+long as the process runs. A real fix — releasing a message's colors when
+its content is torn down, the way an already-existing (if
+narrowly-called) helper function already does for the one case that
+currently invokes it — is a separate, still-open piece of work; see
+`roadmap.md`, item 1(g).
+
 A mechanically unrelated defect, described above in "Modernizing," produced
 a very similar-looking symptom: a code generator's own choice of table
 storage width — not the processor's register width — changed underneath
@@ -1095,6 +1119,26 @@ complete across the entire active tree — every method call and function
 definition in it is now compiler-checked. A live, itemized table of what's
 fully working versus still rough is in `roadmap.md`, rather than repeated
 here.
+
+One rendering feature is specific to this fork rather than a restoration
+of 1994 behavior: `messages`' HTML renderer no longer crushes a `<table>`
+declaring a genuine pixel width down to whatever narrow space the
+surrounding message text happened to offer it. A table's own `width=`
+attribute is read as a statement of intent — a flowing, percentage-based
+table still reflows to fit, exactly as before, but a table with a real
+pixel-width layout now renders at that true width inside its own
+self-contained, horizontally-scrollable inset, the way a modern mail
+client (Thunderbird, for instance) handles the same email, rather than
+being squeezed into an unreadable strip. Making this work also meant
+extending AUIS's own scrollbar model — clicking or dragging a position
+in the scrollbar brings that exact row of pixels to the top of the
+window, rather than the position-based paging most other toolkits use —
+to correctly handle embedded views many times taller than a single line
+of text, a case the original 1988 design never had reason to consider.
+Both the new table rendering and the underlying scrollbar math needed
+several rounds of live-testing fixes against a genuinely nested,
+multi-table message to get right; the individual defects found along
+the way are tracked in `roadmap.md`, item 1.
 
 One deliberate scope decision from early in the project: the Console
 (terminal-emulator) subsystem is not part of this build.
