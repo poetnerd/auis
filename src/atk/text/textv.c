@@ -81,6 +81,10 @@ static void RecordScrollWeight(struct textview *self, long pos, long height, boo
 static long AccumulatedWeightThrough(struct textview *self, long pos);
 static long DecodeWeight(struct textview *self, long encoded);
 static void FreeScrollWeights(struct textview *self);
+/* Forward reference -- real declaration + rationale comment is down by
+   GetScrollWeights(). Needed here too: LinkTree/FinalizeObject (below)
+   must recognize and skip this dictionary entry (see their own comments). */
+static char ScrollWeightsKey;
 static int stringmatch(struct text *d, long pos, char *c);
 
 /* Storage for the elevator-drag position correction -- see position()'s
@@ -271,6 +275,18 @@ void textview__LinkTree(struct textview *self, struct view *parent)
 	if((list = (char **)malloc(cnt * sizeof(char *))) != NULL){
 	    dictionary_ListRefs(self,list,cnt);
 	    for(vr = (struct viewref **)list; cnt--; vr++){
+		/* dictionary_ListRefs returns every key ever Inserted for
+		   `self`, not just viewrefs -- GetScrollWeights() shares
+		   this same per-textview dictionary, keyed on
+		   &ScrollWeightsKey, to stash its scroll-weight blob.
+		   Without this check, a reused textview that still has a
+		   scroll-weight entry from a prior body gets that blob
+		   handed to view_LinkTree() as if it were a view, jumping
+		   through garbage (confirmed live via crash log,
+		   2026-09-25: SIGBUS in a nested lsetview/lpair LinkTree
+		   chain, faulting PC inherited from the blob's first
+		   bytes). */
+		if ((char *) *vr == &ScrollWeightsKey) continue;
 		view = (struct view *) dictionary_LookUp(self,(char *)*vr);
 		if(view){
 		    view_LinkTree(view, self);
@@ -350,6 +366,13 @@ void textview__FinalizeObject(struct classheader *classID, struct textview *self
 	if((list = (char **)malloc(cnt * sizeof(char *))) != NULL){
 	    dictionary_ListRefs(self,list,cnt);
 	    for(vr = (struct viewref **)list; cnt--; vr++){
+		/* Same non-viewref dictionary entry as
+		   textview__LinkTree's own scroll-weight guard above --
+		   see its comment. FreeTextData (called below) is what
+		   actually frees/deletes the scroll-weight blob; skip it
+		   here rather than dispatching view_Destroy/
+		   viewref_RemoveObserver on it. */
+		if ((char *) *vr == &ScrollWeightsKey) continue;
 		view = (struct view *) dictionary_LookUp(self,(char *)*vr);
 		if(view) view_Destroy(view);
 		dictionary_Delete(self,(char *)*vr);
