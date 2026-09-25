@@ -63,6 +63,24 @@ struct linedesc  {
     struct mark *data;			/* the range of the text storing the data */
 };
 
+/* Shared with textv.c's own (formerly private) FINESCROLL -- textv.c
+   #defines its local FINESCROLL as this constant, so there is exactly
+   one place either has to change. Originally 7 (1988), widened to 14
+   on 2026-09-24 for the elevator-drag fix below; that widening's own
+   comment (textv.c) claimed "nothing outside this file reads
+   FINESCROLL" and left this class's EncodePosition/DecodePosition
+   macromethods (below) hardcoded to the old literal 7 -- a sibling
+   site the grep missed because it's a *macro body*, not a read of the
+   FINESCROLL symbol. Found live 2026-09-25: any textview subclass
+   whose own scroll interface calls EncodePosition/DecodePosition to
+   translate a getinfo()-returned (FINESCROLL-shifted) position back to
+   a raw character offset -- messages' `captions` is the one that does
+   this -- silently decoded with the wrong shift (>>7 undoing a <<14),
+   leaving the decoded position ~2^7 too large. captions.c's GetInfo
+   treats an out-of-range decode as "off the end" and collapses the
+   scrollbar to a degenerate whole-document elevator. */
+#define textview_FINESCROLL 14
+
 /* Elevator-drag scrollbar-position correction (2026-09-24, see
    html-scroll-plan.md's Step 3): records the real pixel height of a
    line found -- via any code path, full paint or measurement-only --
@@ -202,8 +220,8 @@ methods:
 macromethods:
     GetEditor() (self->editor)
     GetVIMode() (self->viMode)
-    EncodePosition(pos)  ((pos) << 7)
-    DecodePosition(pos)  ((pos) >> 7)
+    EncodePosition(pos)  ((pos) << textview_FINESCROLL)
+    DecodePosition(pos)  ((pos) >> textview_FINESCROLL)
 
 classprocedures:
     FinalizeObject(struct textview *self);

@@ -144,8 +144,19 @@ static struct graphic *pat;
    -- explicitly re-scoped in: this is the actual root cause, it's a
    narrow encoding-width change, not the deeper pixel-accurate-paging
    rewrite that scoping was written to avoid (see roadmap.md's own
-   open item on that separate, still-unfixed imprecision). */
-#define FINESCROLL 14
+   open item on that separate, still-unfixed imprecision).
+
+   CORRECTION (2026-09-25): that "nothing outside this file reads
+   FINESCROLL" claim was wrong -- textv.ch's own EncodePosition/
+   DecodePosition macromethods hardcoded the same shift as a literal
+   7, independently of this #define, and every textview subclass
+   (messages' `captions` in particular) inherits and calls them to
+   decode getinfo()'s FINESCROLL-shifted positions back to raw
+   character offsets. That mismatch (decode by 7 what was encoded by
+   14) is what broke the captions scrollbar. FINESCROLL is now defined
+   once, in textv.ch (textview_FINESCROLL), and both this #define and
+   textv.ch's macromethods read that single definition. */
+#define FINESCROLL textview_FINESCROLL
 #define FINEMASK 16383 /* 2 ^ FINESCROLL - 1 */
 #define FINEGRID 12
 
