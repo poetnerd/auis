@@ -288,6 +288,35 @@ being front-loaded here.
      of only ever accumulating) is a real, separate follow-up, not done
      here — the widened counter just moves the ceiling far out of
      practical reach.
+
+     **One more, found regression-testing left/right-click scroll
+     after (g) above was fixed:** (h) clicking (not dragging) inside a
+     tall embedded view — e.g. a tableau table — landed at that view's
+     very top regardless of where you actually clicked, and right-click
+     from there jumped further than expected; both looked like "warps
+     to top of document." Root cause: `setframe()`'s `DecodeWeight()`
+     helper does double duty for two different callers that share its
+     one `long` position encoding — elevator-**drag** (`from_bar_to_range`
+     linearly interpolates across the *whole document's* weighted
+     track, so a drag landing inside an oversized entry's inflated
+     span needs proportional rescaling back down to a real pixel
+     offset) and a plain **click** (`position()`, called via
+     `whatisat`, already encodes a genuine, correctly-bounded pixel
+     offset directly — no interpolation, no rescaling needed).
+     `DecodeWeight` had no way to tell which kind of value it was
+     given, so it rescaled click values too; since a click's offset is
+     tiny next to an oversized entry's multi-million-unit span, the
+     rescale collapsed it to ~0 and handed that back as "weight,"
+     which then got subtracted straight out in `setframe`, zeroing the
+     click's own real sub-line offset. Fixed by recognizing that a
+     real click's offset can never exceed the line's own recorded
+     `realOffMax` (its actual pixel height), so any decoded value at
+     or below that bound is already-real and skips the rescale
+     entirely (`textv.c`'s `DecodeWeight`); values above that bound
+     (only reachable via drag interpolation) are unaffected. Found and
+     confirmed live via file-based tracing (register/lldb weren't
+     needed this time) across `scroll.c`'s `CheckBars`/`DoRepeatScroll`
+     and `textv.c`'s `whatisat`/`position`/`setframe`/`DecodeWeight`.
   2. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
   3. Paging isn't pixel-accurate — landing positions are approximate,
