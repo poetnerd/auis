@@ -459,7 +459,16 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
 {
     enum view_DSattributes result;
     self->sizepending = FALSE; /* matches celview__DesiredSize's own reset -- a real query is happening now, so any pending WantNewSize escalation has been serviced. Without this, WantNewSize's debounce guard would latch TRUE forever after the first call and never escalate again. */
-    if (self->mode != lsetview_IsSplit && self->child) {
+    /* CORRECTION (2026-09-25, found chasing a live click-scroll crash
+       into a not-yet-rendered part of a Book Rack tableau): recursing
+       into self->child before it's linked (view_GetIM NULL) can reach
+       real drawing code -- same lazy-linking hazard already guarded in
+       lsetscrollcontent__DesiredSize (lsetscrlc.c) and matte__DesiredSize
+       (matte.c); this leaf case had the same unconditional recursion
+       they were fixed for. Falls through to super_DesiredSize's safe
+       default, exactly like the existing "no child at all" case below,
+       and self-corrects on the next real layout pass once linked. */
+    if (self->mode != lsetview_IsSplit && self->child && view_GetIM(self->child)) {
 	result = view_DesiredSize(self->child, width, height, pass, dWidth, dHeight);
 	return result;
     }
