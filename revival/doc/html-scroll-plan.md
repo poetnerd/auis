@@ -1,10 +1,17 @@
 # Fixed-width HTML tables with horizontal scroll (Thunderbird-style)
 
-> **Status (2026-09-23):** Steps 1 and 2 below are both implemented and
+> **Status (2026-09-24):** Steps 1 and 2 are both implemented and
 > live-verified — canonical status lives in `roadmap.md`'s Open items
-> (item 1), not duplicated here. Short version: the crash and the
-> chrome-flicker/double-frame bug are fixed; national-grid.html's
-> stray-whitespace rendering bug is still open and not yet root-caused.
+> (item 1), not duplicated here. The stray-whitespace bug from Step 2 is
+> fixed. That work uncovered a further, distinct bug — elevator-drag
+> scrolling was inaccurate specifically for a document containing an
+> oversized embedded view (national-grid.html's tableau table) — now
+> **mostly fixed** in **Step 3** below (major, live-verified improvement:
+> drag reaches true top/bottom content it never could before), with one
+> narrower follow-up bug still open (drag-into-endzone after extended
+> scrolling can mis-land; a fresh click to the same spot works). Click/
+> page navigation in the same scrollbar was fixed earlier (see `textv.c`'s
+> `FINESCROLL` widen) and remains confirmed working.
 
 ## Context
 
@@ -181,5 +188,285 @@ live-test in `messages` against `national-grid.html`, `LinkedIn`, and
 - Fossil commits: one per step (1, 2), each compile-verified per touched
   file before committing, per this project's established check-in workflow
   — **done 2026-09-23** for everything built so far (crash fix, chrome-
-  flicker fix included); the eventual whitespace-bug fix gets its own
-  commit(s) on top.
+  flicker fix included); the whitespace-bug fix (`htmlatk.c`'s
+  `CellMinwidth`) is also committed, dated 2026-09-24.
+
+## Step 3 — Elevator-drag scrolling accuracy (implemented 2026-09-24, one known follow-up remains)
+
+> **Status (2026-09-24):** Implemented and live-verified as a major
+> improvement: dragging now tracks proportionally through documents
+> containing an oversized embedded view (national-grid.html's tableau
+> table), including reaching genuine top and bottom content that drag
+> could never reach before. `struct scrollweight`/`scrollweightlist`
+> (textv.ch/textv.c), `RecordScrollWeight`, `CalculateCharsPerLine`,
+> `AccumulatedWeightThrough`, and `DecodeWeight` are all in place; the
+> dictionary-key bug (string-literal identity, see inline comment) and
+> the flat-extraWeight dead-zone bug (see `DecodeWeight`'s own comment)
+> were both found live and fixed. **One follow-up bug remains, not yet
+> fixed:** dragging the elevator into the bottom endzone after a long
+> scrolling session can land at the wrong (much earlier) position —
+> confirmed NOT a shared encode/decode bug (a fresh click to the same
+> endzone, immediately after, lands correctly on the true end-of-document
+> content) — isolated to something drag-specific in `scroll.c`. Leading
+> theory: `struct scroll`'s own cached `cur`/`des` bar state
+> (`self->current`/`self->desired`) doesn't get refreshed against a
+> fresh `getinfo()` on every `HandleThumbing` event, so a long drag
+> gesture can clamp against a stale `total.end` captured earlier in the
+> same gesture, before further scrolling elsewhere in the session caused
+> more weight to be discovered. Not yet fixed or live-tested — next
+> session should verify this theory (e.g. trace `cur->total.end` across
+> a long drag against a fresh `getinfo()` call) before changing
+> `HandleThumbing` again. Debug tracing remains live in both `scroll.c`
+> and `textv.c` (`/tmp/elevator-debug.log`) for this purpose, including
+> the `scroll__Hit`/`endzone()` tracing added while chasing this bug
+> (which ruled out a `mousestate` transition to `TOPENDZONE`/
+> `BOTTOMENDZONE` as the cause).
+
+### Context
+
+Fixing the whitespace bug above immediately surfaced a new, distinct bug:
+dragging the message-body scrollbar's elevator through/past
+national-grid.html's embedded tableau table lands in the wrong place —
+reported variously across several live-test rounds as landing short,
+warping to the top mid-drag, freezing, and (worst) "stuck at bottom,
+dragging goes back to top." Three iterations were tried directly in
+`scroll.c`'s `HandleThumbing` (symmetric end-clamping, swapping in
+`what_is_at()`, dropping `seenLength` centering) — full blow-by-blow is in
+that function's own comment, not repeated here. Each iteration improved
+some symptoms and left others, because none of them addressed the actual
+root cause. **Click/page navigation in the same scrollbar (left/right-click
+in the track) is already correct**, including through the table — fixed
+earlier by widening `textv.c`'s `FINESCROLL`/`FINEMASK` from 7 to 14 bits.
+This step is drag-only.
+
+### Root cause (confirmed via live trace, 2026-09-24)
+
+`scroll.c`'s generic elevator math (`from_bar_to_range`/`from_range_to_bar`,
+`scroll.c:980-1013`) does plain linear interpolation between a track pixel
+coordinate and `total` — a range reported by the scrollee's `GetInfo`
+callback. That's the correct, necessary behavior for a reusable scrollbar;
+it's only as accurate as the `total`/`seen` values it's handed.
+
+`textv.c`'s `getinfo()` (`textv.c:2461-2494`) reports `total->end = tl
+<<FINESCROLL`, where `tl` is `text_GetLength()` — the document's raw
+**character count**. Every character is implicitly treated as occupying
+equal vertical space. That assumption is harmless for ordinary text (line
+density is fairly uniform) but breaks badly for an embedded view: a table
+occupies exactly one character in the text stream (confirmed:
+`linedesc.nChars`/`.containsView` in `textv.c:74-79`), yet can occupy
+thousands of real pixels. `position()` (`textv.c:2438-2459`) already
+carries a *fine* sub-position offset for such a line (the very thing
+`FINESCROLL` was widened to hold more of), but only *within* that one
+line — it does nothing to correct `total`'s coarse, per-character
+granularity *around* it.
+
+Net effect, confirmed by re-tagging every trace line with its owning
+`scroll`/`textview` instance (`self=%p`, added to the existing
+`dbglog`/`/tmp/elevator-debug.log` tracing in both files) and re-running
+the drag live: dragging through the table's neighborhood, `getinfo()`'s
+real `seen` width balloons to ~188,000,000 units against a `total` of
+188,186,624 — essentially "one screenful is almost the whole document" —
+while the elevator's own captured `seenLength` (16,194–38,895,616 across
+different drag-start points in the *same* document, a 2400x spread)
+reflects whatever ordinary-text density happened to be under the cursor
+when the drag began. Dragging across that band therefore either takes a
+huge, invisible mouse motion to register any content change ("stuck"), or
+crosses the table's entire pixel range for a track motion of one or two
+pixels ("warps").
+
+### Why click/page already work and drag doesn't
+
+Click/page resolve via `whatisat()` → `textview_Locate()`
+(`textv.c:2496-2509`), which walks the *currently-rendered* lines directly
+using their real per-line pixel `y`/`height` — genuinely pixel-accurate,
+independent of `total`. It works iteratively: `DoRepeatScroll`'s timer
+re-evaluates it against freshly-rendered content on each tick, converging
+over a few ticks for a far-off click. Drag has no such convergence loop —
+`HandleThumbing` calls `from_bar_to_range()` fresh on every mouse-move
+event and must get a usable answer in one shot from `total`/`seen` alone.
+(An earlier attempt to reuse `what_is_at()`/`textview_Locate()` directly
+for drag was tried and made things worse — confirmed live as "bounces
+around... doesn't correlate with the mouse" — because drag's redraw
+(`im_ForceUpdate()`) is asynchronous: rapid mouse-move events can outrun
+the pending redraw, so `textview_Locate()` resolves against stale
+`self->lines[]`. Click's timer-based repeat avoids this by construction;
+continuous drag doesn't. This is why the fix has to correct `total`
+itself, not swap in click's resolver.)
+
+### Why the "obviously correct" fix (real cumulative pixel height) doesn't fit this architecture
+
+The clean fix would be: make `total` genuinely proportional to real
+document pixel height, end to end. That's not available cheaply.
+`self->lines[]` (what `getinfo()` reads `y`/`height` from) is **not the
+whole document** — it's a virtualized window of only the currently
+rendered/visible lines, confirmed by reading `nLines`'s management
+throughout `textv.c` (grows/shrinks as the view scrolls, `DoUpdate` is
+where lines get (re)computed). Computing a true whole-document cumulative
+pixel height would mean either laying out the entire document up front
+(defeats the lazy-rendering this class is built around, and doesn't scale
+to long documents) or maintaining a persistent per-line height cache for
+content that may never be visited. Neither is a small change.
+
+### Scoped design actually being proposed
+
+Don't touch the character-count basis for ordinary text at all — it isn't
+broken, and per-line real heights for most of a document simply aren't
+known without full layout. Instead, correct **only** for lines that
+`containsView` (an embedded inset, e.g. the tableau table) and are large
+enough to matter:
+
+1. **No new field on any dataobject — the value already exists.** wdc
+   asked (2026-09-24) why this couldn't just be filled in as the document
+   is instantiated rather than tracked in a side cache. The pixel height
+   itself doesn't need a new place to live: `textview_LineRedraw` already
+   computes and holds it, generically, for *any* embedded view the moment
+   it lays that line out — `tl->height` at `textv.c:1127` (the real paint
+   path, `DoUpdate`) and the same field via the measurement-only
+   `textview_GetHeight` mode used by `MoveByPixels`/`MoveByLines`/
+   `MoveForward`/`MoveBack` (~8 more call sites) — no table-specific or
+   even HTML-specific code involved, so this covers the already-confirmed
+   analogous case (a large raster in a plain `.ez` file) for free, not
+   just tables. Adding a field to `lset.ch` (mirroring `minwidth`) was
+   considered and rejected: it would only cover HTML tables, and the
+   value it would hold is already sitting in `tl->height` at the exact
+   moment it's needed — a new field would just be a second place for the
+   same number to go stale in.
+2. **What's actually missing is somewhere for that number to survive
+   scrolling away.** `self->lines[]` is a moving window (`textv.c`'s
+   `nLines` grows/shrinks as the view scrolls) — once a line scrolls back
+   out, its `linedesc` (and the `tl->height` it held) is gone. `total`
+   needs to reflect lines the view isn't currently looking at, so
+   `struct textview` gets a small, sorted `{position, extraWeight}` list
+   — populated (insert-or-update by position) from a single small helper
+   called both from `DoUpdate`'s paint path and from `LineRedraw`'s
+   measurement-only call sites, every time either one discovers a line
+   whose `tl->height` is meaningfully larger than ordinary text (skip
+   the rest, so an inline image or small inset doesn't grow the list).
+   `extraWeight` is that height, `FINEGRID`-scaled, minus the 1-character
+   baseline it would otherwise have contributed. This is genuinely just
+   an index of *where* an already-computed number was seen, not a
+   separate computation of the number itself — the actual geometry stays
+   sourced from the view's own real, already-happening layout, exactly
+   where wdc's question was pointing. (Whether the underlying view's
+   height is itself stable across re-layout — e.g. not width-dependent —
+   still matters for the index entry to stay valid without needing to be
+   refreshed; for the table case this is already true, since
+   `lsetscrollview`'s `DesiredSize` was fixed earlier this session
+   (`lsetscrlv.c`, 2026-09-23) to report a constant, width-independent
+   height.)
+3. **Encode side** (`position()`, `textv.c:2438-2459`, plus `getinfo()`'s
+   `total->end`): after the existing coarse `pos<<FINESCROLL` + fine-offset
+   computation, add the accumulated `extraWeight` of every cached entry at
+   or before `pos`. `getinfo()`'s `total->end` becomes `tl`'s own encoded
+   value via this same path (today it bypasses `position()` entirely and
+   just does `tl<<FINESCROLL` — that bypass goes away).
+4. **Decode side** (`setframe()`, `textv.c:2513` on, specifically the
+   `position >>= FINESCROLL` prologue): subtract the same accumulated
+   `extraWeight` for entries at or before the encoded value, before
+   treating the result as a real character position and handing it to the
+   existing `MoveBack(..., textview_MoveByLines, ...)` /
+   `MoveBack(..., textview_MoveByPixels, ...)` walk — unchanged from here
+   on, since that walk is already genuinely pixel-accurate once given a
+   close starting guess.
+5. Click's own path (`whatisat`/`textview_Locate`) does not change — it
+   never depended on `total`, and doesn't call the new encode/decode
+   correction. It will keep working exactly as it does today; the new
+   `position()` weighting is additive and doesn't change which real
+   character/pixel position any existing caller resolves to, only how
+   coarse positions are spaced relative to each other in scrollbar space.
+
+**Accepted, documented limitation** (refined 2026-09-24, after wdc asked
+whether the correction would end up trying to scale by content that
+hasn't been rendered yet — it can't, and this is the honest shape of
+that): `total` under-reports by the `extraWeight` of any oversized line
+not yet *discovered* — full paint or measurement-only walk, either
+counts. Because `setframe`'s own decode walk (used by every drag step,
+every page, every click) already measures the lines it crosses to land
+correctly, discovery mostly keeps pace with navigation itself rather than
+surfacing as one late, isolated correction — the drag/page operation that
+first reaches an oversized line's neighborhood is usually the same
+operation that discovers it, so the resulting `total` bump is folded into
+that same step's own redraw rather than arriving as a surprise on a later,
+unrelated one. It is *not* zero-risk: a single large jump (a fast drag
+motion, or an endzone jump) could still discover several oversized lines'
+worth of weight in one step, which the elevator will visibly reflect as a
+one-time size/position correction at that moment, and this hasn't been
+verified live yet — only reasoned from `textview_LineRedraw`'s call
+sites, not traced. Worth watching for specifically during verification:
+drag a large, never-before-scrolled document with an oversized view
+somewhere in the untouched middle, single continuous gesture, no prior
+click/page pass over it first.
+
+**Blast radius**: entirely within `textv.c` (`position()`, `getinfo()`,
+`setframe()`, plus the new position-index field/helpers) — smaller than
+the version of this design discussed earlier in the day, which would also
+have touched `lset.ch`. `scroll.c` is not expected to need further
+changes — its existing linear interpolation becomes correct once handed a
+properly-weighted `total`, which is the whole point of pushing the fix
+here rather than continuing to patch `HandleThumbing`. `lpair.c`/
+`drawtxtv.c`/`lset.ch` remain untouched, consistent with this plan's
+original scoping.
+
+### Verification plan
+
+- Rebuild `libtext.a`/`libsupviews.a`, reinstall, relink `runapp` — same
+  procedure already used this session (`rm -f lib*.a && make lib*.a`,
+  `install -m 644` + `ranlib` into `build/lib/atk/`, then `cd
+  src/atk/apps && rm -f runapp && make dependInstall`).
+- Clear `/tmp/elevator-debug.log`, reproduce the national-grid.html drag
+  (bottom end-zone → drag elevator up → drag back down), then filter the
+  trace to the one dragged `scroll`/`textview` pair using the `self=`/
+  `scrollee=` tags already added this session (`grep -E
+  "self=0x...|self=0x..."`) — same method used to root-cause this bug, so
+  it's already proven to isolate the right signal.
+- Confirm the drag tracks proportionally through the table's band (no
+  stuck/warp), confirm `revival/testing.ez` (the big-raster `.ez` file)
+  and ordinary documents are unaffected, and re-confirm click/page are
+  still exact (should be untouched, but worth a live re-check since
+  `position()` is shared code).
+- Once confirmed working live, strip the temporary `dbglog` tracing from
+  `scroll.c`/`textv.c` (kept in deliberately since the 2026-09-24
+  checkpoint specifically for this investigation) and fold the
+  elevator-drag item in `roadmap.md` from "Now open" to closed.
+
+### Implementation notes (what actually shipped, differs from the plan above in a few places)
+
+- No `lset.ch` field, as planned — the weight blob is reached via
+  `dictionary_Insert`/`LookUp` (`dict.ch`), keyed by a static sentinel's
+  address (`ScrollWeightsKey`), NOT a string literal — dict.c compares
+  keys by pointer identity, and with `-fwritable-strings` each textual
+  occurrence of a string literal gets its own address, so a string key
+  silently never matches across call sites. Found live (`RecordScrollWeight`
+  showed ACCEPT, `getinfo`'s `total` never moved) before being traced to
+  `dict.c`'s `dd->id == id` comparison.
+- `extraWeight` is NOT simply added as a flat bonus on top of the normal
+  encoding — an early version did this and created a huge "dead zone" in
+  the track (any drag landing in it collapsed to nearly the same
+  position — the drag-side analog of the exact click-side bug this
+  feature exists to fix). `DecodeWeight` instead proportionally rescales
+  wherever an encoded value falls within a weighted line's full span
+  (`extraWeight + realOffMax + 1`) back down to that line's narrow real
+  `off` range (`0..height/FINEGRID`) — see its own inline comment for the
+  derivation. `struct scrollweight` carries `height` (not just
+  `position`/`extraWeight`) so decode can compute `realOffMax`.
+- `SCROLLWEIGHT_CHARS_PER_LINE` is not a fixed constant — an early version
+  hardcoded 60, which undershot for a wide window (more real characters
+  actually fit per line, so a fixed low estimate understates how much
+  weight an oversized view deserves relative to real text).
+  `CalculateCharsPerLine` derives it dynamically from the view's current
+  width and font metrics (`fontdesc_FontSummary`'s `maxSpacing`),
+  mirroring `CalculateLineHeight`'s existing pattern.
+- **Remaining bug** (see the Status note at the top of this section):
+  drag-into-endzone after extended scrolling can land at the wrong
+  position even though a fresh click to the same spot lands correctly —
+  not yet fixed. Leading theory is `scroll.c`'s cached `cur`/`des` bar
+  state going stale mid-gesture; not yet confirmed with a trace.
+
+### Open questions (never depended on, safe to leave as follow-ups)
+
+- Exact numeric threshold for "large enough to cache" — shipped as
+  `height <= typicalHeight * 3` (reject). Works for the fixtures tested;
+  not stress-tested against many small-but-not-tiny embedded views.
+- Whether the weight list needs any eviction/size bound for pathological
+  documents with many oversized insets — likely not, given how rare these
+  are, but not stress-tested.
