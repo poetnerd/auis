@@ -172,28 +172,40 @@ being front-loaded here.
      from that composition; `fixedpx` still flows to `BuildLsetChain`'s
      own split-sizing, unchanged, via its own independent field.
 
-     **Now open, found immediately after via the same live-testing
-     (2026-09-23/24, still in progress):** the document-wide vertical
-     scrollbar's **elevator drag** doesn't track correctly once a table
-     this large is on-screen — symptoms have included landing short of
-     the true top/bottom, mid-drag warps to the wrong position, the
-     elevator getting stuck, and (current form) "stuck at bottom,
-     dragging goes back to top" (partial improvement over earlier
-     attempts: header lines and the first message chunk are reachable,
-     not fully stuck). Root cause: `textv.c`'s `getinfo()`/`HandleThumbing`
-     (`scroll.c`) treat scrollbar position as proportional to
-     **character count**, which stops correlating with real pixel
-     position once a single "character" (one embedded HTML table) is
-     several thousand pixels tall — confirmed generalizable, not
-     HTML-specific: an ordinary `.ez` file with a large embedded raster
-     shows the same class of symptom via drag (though plain left/right
-     *click* scrolling, which uses a different, content-aware code path
-     in `textv.c`/`scroll.c`, was fixed clean and is confirmed working,
-     including exact per-pixel indexing into an oversized single view).
-     Full technical trail and current status live in `scroll.c`'s own
-     `HandleThumbing` comment (`src/atk/supportviews/scroll.c`) rather
-     than duplicated here, since it's mid-investigation and the code
-     comment is what a resuming session needs to read first.
+     **Mostly fixed 2026-09-24, one narrower follow-up still open**
+     (found immediately after the whitespace bug above, via the same
+     live-testing): the document-wide vertical scrollbar's **elevator
+     drag** didn't track correctly once a table this large was on-screen
+     — root cause was `textv.c`'s `getinfo()`/`position()` treating
+     scrollbar position as proportional to **character count**, which
+     stops correlating with real pixel position once a single
+     "character" (one embedded HTML table) is several thousand pixels
+     tall — confirmed generalizable, not HTML-specific: an ordinary
+     `.ez` file with a large embedded raster shows the same class of
+     symptom via drag. Fixed by giving oversized `containsView` lines a
+     proportional weight in the scrollbar's position encoding, derived
+     from their real rendered height and the view's current width/font
+     metrics — not a document-wide pixel-height rewrite, which stayed
+     out of scope as infeasible without defeating `textview`'s lazy
+     rendering. Two real bugs were found and fixed live during this work
+     (a `dictionary_*` string-literal key silently never matching across
+     call sites; an early version's flat weight-addition creating a huge
+     unreachable "dead zone" in the track) — see `html-scroll-plan.md`'s
+     **Step 3** for the full design, both bugs, and why. Live-verified:
+     dragging now reaches genuine top and bottom content in
+     national-grid.html that it could never reach before. Plain
+     left/right *click* scrolling was already fixed earlier and remains
+     confirmed working throughout this change.
+
+     **Still open:** dragging the elevator into the bottom endzone after
+     an extended scrolling session can land at the wrong (much earlier)
+     position — confirmed NOT a shared encode/decode bug, since a fresh
+     click to the same endzone immediately afterward lands correctly on
+     the true end-of-document content. Leading theory (not yet
+     confirmed with a trace): `scroll.c`'s own cached bar state
+     (`self->current`/`self->desired`) goes stale mid-gesture rather
+     than refreshing against a fresh `getinfo()`. Full status and next
+     step in `html-scroll-plan.md`'s **Step 3** status note.
      `porting-assessment.md` item q.'s trailing note.
   2. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
