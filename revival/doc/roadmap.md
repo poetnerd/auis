@@ -172,7 +172,7 @@ being front-loaded here.
      from that composition; `fixedpx` still flows to `BuildLsetChain`'s
      own split-sizing, unchanged, via its own independent field.
 
-     **Mostly fixed 2026-09-24, one narrower follow-up still open**
+     **Fully fixed 2026-09-25, wdc-confirmed working end to end**
      (found immediately after the whitespace bug above, via the same
      live-testing): the document-wide vertical scrollbar's **elevator
      drag** didn't track correctly once a table this large was on-screen
@@ -187,26 +187,25 @@ being front-loaded here.
      from their real rendered height and the view's current width/font
      metrics — not a document-wide pixel-height rewrite, which stayed
      out of scope as infeasible without defeating `textview`'s lazy
-     rendering. Two real bugs were found and fixed live during this work
-     (a `dictionary_*` string-literal key silently never matching across
-     call sites; an early version's flat weight-addition creating a huge
-     unreachable "dead zone" in the track) — see `html-scroll-plan.md`'s
-     **Step 3** for the full design, both bugs, and why. Live-verified:
-     dragging now reaches genuine top and bottom content in
-     national-grid.html that it could never reach before. Plain
-     left/right *click* scrolling was already fixed earlier and remains
-     confirmed working throughout this change.
+     rendering. Live-verified: dragging reaches genuine top and bottom
+     content in national-grid.html, lands correctly in both endzones,
+     and legacy `.ez` scrolling (`revival/testing.ez`) is unaffected.
+     Plain left/right *click* scrolling was already fixed earlier and
+     remains confirmed working throughout this change.
 
-     **Still open:** dragging the elevator into the bottom endzone after
-     an extended scrolling session can land at the wrong (much earlier)
-     position — confirmed NOT a shared encode/decode bug, since a fresh
-     click to the same endzone immediately afterward lands correctly on
-     the true end-of-document content. Leading theory (not yet
-     confirmed with a trace): `scroll.c`'s own cached bar state
-     (`self->current`/`self->desired`) goes stale mid-gesture rather
-     than refreshing against a fresh `getinfo()`. Full status and next
-     step in `html-scroll-plan.md`'s **Step 3** status note.
-     `porting-assessment.md` item q.'s trailing note.
+     Five real bugs were found and fixed live during this work: a
+     `dictionary_*` string-literal key silently never matching across
+     call sites; an early version's flat weight-addition creating a huge
+     unreachable "dead zone" in the track; an LP64 `int`/`long`
+     truncation in `scroll.c`'s `set_frame()` (positions now routinely
+     exceed `INT_MAX`); an out-of-bounds `self->lines[-1]` read in
+     `textv.c`'s `DoUpdate` scroll-shortcut when the viewport is filled
+     by a single oversized line; and the actual root cause of the
+     endzone mis-landing — `setframe()`'s `off`-revalidation was
+     unreachable when a drag decoded exactly to the document's end
+     (`off` already `0`, so its own correction never ran). See
+     `html-scroll-plan.md`'s **Step 3** for the full design and all five
+     bugs. `porting-assessment.md` item q.'s trailing note.
   2. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
   3. Paging isn't pixel-accurate — landing positions are approximate,
