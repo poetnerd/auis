@@ -206,6 +206,63 @@ being front-loaded here.
      (`off` already `0`, so its own correction never ran). See
      `html-scroll-plan.md`'s **Step 3** for the full design and all five
      bugs. `porting-assessment.md` item q.'s trailing note.
+
+     **A further chain of five bugs found and fixed 2026-09-25**,
+     live-testing the `lsetscrollview`/`lsetscrollcontent` tableau
+     feature against `bookrack.html` (a genuinely nested multi-table
+     message, more demanding than `national-grid.html`'s single floor
+     table): (a) a crash on first click — `textview__LinkTree`/
+     `FinalizeObject` iterated a textview's viewref dictionary and
+     dispatched `view_LinkTree`/`Destroy` on every entry, including the
+     elevator-drag weight blob the fix above stashed there under its own
+     sentinel key, which isn't a viewref at all; fixed by skipping that
+     key in both loops (`textv.c`). (b) Nested tables each independently
+     decided to wrap themselves in `lsetscrollview`, producing two
+     scrollbars, one nested inside the other; fixed by threading a
+     `nested` flag through `htmlatk.c`'s recursive renderer so only the
+     outermost tableau row gets wrapped. (c) A drag-scroll crash in core
+     `matte.c`'s `DesiredSize`, recursing into a child view before it was
+     linked (`view_GetIM` still NULL) and reaching real color-allocation
+     code; guarded the same way `lsetscrollcontent__DesiredSize` already
+     guarded its own equivalent recursion. (d) The tableau's horizontal
+     scrollbar drew but didn't respond to click/drag, and endzone-left
+     misdrew stale content: `lsetview__FullUpdate` forwarded a
+     `view_FullRedraw` caller's possibly-0×0 rectangle straight through
+     to real content (`lpair.c` already had an identical guard for this
+     exact case; `lsetview` never got one), and separately
+     `lsetscrollcontent`'s own repaint idiom never cleared its background
+     before redrawing at a new pan offset, the way `lpair__Update`'s own
+     `WantUpdate`-driven path does; both fixed. (e) The **messages
+     captions list's** own vertical scrollbar — unrelated to any
+     embedded HTML view, but only ever noticed once bookrack-scale
+     testing prompted scrolling further through captions than usual —
+     started collapsing to a whole-document, non-functional elevator
+     after one "scroll back" command in some mailboxes. Root cause: the
+     elevator-drag fix above widened `textv.c`'s internal `FINESCROLL`
+     scrollbar-position-encoding shift from 7 to 14 bits, but
+     `textv.ch`'s `EncodePosition`/`DecodePosition` **macromethods**
+     still hardcoded the old literal 7 independently — a sibling site
+     the original change's own grep missed because it's a macro body,
+     not a read of the `FINESCROLL` symbol. Every `textview` subclass
+     inherits those macros; `messages`' `captions` class is the one that
+     actually calls them, to decode a `getinfo()`-returned
+     (now-14-bit-shifted) position back to a raw character offset —
+     silently decoding with the stale 7-bit shift left the result about
+     128× too large, which `captions.c`'s own `GetInfo` treated as "off
+     the end of the document." Fixed by promoting the shift to one
+     shared `textview_FINESCROLL` constant read by both the `#define`
+     and the macromethods. Chasing this also surfaced a build-process
+     gap worth recording here since it cost real time: classpp inlines
+     an inherited macromethod's body from the ancestor class's
+     **installed** `build/include/atk/*.ch` copy, not the source tree,
+     and that copy is only resynced by `make install`/`dependInstall` in
+     the ancestor's own directory — a narrower `make foo.o` leaves it
+     stale, so a subclass elsewhere can regenerate its own header and
+     silently bake in the *old* macro body even after the source fix is
+     correct and compiled. All five: bookrack now renders as one
+     correctly-nested tableau, doesn't crash on click or on drag-scroll,
+     and both its own horizontal scrollbar and the unrelated captions
+     vertical scrollbar are confirmed fully functional.
   2. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
   3. Paging isn't pixel-accurate — landing positions are approximate,
