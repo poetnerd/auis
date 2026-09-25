@@ -555,7 +555,31 @@ void lsetview__FullUpdate(struct lsetview *self, enum view_UpdateType type, long
 	view_InsertView(self->app, self, &rr);
 	view_RetractViewCursors(self->app,self->app);
 	view_DesiredSize(self->app,width,height,view_NoSet,&foo1,&foo2);
-	view_FullUpdate(self->app,type,left,top,width,height);
+	/* CORRECTION (2026-09-25, found live -- Book Rack's tableau
+	   horizontal scrollbar, endzone-jump-back-to-left-margin misdraw):
+	   a view_FullRedraw caller is not required to supply a real
+	   rectangle -- lpair__FullUpdate (lpair.c) has an identical,
+	   pre-existing workaround with the same reasoning ("there are a
+	   few places (drawtxtv.c) where view_FullRedraw ... types get
+	   sent with 0 by 0 rectangles"), recomputing its own real
+	   rectangle instead of forwarding the caller's. This function
+	   never had that guard: it forwarded left/top/width/height
+	   straight to self->app (real content, e.g. a textview)
+	   unconditionally. lsetscrlc.c's own place_inner()/Update() (the
+	   scrollable-tableau wrapper's established "genuinely repaint
+	   yourself now" idiom, matching celv.c/imagev.c/colorv.c
+	   elsewhere) calls view_FullUpdate(self->inner, view_FullRedraw,
+	   0,0,0,0) on every pan -- a 0x0 rectangle silently skipped the
+	   actual pixel repaint of self->app's real content, leaving
+	   stale pixels from the previous pan position on screen. Use the
+	   real, just-computed rr for view_FullRedraw; every other type
+	   (PartialRedraw et al.) keeps forwarding the caller's own
+	   rectangle unchanged, since only FullRedraw callers are allowed
+	   to send a meaningless one. */
+	if (type == view_FullRedraw)
+	    view_FullUpdate(self->app,type,rr.left,rr.top,rr.width,rr.height);
+	else
+	    view_FullUpdate(self->app,type,left,top,width,height);
     }
     else if (self->mode == lsetview_IsSplit){
         super_FullUpdate(self,type,left,top,width,height);
