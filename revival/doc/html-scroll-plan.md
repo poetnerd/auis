@@ -15,6 +15,18 @@
 > `.ez` scrolling (`revival/testing.ez`) to rule out regressions. Click/
 > page navigation in the same scrollbar was fixed earlier (see `textv.c`'s
 > `FINESCROLL` widen) and remains confirmed working.
+>
+> **2026-09-25 addendum:** stress-testing this implementation against
+> `bookrack.html` (nested tables, more demanding than the fixtures used
+> above) surfaced six further bugs squarely within Steps 2 and 3's own
+> subsystems — a `ScrollWeightsKey` dictionary-iteration crash and a
+> `textview_FINESCROLL` sibling-site macro mismatch (both Step 3's
+> scroll-weight/position-encoding machinery), plus a nested-table
+> double-wrap, a `matte.c` drag-scroll crash, and an `lsetview`/
+> `lsetscrollcontent` horizontal-redraw bug (all Step 2's scrollable-inset
+> machinery). All six fixed and live-confirmed; full writeup in
+> `roadmap.md`'s Open items (item 1), per that doc's own status-lives-
+> there convention — not duplicated here.
 
 ## Context
 
