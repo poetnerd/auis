@@ -2766,6 +2766,36 @@ static long DecodeWeight(struct textview *self, long encoded)
         if (encoded < entryStart) break;
         if (encoded < entryStart + entrySpan) {
             withinLine = encoded - entryStart;
+            /* CORRECTION (2026-09-25, click-scroll-warps-to-top
+               investigation): withinLine <= realOffMax means `encoded`
+               already IS a genuine, unrescaled off (0..realOffMax) --
+               exactly what position() itself produces for a real click
+               (via whatisat/setframe, never through from_bar_to_range's
+               proportional interpolation). The rescale formula below
+               assumes withinLine came from linearly interpolating across
+               this entry's whole inflated entrySpan (genuinely true only
+               for elevator DRAG, from_bar_to_range) and collapses any
+               such small withinLine to ~0 desiredOff, so `withinLine -
+               desiredOff` returns withinLine itself as this entry's own
+               "weight" -- which then gets subtracted out in setframe,
+               zeroing a real click's own sub-line offset and landing
+               every click inside an oversized view at its very top
+               (off=0), regardless of where it was actually clicked.
+               Confirmed live: a click 74 off-units into a 2422px tall
+               embedded view (realOffMax=201) was decoding to weight=74,
+               same as its own withinLine, canceling to off=0. Since
+               realOffMax is literally the max real off this line can
+               ever produce, any withinLine in that closed range is
+               unambiguously already-real and needs no rescaling --
+               return accumBefore only, leaving it in place for setframe
+               to recover via the ordinary FINEMASK low-bits extraction.
+               Only truly-interpolated values beyond realOffMax (which a
+               real off value can never reach) still take the rescale
+               path below, so elevator-drag through this same oversized
+               view is unaffected. */
+            if (withinLine <= realOffMax) {
+                return accumBefore;
+            }
             desiredOff = (entrySpan > 1) ? (withinLine * realOffMax) / (entrySpan - 1) : 0;
             return accumBefore + (withinLine - desiredOff);
         }
