@@ -630,8 +630,8 @@ static void getinfo(struct scroll *self, int type, struct range *total, struct r
         *seen = *total;
         dot->beg = dot->end = total->beg;
     }
-    dbglog("SCROLL getinfo type=%d total=%ld,%ld seen=%ld,%ld dot=%ld,%ld\n",
-           type, total->beg, total->end, seen->beg, seen->end, dot->beg, dot->end);
+    dbglog("SCROLL getinfo self=%p scrollee=%p type=%d total=%ld,%ld seen=%ld,%ld dot=%ld,%ld\n",
+           self, self->scrollee, type, total->beg, total->end, seen->beg, seen->end, dot->beg, dot->end);
 }
 
 /* Calculation routines. */
@@ -665,6 +665,7 @@ static void endzone(struct scroll *self, int side, int end, enum view_MouseActio
     int type = Type[side];
     int typedEnd;
 
+    dbglog("SCROLL endzone self=%p side=%d end=%d action=%d\n", self, side, end, (int) action);
     get_interface(self, type);
 
     if (self->fns[type] != NULL && (real_endzone = self->fns[type]->EndZone) != NULL) {
@@ -989,7 +990,7 @@ static long from_range_to_bar(struct scroll *self, int side, struct scrollbar *b
     else {
         retval = self->endbarSpace + ((long)(((double)(posn - bar->total.beg)) * (double)cords / ((double)(bar->total.end - bar->total.beg)) + .5));
     }
-    dbglog("SCROLL from_range_to_bar posn=%ld total=%ld,%ld cords=%ld -> %ld\n", posn, bar->total.beg, bar->total.end, cords, retval);
+    dbglog("SCROLL from_range_to_bar self=%p posn=%ld total=%ld,%ld cords=%ld -> %ld\n", self, posn, bar->total.beg, bar->total.end, cords, retval);
     return retval;
 }
 
@@ -1008,7 +1009,7 @@ static long from_bar_to_range(struct scroll *self, int side, struct scrollbar *b
 			    ((double)(posn - self->endbarSpace))) / (double)cords)
 			  + .5));
     }
-    dbglog("SCROLL from_bar_to_range posn=%ld total=%ld,%ld cords=%ld -> %ld\n", posn, bar->total.beg, bar->total.end, cords, retval);
+    dbglog("SCROLL from_bar_to_range self=%p posn=%ld total=%ld,%ld cords=%ld -> %ld\n", self, posn, bar->total.beg, bar->total.end, cords, retval);
     return retval;
 }
 
@@ -1722,8 +1723,8 @@ static void HandleThumbing(struct scroll *self, enum view_MouseAction action, lo
 	   now understood); may still be true here too, not yet confirmed
 	   either way. */
 	posn = from_bar_to_range(self, self->side, cur, coord);
-	dbglog("SCROLL HandleThumbing MOVE coord=%ld posn=%ld cur->seen=%ld,%ld seenLength=%ld total=%ld,%ld\n",
-	       coord, posn, cur->seen.beg, cur->seen.end, self->seenLength, cur->total.beg, cur->total.end);
+	dbglog("SCROLL HandleThumbing MOVE self=%p coord=%ld posn=%ld cur->seen=%ld,%ld seenLength=%ld total=%ld,%ld\n",
+	       self, coord, posn, cur->seen.beg, cur->seen.end, self->seenLength, cur->total.beg, cur->total.end);
 	if(ABS(posn-cur->seen.beg)>=MAX(1,self->seenLength/10) || posn==cur->total.beg || posn==cur->total.end) {
 	    int location=self->current.location;
 
@@ -1755,8 +1756,8 @@ static void HandleThumbing(struct scroll *self, enum view_MouseAction action, lo
 	    des->seen.beg = des->total.end;
 	}
 
-	dbglog("SCROLL HandleThumbing UP coord=%ld des->seen.beg=%ld seenLength=%ld total=%ld,%ld\n",
-	       coord, des->seen.beg, self->seenLength, des->total.beg, des->total.end);
+	dbglog("SCROLL HandleThumbing UP self=%p coord=%ld des->seen.beg=%ld seenLength=%ld total=%ld,%ld\n",
+	       self, coord, des->seen.beg, self->seenLength, des->total.beg, des->total.end);
 	set_frame(self, self->side, des->seen.beg, 0);
 	im_ForceUpdate();
     }
@@ -1837,6 +1838,8 @@ static void MaybeStartThumbing(struct scroll *self, enum view_MouseAction action
 
 struct view * scroll__Hit(struct scroll *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
+    dbglog("SCROLL Hit self=%p mousestate=%d action=%d x=%ld y=%ld\n",
+           self, (int) self->mousestate, (int) action, x, y);
     switch(self->mousestate) {
 	case scroll_THUMBING:
 	    HandleThumbing(self, action, x, y);

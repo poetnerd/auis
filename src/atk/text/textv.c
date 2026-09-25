@@ -75,8 +75,30 @@ static void HandleSelection(struct textview *self, long len);
 static long ReverseNewline(struct text *self, long pos);
 static void UpdateCursor(struct textview *self, boolean oldCursor);
 static void XorCursor(struct textview *self);
-static long position(long pos, struct linedesc *theline, long coord);
+static long position(struct textview *self, long pos, struct linedesc *theline, long coord);
+static long CalculateCharsPerLine(struct textview *self);
+static void RecordScrollWeight(struct textview *self, long pos, long height, boolean containsView);
+static long AccumulatedWeightThrough(struct textview *self, long pos);
+static long DecodeWeight(struct textview *self, long encoded);
+static void FreeScrollWeights(struct textview *self);
 static int stringmatch(struct text *d, long pos, char *c);
+
+/* Storage for the elevator-drag position correction -- see position()'s
+   own 2026-09-24 comment (below, near getinfo/setframe) for the full
+   rationale. Kept out of `struct textview` itself (textv.ch) and out of
+   this blob's own struct too (deliberately a `char *`-opaque blob
+   reached only via dictionary_LookUp/Insert, textv.c's existing
+   per-object auxiliary-storage mechanism -- see LinkTree/FinalizeObject
+   for its other, older use here) specifically so that adding this
+   feature never requires shifting any field offset either subclasses of
+   textview (there are 25+ across the tree, `messages` among them, built
+   as its own separately-linked messages.do) would need recompiling to
+   stay in sync with. */
+struct scrollweightlist {
+    struct scrollweight *entries;
+    int nEntries;
+    int aEntries;
+};
 
 static struct graphic *pat;
 
@@ -327,6 +349,7 @@ static void FreeTextData(struct textview *self)
 	self->nLines = 0;
 	self->aLines = 0;
     }
+    FreeScrollWeights(self);
 }
 
 
@@ -1124,6 +1147,7 @@ calls in this function are being RETURNED state vector information in info.sv, b
 
 	    height = textview_LineRedraw(self, textview_FullLineRedraw, tob, curx, cury, xs, ysleft, force, &cont, &textheight, &info);
 	    tl->containsView = (info.foundView != NULL);
+	    RecordScrollWeight(self, mark_GetPos(tob), height, tl->containsView);
 	    tl->height = height;	/* set the new length */
 	    tl->textheight = textheight;
 	    tl->nChars = info.lineLength;
@@ -1770,6 +1794,7 @@ static long CalculateBltToTop(struct textview *self, long pos, long *distMoved, 
     while (TRUE)  {         /* scan lines in the paragraph */
 	mark_SetPos(tm, tp); /* start mark at paragraph start */
 	height = textview_LineRedraw(self, textview_GetHeight, tm, 0, 0, vxs, vys, 0, NULL, NULL, &info);
+	RecordScrollWeight(self, tp, height, info.foundView != NULL);
 	length = info.lineLength;
 
 	/* handle stopping prematurely at end of file, instead of at a newline */
@@ -1786,6 +1811,7 @@ static long CalculateBltToTop(struct textview *self, long pos, long *distMoved, 
 		tp += length;
 		mark_SetPos(tm,tp);		/* start mark at paragraph start */
 		height = textview_LineRedraw(self, textview_GetHeight, tm, 0, 0, vxs, vys, 0, NULL,NULL, &info);
+		RecordScrollWeight(self, tp, height, info.foundView != NULL);
 		length = info.lineLength;
 		if (tp+length == textLength && !textview_PrevCharIsNewline(text, textLength)) length ++;
 		if (tpos == tp || (tpos >= tp && tpos < tp+length))  {
@@ -1956,7 +1982,8 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
             pseudo[px] = pseudoLines;
 	    mark_SetPos(tm, tp);	/* start mark at paragraph start */
 	    height = textview_LineRedraw(self, textview_GetHeight, tm, 0, 0, vxs, vys, 0, NULL, NULL, &info);
-	    
+	    RecordScrollWeight(self, tp, height, info.foundView != NULL);
+
 	    length = info.lineLength;
             realLength = length;
             plines = PLines(height);
@@ -2193,6 +2220,7 @@ long textview__MoveForward(struct textview *self, long pos, long units, enum tex
     while (i < units)  {
         mark_SetPos(tm, pos);
         viewHeight = textview_LineRedraw(self, textview_GetHeight, tm, 0, 0, vxs, vys, 0, NULL, NULL, &info);
+        RecordScrollWeight(self, pos, viewHeight, info.foundView != NULL);
         if (type == textview_MoveByPseudoLines && viewHeight > VIEWTOOSMALL) {
             long pixelsLeft = viewHeight - self->pixelsComingOffTop;
             long pseudoLines = (pixelsLeft + PSEUDOLINEHEIGHT - 1) / PSEUDOLINEHEIGHT;
@@ -2365,6 +2393,7 @@ enum view_DSattributes textview__DesiredSize(struct textview *self, long width, 
     while (pos < len )  {
 	mark_SetPos(tm,pos);
 	txheight = textview_LineRedraw(self, textview_GetHeight, tm, curx,cury,xs,ys, 0, NULL,NULL, &info);
+	RecordScrollWeight(self, pos, txheight, info.foundView != NULL);
 	 if(info.lineLength == 0){
 	     *desiredwidth = sw;
 	     *desiredheight = CalculateLineHeight(self);
@@ -2399,9 +2428,11 @@ void textview__GetOrigin(struct textview *self, long width, long height, long *o
 children. */
 
     struct formattinginfo info;
+    long lineHeight;
 
-    textview_LineRedraw(self, textview_GetHeight, self->top, 0, 0, width,
+    lineHeight = textview_LineRedraw(self, textview_GetHeight, self->top, 0, 0, width,
                         height, 0, NULL, NULL, &info);
+    RecordScrollWeight(self, mark_GetPos(self->top), lineHeight, info.foundView != NULL);
     *originY = info.lineAbove;
     *originX = 0;
 }
@@ -2435,7 +2466,261 @@ long textview__FindLineNumber(struct textview *self, long pos)
     return -1;
 }
 
-static long position(long pos, struct linedesc *theline, long coord)
+/* Elevator-drag scrollbar-position correction (2026-09-24, see
+   html-scroll-plan.md's Step 3). `position()`'s coarse `pos<<FINESCROLL`
+   component treats every character as occupying equal vertical space --
+   true enough for ordinary text, badly wrong for a line whose one
+   "character" is actually an embedded view many thousand pixels tall
+   (an HTML table kept as one view so its own horizontal scroll stays in
+   sync across rows, or a large raster in a plain .ez file -- confirmed
+   both hit this). `scroll.c`'s elevator math only ever sees the total/
+   seen/position values these functions report; it does correct, plain
+   linear interpolation over whatever range it's given, so the fix
+   belongs here, in what that range actually means -- not in scroll.c.
+
+   No new field is needed on any dataobject to know a line's real pixel
+   height: `textview_LineRedraw` already computes and holds it,
+   generically, for any embedded view, the moment it lays that line out
+   -- both the real paint path (DoUpdate) and the measurement-only walks
+   (MoveByPixels/MoveByLines/MoveForward/MoveBack, which already drive
+   paging, endzone jumps, and this file's own drag-decode walk in
+   setframe below) go through the same formattinginfo/height computation.
+   RecordScrollWeight is called from all of those sites (search this
+   file for its name) the moment such a line is discovered -- covering
+   plain .ez rasters too, not just HTML tables. What's missing without
+   this is only somewhere for that number to survive the line scrolling
+   back out of `self->lines[]`'s moving window; the per-textview
+   scroll-weight blob (`struct scrollweightlist`, reached via
+   `dictionary_LookUp`/`GetScrollWeights` above, not a `struct textview`
+   field -- see that struct's own comment for why) is that index: a
+   small, sorted list of {position, extraWeight}, recording where an
+   already-computed height was seen, not a second computation of the
+   number itself.
+
+   `extraWeight` estimates, in the same units `position()` returns, how
+   many *additional* coarse position-ticks a line's real pixel height
+   deserves beyond the single tick it already gets for being "one
+   character": scaled against CalculateLineHeight()'s real font metric
+   and an assumed typical character density (SCROLLWEIGHT_CHARS_PER_LINE
+   below), so a line behaves, position-space-wise, roughly as if it were
+   as many ordinary characters tall as its real pixel height implies.
+   This only needs to be roughly right, not exact -- `setframe`'s own
+   pixel-accurate MoveByPixels walk (unchanged) does the final correction
+   once handed a starting guess that's in the right neighborhood; today,
+   without any of this, that starting guess can be wrong by the entire
+   span of an oversized view, which is the actual bug. Known limitation,
+   not yet exercised live: a single very large drag/page/jump that first
+   discovers several oversized lines' worth of weight in one step will
+   show up as a one-time elevator size/position correction at that
+   moment, since discovery only happens as navigation actually reaches
+   a line -- see html-scroll-plan.md's Step 3 for the full reasoning and
+   why this is judged an acceptable, self-limiting edge case rather than
+   something worth a heavier (e.g. eager whole-document) fix. */
+/* Fallback only, used when real font/width metrics aren't available
+   (see CalculateCharsPerLine below, added 2026-09-24 after a live test
+   at a wide window showed the fix still undershooting: a fixed
+   chars-per-line assumption doesn't scale with the view's actual
+   width, so a wide window -- which packs more real characters into
+   each ordinary line -- was making an oversized embedded view's real
+   proportional share of the document look smaller than it truly is,
+   reintroducing a smaller version of the same density-disproportion
+   bug this feature exists to fix). */
+#define SCROLLWEIGHT_CHARS_PER_LINE_FALLBACK 60
+
+/* Dynamic estimate of how many ordinary characters occupy one typical
+   text line AT THIS VIEW'S CURRENT WIDTH -- mirrors CalculateLineHeight
+   just above/below in spirit (same font lookup pattern) but for width
+   instead of height. Only needs to be roughly right, same as
+   extraWeight itself (see RecordScrollWeight's own comment). */
+static long CalculateCharsPerLine(struct textview *self)
+{
+    struct style *defaultStyle;
+    struct fontdesc *defaultFont;
+    struct FontSummary *fontSummary;
+    char fontFamily[256];
+    long refBasis, refOperand, refUnit, fontSize;
+    long width;
+
+    if ((defaultStyle = textview_GetDefaultStyle(self)) == NULL)
+        return SCROLLWEIGHT_CHARS_PER_LINE_FALLBACK;
+    style_GetFontFamily(defaultStyle, fontFamily, sizeof(fontFamily));
+    style_GetFontSize(defaultStyle, (enum style_FontSize *) &refBasis, &fontSize);
+    style_GetFontScript(defaultStyle, (enum style_ScriptMovement *) &refBasis, &refOperand, (enum style_Unit *) &refUnit);
+    defaultFont = fontdesc_Create(fontFamily, refOperand, fontSize);
+    if ((fontSummary = fontdesc_FontSummary(defaultFont, textview_GetDrawable(self))) == NULL
+        || fontSummary->maxSpacing <= 0)
+        return SCROLLWEIGHT_CHARS_PER_LINE_FALLBACK;
+    width = textview_GetLogicalWidth(self);
+    if (width <= 0) return SCROLLWEIGHT_CHARS_PER_LINE_FALLBACK;
+    return width / fontSummary->maxSpacing;
+}
+
+/* dictionary_Insert/LookUp/Delete (dict.c) compare `id` by pointer
+   identity (`dd->id == id`), not string content -- confirmed by reading
+   dict.c after this feature's first live test recorded weights
+   (RecordScrollWeight's own tracing showed ACCEPT) that getinfo() then
+   never saw (AccumulatedWeightThrough kept returning 0). A string
+   literal id doesn't work for that: with -fwritable-strings (this
+   build's own flag), each textual occurrence of "scrollWeights" gets
+   its own separate address, so Insert's literal never equals LookUp's
+   from a different call site. The existing dictionary_* usage
+   elsewhere in this file (LinkTree/FinalizeObject) never hits this,
+   since it always keys on a real `struct viewref *`, never a string --
+   this key needs the same treatment: one static sentinel, same address
+   everywhere, every time. */
+static char ScrollWeightsKey;
+
+/* Fetch (or, if `create`, lazily allocate and register) this textview's
+   scroll-weight blob via the dictionary_* mechanism -- see this file's
+   forward-declaration-block comment on `struct scrollweightlist` for
+   why it isn't just a struct field. */
+static struct scrollweightlist *GetScrollWeights(struct textview *self, boolean create)
+{
+    struct scrollweightlist *swl =
+        (struct scrollweightlist *) dictionary_LookUp(self, &ScrollWeightsKey);
+    if (swl == NULL && create) {
+        swl = (struct scrollweightlist *) malloc(sizeof(struct scrollweightlist));
+        if (swl == NULL) return NULL;
+        swl->entries = NULL;
+        swl->nEntries = 0;
+        swl->aEntries = 0;
+        dictionary_Insert(self, &ScrollWeightsKey, (char *) swl);
+    }
+    return swl;
+}
+
+static void FreeScrollWeights(struct textview *self)
+{
+    struct scrollweightlist *swl = GetScrollWeights(self, FALSE);
+    if (swl != NULL) {
+        if (swl->entries != NULL) free(swl->entries);
+        free(swl);
+        dictionary_Delete(self, &ScrollWeightsKey);
+    }
+}
+
+static void RecordScrollWeight(struct textview *self, long pos, long height, boolean containsView)
+{
+    long typicalHeight, charsPerLine, weightedUnits, extraWeight;
+    struct scrollweightlist *swl;
+    int i, insertAt;
+
+    dbglog("TEXTV RecordScrollWeight self=%p pos=%ld height=%ld containsView=%d\n",
+           self, pos, height, (int) containsView);
+    if (!containsView) return;
+    typicalHeight = CalculateLineHeight(self);
+    if (typicalHeight <= 0 || height <= typicalHeight * 3) {
+        dbglog("TEXTV RecordScrollWeight self=%p REJECTED typicalHeight=%ld height=%ld\n",
+               self, typicalHeight, height);
+        return;
+    }
+    charsPerLine = CalculateCharsPerLine(self);
+    if (charsPerLine <= 0) charsPerLine = SCROLLWEIGHT_CHARS_PER_LINE_FALLBACK;
+
+    weightedUnits = (long) (((double) height / (double) typicalHeight)
+                             * (double) charsPerLine * (double) (1L << FINESCROLL));
+    extraWeight = weightedUnits - (1L << FINESCROLL);
+    if (extraWeight <= 0) return;
+
+    dbglog("TEXTV RecordScrollWeight self=%p ACCEPT pos=%ld height=%ld typicalHeight=%ld charsPerLine=%ld extraWeight=%ld\n",
+           self, pos, height, typicalHeight, charsPerLine, extraWeight);
+
+    swl = GetScrollWeights(self, TRUE);
+    if (swl == NULL) return;
+
+    for (i = 0; i < swl->nEntries; i++) {
+        if (swl->entries[i].position == pos) {
+            swl->entries[i].extraWeight = extraWeight;
+            swl->entries[i].height = height;
+            return;
+        }
+        if (swl->entries[i].position > pos) break;
+    }
+    insertAt = i;
+    if (swl->nEntries >= swl->aEntries) {
+        int newAlloc = swl->aEntries ? swl->aEntries * 2 : 8;
+        struct scrollweight *newArray =
+            (struct scrollweight *) malloc(newAlloc * sizeof(struct scrollweight));
+        if (newArray == NULL) return;
+        if (swl->entries != NULL) {
+            memcpy(newArray, swl->entries, swl->nEntries * sizeof(struct scrollweight));
+            free(swl->entries);
+        }
+        swl->entries = newArray;
+        swl->aEntries = newAlloc;
+    }
+    memmove(&swl->entries[insertAt + 1], &swl->entries[insertAt],
+            (swl->nEntries - insertAt) * sizeof(struct scrollweight));
+    swl->entries[insertAt].position = pos;
+    swl->entries[insertAt].extraWeight = extraWeight;
+    swl->entries[insertAt].height = height;
+    swl->nEntries++;
+}
+
+/* Encode side: total extraWeight for every recorded line at or before
+   `pos`. Entries are sorted ascending, so this is a short linear scan. */
+static long AccumulatedWeightThrough(struct textview *self, long pos)
+{
+    struct scrollweightlist *swl = GetScrollWeights(self, FALSE);
+    long accum = 0;
+    int i;
+
+    if (swl == NULL) return 0;
+    for (i = 0; i < swl->nEntries; i++) {
+        if (swl->entries[i].position > pos) break;
+        accum += swl->entries[i].extraWeight;
+    }
+    return accum;
+}
+
+/* Decode side: given an already-encoded scrollbar value, how much
+   accumulated weight to undo before the FINESCROLL shift.
+
+   CORRECTION (2026-09-24, found live-testing: "returns to the original
+   offset... can never view any rendered content below what you see as
+   the bottom"): the first version of this jumped straight from 0 to
+   the entry's FULL extraWeight the instant `encoded` crossed the
+   entry's own position -- but position()'s own `off` term for that one
+   line only ever produces a NARROW real range (0..height/FINEGRID,
+   typically a few hundred at most -- nowhere near extraWeight, which
+   can be in the tens or hundreds of millions). That leaves a huge
+   "dead zone" between the two: any encoded value scroll.c's linear
+   `from_bar_to_range` interpolates into that zone (the vast majority
+   of the track share this line's extraWeight earns it) doesn't
+   correspond to anything position() would ever actually produce, and
+   the old all-or-nothing subtraction collapsed every one of them back
+   down to nearly the same raw value -- the drag equivalent of the
+   click-side bug this whole feature was chasing, just self-inflicted
+   this time. Fixed by treating the entry's full span
+   (extraWeight + realOffMax + 1) as belonging to it, and proportionally
+   rescaling wherever `encoded` falls in that span back down to the
+   narrow real 0..realOffMax range position() actually produces --
+   instead of an instant step. */
+static long DecodeWeight(struct textview *self, long encoded)
+{
+    struct scrollweightlist *swl = GetScrollWeights(self, FALSE);
+    long accumBefore = 0;
+    int i;
+
+    if (swl == NULL) return 0;
+    for (i = 0; i < swl->nEntries; i++) {
+        long realOffMax = swl->entries[i].height / FINEGRID;
+        long entryStart, entrySpan, withinLine, desiredOff;
+        if (realOffMax > FINEMASK) realOffMax = FINEMASK;
+        entryStart = (swl->entries[i].position << FINESCROLL) + accumBefore;
+        entrySpan = swl->entries[i].extraWeight + realOffMax + 1;
+        if (encoded < entryStart) break;
+        if (encoded < entryStart + entrySpan) {
+            withinLine = encoded - entryStart;
+            desiredOff = (entrySpan > 1) ? (withinLine * realOffMax) / (entrySpan - 1) : 0;
+            return accumBefore + (withinLine - desiredOff);
+        }
+        accumBefore += swl->entries[i].extraWeight;
+    }
+    return accumBefore;
+}
+
+static long position(struct textview *self, long pos, struct linedesc *theline, long coord)
 {
     long off;
 
@@ -2455,7 +2740,14 @@ static long position(long pos, struct linedesc *theline, long coord)
     if (off > FINEMASK) {
         off = FINEMASK;
     }
-    return (pos << FINESCROLL) + off;
+    /* pos - 1, not pos: this line's OWN weight (if any) must NOT be
+       folded into its own encoding (see DecodeWeight's 2026-09-24
+       comment -- its `entryStart` assumes exactly this), only into
+       whatever comes after it. AccumulatedWeightThrough's other
+       callers (getinfo's total/dot, not going through a specific
+       line's `off`) are unaffected and still want the full "at or
+       before" sum, unchanged. */
+    return (pos << FINESCROLL) + off + AccumulatedWeightThrough(self, pos - 1);
 }
 
 static void getinfo(struct textview *self, struct range *total, struct range *seen, struct range *dot)
@@ -2466,10 +2758,10 @@ static void getinfo(struct textview *self, struct range *total, struct range *se
     long tl = text_GetLength(Text(self));
 
     total->beg = 0;
-    total->end = (tl << FINESCROLL);
+    total->end = (tl << FINESCROLL) + AccumulatedWeightThrough(self, tl);
 
     if (self->nLines > 0) {
-        seen->beg = position(textview_GetTopPosition(self), &self->lines[0], BY);
+        seen->beg = position(self, textview_GetTopPosition(self), &self->lines[0], BY);
         last = &self->lines[self->nLines - 1];
         lastpos = mark_GetPos(last->data);
         if ((textview_GetLogicalHeight(self) - (2*BY)) >= last->y + last->height) {
@@ -2482,14 +2774,16 @@ static void getinfo(struct textview *self, struct range *total, struct range *se
         else {
             lastcoord = textview_GetLogicalHeight(self) - (2*BY);
         }
-        seen->end = position(lastpos, last, lastcoord);
+        seen->end = position(self, lastpos, last, lastcoord);
     }
     else {
-        seen->beg = (textview_GetTopPosition(self) << FINESCROLL);
+        seen->beg = (textview_GetTopPosition(self) << FINESCROLL)
+                    + AccumulatedWeightThrough(self, textview_GetTopPosition(self));
         seen->end = seen->beg;
     }
 
-    dot->beg = (textview_GetDotPosition(self) << FINESCROLL);
+    dot->beg = (textview_GetDotPosition(self) << FINESCROLL)
+               + AccumulatedWeightThrough(self, textview_GetDotPosition(self));
     dot->end = dot->beg + (textview_GetDotLength(self) << FINESCROLL);
 }
 
@@ -2505,7 +2799,7 @@ static long whatisat(struct textview *self, long numerator, long denominator)
     pos = textview_Locate(self, 0, coord, NULL);
     linenum = textview_FindLineNumber(self, pos);
 
-    return position(pos, (linenum >= 0) ? &self->lines[linenum] : NULL, coord);
+    return position(self, pos, (linenum >= 0) ? &self->lines[linenum] : NULL, coord);
 }
 
 /* move the text at position to be on screen at numerator/denominator */
@@ -2515,6 +2809,7 @@ static void setframe(struct textview *self, long position, long numerator, long 
     long dist, lines, coord;
     long newpos;
     long off;
+    long weight;
     boolean forceup = FALSE;
 
     long inposition = position;
@@ -2522,19 +2817,26 @@ static void setframe(struct textview *self, long position, long numerator, long 
     coord = numerator * textview_GetLogicalHeight(self);
     coord /= denominator;
 
+    /* Inverse of position()'s AccumulatedWeightThrough() addition (see
+       that function's own 2026-09-24 comment) -- must be undone before
+       the FINESCROLL shift below, or a position past an oversized
+       embedded view would decode to a wildly wrong raw character
+       position. */
+    weight = DecodeWeight(self, position);
+    position -= weight;
     off = (position & FINEMASK) * FINEGRID;
     position >>= FINESCROLL;
 
-    dbglog("TEXTV setframe IN inposition=%ld numerator=%ld denominator=%ld coord=%ld decoded_position=%ld off=%ld tl=%ld\n",
-           inposition, numerator, denominator, coord, position, off, text_GetLength(Text(self)));
+    dbglog("TEXTV setframe self=%p IN inposition=%ld numerator=%ld denominator=%ld coord=%ld decoded_position=%ld off=%ld tl=%ld\n",
+           self, inposition, numerator, denominator, coord, position, off, text_GetLength(Text(self)));
 
     newpos = textview_MoveBack(self, position, 0, textview_MoveByLines, 0, 0);
     if (newpos != position) {
         forceup = TRUE;
     }
-    dbglog("TEXTV setframe afterLinesSnap position=%ld newpos=%ld forceup=%d\n", position, newpos, (int) forceup);
+    dbglog("TEXTV setframe self=%p afterLinesSnap position=%ld newpos=%ld forceup=%d\n", self, position, newpos, (int) forceup);
     newpos = textview_MoveBack(self, newpos, coord, textview_MoveByPixels, &dist, &lines);
-    dbglog("TEXTV setframe afterPixelsMove newpos=%ld dist=%ld lines=%ld\n", newpos, dist, lines);
+    dbglog("TEXTV setframe self=%p afterPixelsMove newpos=%ld dist=%ld lines=%ld\n", self, newpos, dist, lines);
     if (newpos < textview_GetTopPosition(self) && self->scroll != textview_ScrollForward && self->scroll != textview_MultipleScroll)  {
 	if (dist == -1)  {
 	    self->scrollDist = -1;
@@ -2571,6 +2873,7 @@ static void setframe(struct textview *self, long position, long numerator, long 
                 mark_SetPos(tm, newpos);
                 textview_GetTextSize(self, &vxs, &vys);
 		height = textview_LineRedraw(self, textview_GetHeight, tm, 0, 0, vxs, vys, 0, NULL, NULL, &info);
+		RecordScrollWeight(self, newpos, height, info.foundView != NULL);
 		mark_Destroy(tm);
             }
 
@@ -2582,29 +2885,43 @@ static void setframe(struct textview *self, long position, long numerator, long 
             }
         }
     }
-    dbglog("TEXTV setframe SetTopOffTop newpos=%ld off=%ld\n", newpos, off);
+    dbglog("TEXTV setframe self=%p SetTopOffTop newpos=%ld off=%ld\n", self, newpos, off);
     textview_SetTopOffTop(self, newpos, off);
 }
 
 static void endzone(struct textview *self, int end, enum view_MouseAction action)
 {
+    /* Every setframe() call below constructs its position argument by
+       hand (pos<<FINESCROLL) rather than going through position()'s own
+       encoding -- setframe now always undoes an accumulated-weight
+       correction (see its own 2026-09-24 comment) on whatever it's
+       given, so each of these must add that same correction here, or a
+       hand-built value that never had it added would get incorrectly
+       decoded as if it had. */
     if(action != view_LeftDown && action != view_RightDown) return;
 
     if (action == view_LeftDown &&
          (end == scroll_TOPENDZONE || end == scroll_BOTTOMENDZONE)) {
 	    if (end == scroll_TOPENDZONE)
-		setframe(self, 0, 0, textview_GetLogicalHeight(self));
-	    else
-		setframe(self, text_GetLength(Text(self))<<FINESCROLL, textview_GetLogicalHeight(self)>>2, textview_GetLogicalHeight(self));
+		setframe(self, AccumulatedWeightThrough(self, 0), 0, textview_GetLogicalHeight(self));
+	    else {
+		long tl = text_GetLength(Text(self));
+		setframe(self, (tl<<FINESCROLL) + AccumulatedWeightThrough(self, tl),
+			 textview_GetLogicalHeight(self)>>2, textview_GetLogicalHeight(self));
+	    }
     }
     else {
         if (end == scroll_TOPENDZONE || end == scroll_MOTIFTOPENDZONE) {
 		long newpos=textview_GetTopPosition(self);
 		newpos = textview_MoveBack(self, newpos, 1, textview_MoveByLines, 0, 0);
-		setframe(self, newpos<<FINESCROLL, 0, textview_GetLogicalHeight(self));
+		setframe(self, (newpos<<FINESCROLL) + AccumulatedWeightThrough(self, newpos),
+			 0, textview_GetLogicalHeight(self));
 	    } else {
+                long newpos;
                 if (self->nLines<2) return;
-		setframe(self, mark_GetPos(self->lines[1].data)<<FINESCROLL, 0, textview_GetLogicalHeight(self));
+                newpos = mark_GetPos(self->lines[1].data);
+		setframe(self, (newpos<<FINESCROLL) + AccumulatedWeightThrough(self, newpos),
+			 0, textview_GetLogicalHeight(self));
 	    }
     }
 }
