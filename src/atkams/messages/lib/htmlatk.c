@@ -597,6 +597,17 @@ struct hax_state {
     htmlatk_ImageResolver resolver;
     void *resolverRock;
     int hardfail;
+    /* TRUE when this walk is rendering a <td>'s own ambient content
+       (BuildLsetCell's general-path recursive htmlatk_RenderAmbient
+       call), FALSE for the single top-level htmlatk_Render walk over
+       the whole message body. See RenderTableAsLset/TryPairFloatedTables'
+       own comments on why this gates the "lsetscrollview" routing
+       decision -- only the outermost table embedding should ever get
+       its own scrollable wrapper; a nested table's composed minwidth
+       already flows up into its ancestor row's own minwidth
+       (TextMaxEmbeddedLsetMinwidth), so wrapping it too just nests a
+       second, redundant scrollbar inside the first one. */
+    int nested;
 };
 
 /* Returns 1 if a mark was actually pushed, 0 if not (NULL style, or a
@@ -1609,7 +1620,7 @@ static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnod
 static long FloatTableSoleImageWidth(const struct htmlnode *n);
 static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct htmlnode *root,
     const struct htmlnode *ambientNode1, const struct htmlnode *ambientNode2,
-    htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut);
+    htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut, int nested);
 
 /* Small paired vector of (leaf, weight) for one row's cells --
    analogous to lsetvec above but carrying each cell's WEIGHT alongside
@@ -2305,7 +2316,7 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
     if (ct) {
         if (!CellIsEmpty(td)) {
             long celllen = 0;
-            if (!htmlatk_RenderAmbient(ct, 0, td->children, tableNode, td, st->resolver, st->resolverRock, &celllen))
+            if (!htmlatk_RenderAmbient(ct, 0, td->children, tableNode, td, st->resolver, st->resolverRock, &celllen, TRUE))
                 st->hardfail = 1;
         }
         /* A fresh "text" object defaults to editable
@@ -2800,7 +2811,17 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
            explicitly, right here at the embedding call, rather than by
            setting rowRoot->viewname and expecting this lookup to honor
            it -- it wouldn't. */
-        const char *rowViewName = (rowRoot->minwidth > 0) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) rowRoot);
+        /* !st->nested: only the outermost table embedding gets its own
+           scrollable wrapper -- see struct hax_state's own comment on
+           `nested`. A table rendered via BuildLsetCell's cell-ambient
+           recursion (st->nested == TRUE) keeps its plain view even when
+           its own minwidth > 0; that minwidth already composed up into
+           this cell's ancestor row (TextMaxEmbeddedLsetMinwidth), and
+           wrapping it too produced a real, confirmed regression: a
+           second, nested lsetscrollview inside the outer one, i.e. a
+           table rendered with two independent horizontal scrollbars
+           (Book Rack, 2026-09-25). */
+        const char *rowViewName = (rowRoot->minwidth > 0 && !st->nested) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) rowRoot);
         if (i > 0) EnsureLineBreak(st);
         text_AlwaysAddView(st->dest, st->pos, rowViewName, (struct dataobject *) rowRoot);
         ++st->pos;
@@ -2960,7 +2981,9 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
        text column next to each cover image down to a handful of
        pixels. Same routing rule as RenderTableAsLset's row loop. */
     {
-        const char *rowViewName = (row->minwidth > 0) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) row);
+        /* Same !st->nested gate as RenderTableAsLset's own row loop --
+           see its comment and struct hax_state's `nested` field. */
+        const char *rowViewName = (row->minwidth > 0 && !st->nested) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) row);
         text_AlwaysAddView(st->dest, st->pos, rowViewName, (struct dataobject *) row);
     }
     ++st->pos;
@@ -3150,7 +3173,7 @@ static int PushFormattingMarks(struct hax_state *st, const struct htmlnode *n)
    a full ancestor stack would need. */
 static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct htmlnode *root,
     const struct htmlnode *ambientNode1, const struct htmlnode *ambientNode2,
-    htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut)
+    htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut, int nested)
 {
     struct hax_state st;
     struct hax_walkstack ws;
@@ -3171,6 +3194,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
     st.resolver = resolver;
     st.resolverRock = resolverRock;
     st.hardfail = 0;
+    st.nested = nested;
 
     if (ambientNode1) ambientOpened += PushFormattingMarks(&st, ambientNode1);
     if (ambientNode2) ambientOpened += PushFormattingMarks(&st, ambientNode2);
@@ -3361,7 +3385,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
 boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
                         htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut)
 {
-    return htmlatk_RenderAmbient(dest, pos, root, NULL, NULL, resolver, resolverRock, lengthOut);
+    return htmlatk_RenderAmbient(dest, pos, root, NULL, NULL, resolver, resolverRock, lengthOut, FALSE);
 }
 
 /* ==================================================================== *
