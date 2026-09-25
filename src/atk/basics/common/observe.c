@@ -125,11 +125,19 @@ void observable__AddObserver(struct observable *self, struct observable *observe
     if (self->maxObservers == 0)  {
 	self->maxObservers = INITIALNUMOBSERVERS;
 	self->observers = (struct observable **) malloc (INITIALNUMOBSERVERS * sizeof(struct observable *));
+	if (self->observers == NULL) {
+	    self->maxObservers = 0;
+	    return;
+	}
     }
     else if (FindObserver(self, observer) != -1) return;
     else if (self->nObservers == self->maxObservers)  {
-	self->maxObservers += self->maxObservers / 2;
-	self->observers = (struct observable **) realloc(self->observers, self->maxObservers * sizeof(struct observable *));
+	int newMax = self->maxObservers + self->maxObservers / 2;
+	struct observable **newObservers =
+	    (struct observable **) realloc(self->observers, newMax * sizeof(struct observable *));
+	if (newObservers == NULL) return; /* self->observers/maxObservers untouched -- drop this registration rather than crash */
+	self->observers = newObservers;
+	self->maxObservers = newMax;
     }
     self->observers[self->nObservers++] = observer;
 }

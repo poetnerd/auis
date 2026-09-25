@@ -95,8 +95,26 @@ classprocedures:
 
 data:
 
-	short nObservers;			/* number of observers */
-	short maxObservers;		/* number of entries in observers table */
+	/* CORRECTION (2026-09-25, found live via a real crash: EXC_BAD_ACCESS
+	   in AddObserver, self->observers NULL with self->nObservers==27310):
+	   these were `short` (max 32767) since 1988. observable_AddObserver
+	   is called once per genuinely new xcolor an image's pixels need
+	   (xcolormap_AddObserver, xcmap.c) -- the xcolormap itself is a
+	   single process-wide-shared singleton (one per X display
+	   connection, cached in xim.c's displayList, never recreated), and
+	   nothing in the tree currently releases a message's colors when a
+	   different message is displayed (xgraphic__ClearColors exists and
+	   correctly refcounts, but its only caller, textview.c's
+	   ObservedChanged, fires solely on a textview's own text going
+	   empty -- not on being swapped to different content). So this
+	   count is a running total across the whole process lifetime, not
+	   per-image or per-message, and a single richly-colored photo can
+	   exceed 32767 distinct RGB values on its own regardless. `int`
+	   removes the practical ceiling; the underlying accumulate-forever
+	   behavior is a separate, real inefficiency (releasing a message's
+	   colors when it's replaced) tracked separately, not fixed here. */
+	int nObservers;			/* number of observers */
+	int maxObservers;		/* number of entries in observers table */
 	struct observable **observers;	/* table of observers */
 	struct triggerhousing *triggers;
 };
