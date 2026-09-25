@@ -263,6 +263,31 @@ being front-loaded here.
      correctly-nested tableau, doesn't crash on click or on drag-scroll,
      and both its own horizontal scrollbar and the unrelated captions
      vertical scrollbar are confirmed fully functional.
+
+     **Two more bugs, found the same evening in regression-testing the
+     five above:** (f) `lsetview__DesiredSize`'s leaf case had the same
+     unlinked-child recursion hazard as (c)'s `matte.c` fix and
+     `lsetscrollcontent__DesiredSize`'s own pre-existing guard, just
+     reached via a click/page landing on a not-yet-rendered part of the
+     tableau rather than drag-scroll; fixed the same way (`lsetv.c`).
+     (g) A real crash, unrelated to any of this session's own changes:
+     `observable`'s `nObservers`/`maxObservers` (`observe.ch`) were
+     `short` since 1988, and `xcolormap`'s observer list — a single
+     process-wide cache of every distinct color ever allocated for the
+     life of the display connection, never released per-message since
+     nothing currently calls `xgraphic__ClearColors` on message-switch —
+     overflowed it after enough distinct colors accumulated (a single
+     rich photo can exceed 32767 on its own). Root-caused live via
+     `lldb` attached to the running process (not a printf trace) after
+     several rounds of the crash not being reproducible in any of the
+     functions already being traced. Widened to `int` plus added
+     missing `malloc`/`realloc` failure checks in `AddObserver`
+     (`observe.c`); `observable` is embedded almost everywhere, so this
+     needed a full `make Clean; make World` rather than a targeted
+     rebuild. Releasing a message's colors when it's replaced (instead
+     of only ever accumulating) is a real, separate follow-up, not done
+     here — the widened counter just moves the ceiling far out of
+     practical reach.
   2. `<td style="background-color:...">` isn't honored at all.
      `porting-assessment.md` item q.'s trailing note.
   3. Paging isn't pixel-accurate — landing positions are approximate,
