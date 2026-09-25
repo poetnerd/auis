@@ -1,15 +1,18 @@
 # Fixed-width HTML tables with horizontal scroll (Thunderbird-style)
 
-> **Status (2026-09-24):** Steps 1 and 2 are both implemented and
+> **Status (2026-09-25):** Steps 1 and 2 are both implemented and
 > live-verified — canonical status lives in `roadmap.md`'s Open items
 > (item 1), not duplicated here. The stray-whitespace bug from Step 2 is
 > fixed. That work uncovered a further, distinct bug — elevator-drag
 > scrolling was inaccurate specifically for a document containing an
 > oversized embedded view (national-grid.html's tableau table) — now
-> **mostly fixed** in **Step 3** below (major, live-verified improvement:
-> drag reaches true top/bottom content it never could before), with one
-> narrower follow-up bug still open (drag-into-endzone after extended
-> scrolling can mis-land; a fresh click to the same spot works). Click/
+> **fully fixed** in **Step 3** below, including the drag-into-endzone
+> mis-landing that was the last open piece: three real bugs (LP64 int/
+> long truncation in `scroll.c`'s `set_frame`; an out-of-bounds
+> `self->lines[-1]` read in `textv.c`'s `DoUpdate`; an `off`-reset-to-0
+> bug in `setframe()` when a drag decodes exactly to the document's end).
+> wdc-confirmed working end to end, including a full re-test of legacy
+> `.ez` scrolling (`revival/testing.ez`) to rule out regressions. Click/
 > page navigation in the same scrollbar was fixed earlier (see `textv.c`'s
 > `FINESCROLL` widen) and remains confirmed working.
 
@@ -191,36 +194,64 @@ live-test in `messages` against `national-grid.html`, `LinkedIn`, and
   flicker fix included); the whitespace-bug fix (`htmlatk.c`'s
   `CellMinwidth`) is also committed, dated 2026-09-24.
 
-## Step 3 — Elevator-drag scrolling accuracy (implemented 2026-09-24, one known follow-up remains)
+## Step 3 — Elevator-drag scrolling accuracy (implemented 2026-09-24, fully fixed 2026-09-25)
 
-> **Status (2026-09-24):** Implemented and live-verified as a major
-> improvement: dragging now tracks proportionally through documents
-> containing an oversized embedded view (national-grid.html's tableau
-> table), including reaching genuine top and bottom content that drag
-> could never reach before. `struct scrollweight`/`scrollweightlist`
-> (textv.ch/textv.c), `RecordScrollWeight`, `CalculateCharsPerLine`,
-> `AccumulatedWeightThrough`, and `DecodeWeight` are all in place; the
-> dictionary-key bug (string-literal identity, see inline comment) and
-> the flat-extraWeight dead-zone bug (see `DecodeWeight`'s own comment)
-> were both found live and fixed. **One follow-up bug remains, not yet
-> fixed:** dragging the elevator into the bottom endzone after a long
-> scrolling session can land at the wrong (much earlier) position —
-> confirmed NOT a shared encode/decode bug (a fresh click to the same
-> endzone, immediately after, lands correctly on the true end-of-document
-> content) — isolated to something drag-specific in `scroll.c`. Leading
-> theory: `struct scroll`'s own cached `cur`/`des` bar state
-> (`self->current`/`self->desired`) doesn't get refreshed against a
-> fresh `getinfo()` on every `HandleThumbing` event, so a long drag
-> gesture can clamp against a stale `total.end` captured earlier in the
-> same gesture, before further scrolling elsewhere in the session caused
-> more weight to be discovered. Not yet fixed or live-tested — next
-> session should verify this theory (e.g. trace `cur->total.end` across
-> a long drag against a fresh `getinfo()` call) before changing
-> `HandleThumbing` again. Debug tracing remains live in both `scroll.c`
-> and `textv.c` (`/tmp/elevator-debug.log`) for this purpose, including
-> the `scroll__Hit`/`endzone()` tracing added while chasing this bug
-> (which ruled out a `mousestate` transition to `TOPENDZONE`/
-> `BOTTOMENDZONE` as the cause).
+> **Status (2026-09-25): DONE, wdc-confirmed working end to end.**
+> Dragging now tracks proportionally through documents containing an
+> oversized embedded view (national-grid.html's tableau table),
+> including reaching genuine top and bottom content, and correctly
+> landing there when the drag ends in either endzone. `struct
+> scrollweight`/`scrollweightlist` (textv.ch/textv.c),
+> `RecordScrollWeight`, `CalculateCharsPerLine`,
+> `AccumulatedWeightThrough`, and `DecodeWeight` are all in place.
+>
+> Five real bugs were found and fixed live over the course of this step,
+> the last three specifically chasing "drag into the bottom endzone
+> lands at the wrong, much-earlier position" (a fresh click to the same
+> spot always worked, isolating this to something drag-specific):
+> 1. Dictionary-key bug (string-literal pointer identity, see
+>    `ScrollWeightsKey`'s own comment).
+> 2. Flat-extraWeight dead-zone bug (see `DecodeWeight`'s own comment).
+> 3. `scroll.c`'s `set_frame()` declared its position parameter `int`;
+>    every caller passes a `long`, silently truncated — with weighted
+>    positions now routinely in the hundreds of millions, this wrapped
+>    once a drag target crossed `INT_MAX`. Widened to `long`.
+> 4. `textv.c`'s `DoUpdate` scroll-shortcut computed `stopline =
+>    self->nLines - 2`, underflowing to `-1` whenever the viewport was
+>    filled by a single oversized line (exactly the state once scrolled
+>    near a document's end) — the next line then read
+>    `self->lines[-1]`, one struct before the array, out of bounds.
+>    Garbage `y`/`height` corrupted the blit's rectangle math. That
+>    same degenerate case (`nLines==1`, the single line itself
+>    oversized) is also now routed to the existing, already-reliable
+>    full-redraw path instead of the scroll-shortcut, since the
+>    shortcut's `redrawline == scrollLine` scenario was never designed
+>    for and a deeper defect in it (traced down through `drawtxtv.c`'s
+>    `view_InsertView` call and `graphic.c`'s rectangle-intersect math,
+>    both of which computed provably correct values) was never fully
+>    isolated — not worth chasing further into decades-old core
+>    graphics code when a known-good path was one condition away.
+> 5. **The actual root cause of the endzone mis-landing:** `setframe()`
+>    decodes a drag target into a raw position and a pixel `off`-within-
+>    that-line. A drag landing exactly at the document's end decodes to
+>    `position == tl` (one past the last line) with `off == 0`.
+>    `MoveBack` then snaps that down to the real last line (the
+>    oversized view) — but `off`'s own re-validation against the
+>    *new* line's height was gated behind `if (off != 0)`, so with
+>    `off` already `0` from the out-of-range decode, the correction
+>    never ran and `off` stayed `0` — landing at the very *top* of the
+>    giant view instead of its bottom. Two-part fix: track the snap
+>    from *both* `MoveBack` calls (the first, by-lines, didn't change
+>    anything here; it was the second, by-pixels, that actually
+>    performed the tl→tl-1 snap and was never being watched), and let
+>    that `forceup` flag alone open the `off`-revalidation block even
+>    when `off` is already `0`.
+>
+> All temporary `dbglog`/`/tmp/elevator-debug.log` tracing added while
+> chasing these (in `scroll.c`, `textv.c`, and a since-reverted probe in
+> `drawtxtv.c`) has been removed. Re-verified live against
+> `national-grid.html` (full range, both endzones) and against legacy
+> `.ez` scrolling (`revival/testing.ez`) to confirm no regression.
 
 ### Context
 
@@ -424,10 +455,9 @@ original scoping.
   and ordinary documents are unaffected, and re-confirm click/page are
   still exact (should be untouched, but worth a live re-check since
   `position()` is shared code).
-- Once confirmed working live, strip the temporary `dbglog` tracing from
-  `scroll.c`/`textv.c` (kept in deliberately since the 2026-09-24
-  checkpoint specifically for this investigation) and fold the
-  elevator-drag item in `roadmap.md` from "Now open" to closed.
+- **Done 2026-09-25**: all temporary `dbglog` tracing stripped from
+  `scroll.c`/`textv.c` (and a since-reverted probe in `drawtxtv.c`), the
+  elevator-drag item in `roadmap.md` folded from "Now open" to closed.
 
 ### Implementation notes (what actually shipped, differs from the plan above in a few places)
 
@@ -456,11 +486,17 @@ original scoping.
   `CalculateCharsPerLine` derives it dynamically from the view's current
   width and font metrics (`fontdesc_FontSummary`'s `maxSpacing`),
   mirroring `CalculateLineHeight`'s existing pattern.
-- **Remaining bug** (see the Status note at the top of this section):
-  drag-into-endzone after extended scrolling can land at the wrong
-  position even though a fresh click to the same spot lands correctly —
-  not yet fixed. Leading theory is `scroll.c`'s cached `cur`/`des` bar
-  state going stale mid-gesture; not yet confirmed with a trace.
+- **Endzone mis-landing, fixed 2026-09-25** (see the Status note at the
+  top of this section for full detail): the initial suspicion —
+  `scroll.c`'s cached `cur`/`des` bar state going stale mid-gesture —
+  turned out not to be it. The real chain was three separate bugs: an
+  LP64 `int`/`long` truncation in `scroll.c`'s `set_frame()`, an
+  out-of-bounds `self->lines[-1]` read in `textv.c`'s `DoUpdate` scroll-
+  shortcut, and (the actual root cause) `setframe()`'s `off`-
+  revalidation being unreachable when a drag decoded exactly to the
+  document's end (`off` already `0`, so the `off != 0` guard skipped
+  the very clamp that would have corrected it after `MoveBack` snapped
+  to the real last line).
 
 ### Open questions (never depended on, safe to leave as follow-ups)
 
