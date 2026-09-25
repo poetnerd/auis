@@ -102,19 +102,6 @@ struct scrollweightlist {
 
 static struct graphic *pat;
 
-/* TEMPORARY (2026-09-23): elevator-drag-warps-to-top investigation.
-   Removed before commit. */
-static void dbglog(const char *fmt, ...)
-{
-    FILE *f = fopen("/tmp/elevator-debug.log", "a");
-    va_list ap;
-    if (!f) return;
-    va_start(ap, fmt);
-    vfprintf(f, fmt, ap);
-    va_end(ap);
-    fclose(f);
-}
-
 #define TEXT_VIEWREFCHAR '\377'  /* place holder character for viewrefs */
 #define textview_MOVEVIEW 99999999
 
@@ -822,7 +809,9 @@ calls in this function are being RETURNED state vector information in info.sv, b
 
     if (self->scroll == textview_ScrollForward || self->scroll == textview_ScrollBackward)  {
 	for (line = 0; line < self->nLines && ! mark_GetModified(self->lines[line].data); line++);
-	if (line == self->nLines && line >= 1)  { /* was > */
+	if (line == self->nLines && line >= 1
+	    && !(self->scroll == textview_ScrollForward && self->nLines == 1
+		 && self->lines[0].height > self->lines[0].textheight))  { /* was > */
 	    /* At this point we know that only scrolling has occurred and we can just do the bit blt and continue formatting */
 
 	    int sy, dy, h, newLine, movement, lasty, yoff, extendedTop = 0;
@@ -847,7 +836,29 @@ calls in this function are being RETURNED state vector information in info.sv, b
 
 		sy = self->lines[self->scrollLine].y;
 		dy = cury;
-		lasty = self->lines[stopline].y + self->lines[stopline].height;
+		/* CORRECTION (2026-09-25, elevator-drag-into-endzone-warps-
+		   to-top investigation): stopline goes to -1 above when
+		   nLines==1 and that single line is itself an oversized
+		   view (e.g. deep inside a many-thousand-pixel embedded
+		   table -- exactly the state once scrolled near a
+		   document's end, live-traced: nLines=1 sy=5 h=-5). Indexing
+		   self->lines[stopline] then read self->lines[-1], one
+		   linedesc before the array -- out-of-bounds, garbage in,
+		   corrupting this blit's source/dest rectangle math and
+		   leaving stale pixels on screen (matches wdc's live report:
+		   drag lands at the correct document position internally,
+		   but the screen shows the document's top until the next
+		   full redraw, e.g. on leaving the endzone). With
+		   stopline==-1 there's nothing preceding scrollLine to
+		   blit, so the correct range-to-move is empty:
+		   lasty==sy, giving h==0 below, which the existing
+		   tempSrcRect.height<=0 check already treats as a no-op
+		   blit -- exactly right, since redrawline's own
+		   mark_SetModified() (above) already queues this line for
+		   an ordinary full redraw. */
+		lasty = (stopline >= 0)
+		    ? self->lines[stopline].y + self->lines[stopline].height
+		    : sy;
 		if (self->ceyPos >= lasty && self->ceyPos == self->csyPos && self->cexPos == self->csxPos)  {
 		    /* We are viewing the end of the file with the carat at the end. */
 
@@ -1057,7 +1068,23 @@ calls in this function are being RETURNED state vector information in info.sv, b
 	    }
 	}
 	else  {
-	    /* Both scrolling and some text has changed.  Have no choice but to redraw the entire view. */
+	    /* Both scrolling and some text has changed.  Have no choice but to redraw the entire view.
+
+	       Also reached (2026-09-25, elevator-drag-into-endzone-warps-
+	       to-top investigation) when nLines==1 and that single line
+	       is itself an oversized view -- scrollLine and redrawline
+	       are then the SAME line (0), a case the blit-shortcut above
+	       was never designed for (it assumes redrawline is always
+	       excluded from, not identical to, the range being shifted).
+	       Traced repeatedly: the shortcut's own reposition of the
+	       view (view_InsertView, drawtxtv.c) computed a provably
+	       correct rectangle every time, yet the screen kept showing
+	       the document's original top-of-view content instead of the
+	       correct near-bottom sliver, self-correcting only once a
+	       real force=1 pass ran (e.g. on leaving the endzone) -- so
+	       rather than chase the exact defect further into decades-old
+	       X11/backing-store code, this reuses the one path already
+	       proven live to repaint correctly in every case. */
 	    self->force = 1;
 	}
     }
@@ -2605,13 +2632,9 @@ static void RecordScrollWeight(struct textview *self, long pos, long height, boo
     struct scrollweightlist *swl;
     int i, insertAt;
 
-    dbglog("TEXTV RecordScrollWeight self=%p pos=%ld height=%ld containsView=%d\n",
-           self, pos, height, (int) containsView);
     if (!containsView) return;
     typicalHeight = CalculateLineHeight(self);
     if (typicalHeight <= 0 || height <= typicalHeight * 3) {
-        dbglog("TEXTV RecordScrollWeight self=%p REJECTED typicalHeight=%ld height=%ld\n",
-               self, typicalHeight, height);
         return;
     }
     charsPerLine = CalculateCharsPerLine(self);
@@ -2621,9 +2644,6 @@ static void RecordScrollWeight(struct textview *self, long pos, long height, boo
                              * (double) charsPerLine * (double) (1L << FINESCROLL));
     extraWeight = weightedUnits - (1L << FINESCROLL);
     if (extraWeight <= 0) return;
-
-    dbglog("TEXTV RecordScrollWeight self=%p ACCEPT pos=%ld height=%ld typicalHeight=%ld charsPerLine=%ld extraWeight=%ld\n",
-           self, pos, height, typicalHeight, charsPerLine, extraWeight);
 
     swl = GetScrollWeights(self, TRUE);
     if (swl == NULL) return;
@@ -2812,8 +2832,6 @@ static void setframe(struct textview *self, long position, long numerator, long 
     long weight;
     boolean forceup = FALSE;
 
-    long inposition = position;
-
     coord = numerator * textview_GetLogicalHeight(self);
     coord /= denominator;
 
@@ -2827,16 +2845,26 @@ static void setframe(struct textview *self, long position, long numerator, long 
     off = (position & FINEMASK) * FINEGRID;
     position >>= FINESCROLL;
 
-    dbglog("TEXTV setframe self=%p IN inposition=%ld numerator=%ld denominator=%ld coord=%ld decoded_position=%ld off=%ld tl=%ld\n",
-           self, inposition, numerator, denominator, coord, position, off, text_GetLength(Text(self)));
-
     newpos = textview_MoveBack(self, position, 0, textview_MoveByLines, 0, 0);
     if (newpos != position) {
         forceup = TRUE;
     }
-    dbglog("TEXTV setframe self=%p afterLinesSnap position=%ld newpos=%ld forceup=%d\n", self, position, newpos, (int) forceup);
     newpos = textview_MoveBack(self, newpos, coord, textview_MoveByPixels, &dist, &lines);
-    dbglog("TEXTV setframe self=%p afterPixelsMove newpos=%ld dist=%ld lines=%ld\n", self, newpos, dist, lines);
+    /* CORRECTION (2026-09-25, elevator-drag-into-endzone-warps-to-top
+       investigation, part 2 -- the first `forceup` fix below wasn't
+       enough): a drag landing exactly at the document's end decodes to
+       position==tl. The FIRST MoveBack (0 lines) leaves it unchanged
+       (tl is already "a line start" as far as it's concerned), so
+       forceup stays FALSE here. It's THIS SECOND MoveBack (0 pixels,
+       byPixels) that actually snaps tl down to tl-1 -- the real last
+       line, the oversized embedded view -- live-traced returning
+       11485 from an input of 11486. forceup never saw that snap, so
+       the `off` re-validation below still didn't run. Comparing
+       against `position` (the byLines-snapped value, before this call)
+       catches a change from EITHER MoveBack call. */
+    if (newpos != position) {
+        forceup = TRUE;
+    }
     if (newpos < textview_GetTopPosition(self) && self->scroll != textview_ScrollForward && self->scroll != textview_MultipleScroll)  {
 	if (dist == -1)  {
 	    self->scrollDist = -1;
@@ -2858,7 +2886,24 @@ static void setframe(struct textview *self, long position, long numerator, long 
         off = self->pixelsComingOffTop;
     }
     else {
-        if (off != 0) {
+        /* CORRECTION (2026-09-25, elevator-drag-into-endzone-warps-to-
+           top investigation, ROOT CAUSE): this whole block re-validates
+           `off` against the line MoveBack actually snapped to (newpos),
+           via the `forceup || off > height` clamp below -- but it used
+           to run only `if (off != 0)`. A drag landing exactly at the
+           document's end decodes to position==tl with off==0 (see
+           DecodeWeight/position()); MoveBack then snaps that down to
+           tl-1 (the real last line, forceup=TRUE) -- an oversized
+           embedded view. off==0 was correct for the ORIGINAL decoded
+           (one-past-the-end, nonexistent) line, but says nothing valid
+           about the DIFFERENT line just snapped to, and the `off!=0`
+           guard skipped the very clamp (`forceup || off > height`) that
+           exists to catch exactly this: forceup means the position we
+           ended up at isn't the one we decoded, so off must be
+           re-derived from the new line, not carried over unchecked.
+           Traced live: off stayed 0, landing the view at the very TOP
+           of the giant final line instead of its bottom. */
+        if (off != 0 || forceup) {
             long line = textview_FindLineNumber(self, newpos);
             long height;
 
@@ -2885,7 +2930,6 @@ static void setframe(struct textview *self, long position, long numerator, long 
             }
         }
     }
-    dbglog("TEXTV setframe self=%p SetTopOffTop newpos=%ld off=%ld\n", self, newpos, off);
     textview_SetTopOffTop(self, newpos, off);
 }
 
