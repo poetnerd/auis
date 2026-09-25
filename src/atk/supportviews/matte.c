@@ -100,12 +100,37 @@ void matte__Print(struct matte *self, FILE *file, char *processor, char *finalFo
     if(self->child) 
 	view_Print(self->child,file, processor, finalFormat, topLevel);
 }
+/* GUARD (2026-09-25, found live via lldb-equivalent crash-log reading
+   against Book Rack's deeply-nested HTML tables -- see project memory
+   project_lazy_linking_invariant.md and lsetscrlc.c's own top-of-file
+   note on this same ATK characteristic, first documented there
+   2026-09-23). self->child is only guaranteed to have a valid
+   window/graphic context (view_GetIM non-NULL) once something has
+   actually linked it in (LinkTree, or InsertView's imPtr side effect);
+   matte__LinkTree links self->child at ordinary matte-creation time,
+   which covers the common case, but a matte several real levels deep
+   inside a still-being-laid-out textview line (drawtxtv.c's
+   GenerateLineItems querying an embedded view's DesiredSize to measure
+   the line it's about to draw, itself invoked while a FullUpdate
+   cascade is still walking down through Book Rack's nested-table
+   structure) can be reached before its own LinkTree/InsertView has run.
+   Recursing into such a child's DesiredSize is not inherently unsafe --
+   it's only a problem when that recursion reaches real content that
+   assumes a valid drawable/colormap (textview__LineRedraw's color-
+   allocation calls, confirmed live: EXC_BAD_ACCESS/SIGSEGV inside
+   xcolormap__AllocColor <- SetFGColor <- xgraphic__SetForegroundColor
+   <- textview__LineRedraw <- textview__DesiredSize, reached from here).
+   Treating an unlinked child the same as no child at all -- the
+   existing, already-safe fallback below -- self-corrects on the next
+   real layout pass once this child is actually linked, same reasoning
+   as lsetscrollcontent__DesiredSize's own guard. */
+#define matte_ChildReady(s) ((s)->child && view_GetIM((s)->child))
 enum view_DSattributes matte__DesiredSize(struct matte *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
     enum view_DSattributes val;
     long pwidth , pheight ;
     self->sizepending = FALSE;
-    if(self->child && self->desw == UNSET && self->desh == UNSET) {
+    if(matte_ChildReady(self) && self->desw == UNSET && self->desh == UNSET) {
 	val = view_DesiredSize(self->child, width -2 , height -2 , pass, dWidth, dHeight);
 	*dWidth += 2;
 	*dHeight += 2;
@@ -137,10 +162,10 @@ enum view_DSattributes matte__DesiredSize(struct matte *self, long width, long h
 	    if(self->desh != UNSET) pass = view_HeightSet;
 	    else if(self->desw != UNSET) pass = view_WidthSet;
     }
-    if(self->child )val = view_DesiredSize(self->child, pwidth , pheight , pass, dWidth, dHeight);
+    if(matte_ChildReady(self))val = view_DesiredSize(self->child, pwidth , pheight , pass, dWidth, dHeight);
     else{
 	val = view_HeightFlexible | view_WidthFlexible;
-	*dHeight = height - 2; 
+	*dHeight = height - 2;
 	*dWidth = width - 2;
     }
     if(self->desh == UNSET) *dHeight += 2;
