@@ -132,6 +132,19 @@ static void place_inner(struct lsetscrollcontent *self)
     naturalWidth = EffectiveNaturalWidth(self);
     w = (naturalWidth > ownBounds.width) ? naturalWidth : ownBounds.width;
     rectangle_SetRectSize(&r, ownBounds.left - self->panx, ownBounds.top, w, ownBounds.height);
+    /* CORRECTION (2026-09-25, found live -- endzone-jump-back-to-left-
+       margin misdraw): DoFullUpdate (lpair.c) never clears background
+       ahead of recursing into children -- only lpair__Update's OWN
+       WantUpdate-driven path does that (lpair_FillRect before
+       DoFullUpdate). Our own repaint idiom (view_FullUpdate(self->inner,
+       view_FullRedraw, 0,0,0,0), lsetscrollcontent__Update below) goes
+       straight through lsetview__FullUpdate/lpair__FullUpdate/
+       DoFullUpdate, skipping that erase. Explicitly erasing this
+       object's own bounds first, mirroring lpair__Update's own
+       established pattern, so any stale pixels from the previous pan
+       position can't survive regardless of whether every downstream
+       leaf's own repaint happens to cover 100% of its own rectangle. */
+    lsetscrollcontent_FillRect(self, &ownBounds, lsetscrollcontent_WhitePattern(self));
     view_InsertView((struct view *) self->inner, self, &r);
 }
 
