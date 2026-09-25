@@ -63,6 +63,41 @@ struct linedesc  {
     struct mark *data;			/* the range of the text storing the data */
 };
 
+/* Elevator-drag scrollbar-position correction (2026-09-24, see
+   html-scroll-plan.md's Step 3): records the real pixel height of a
+   line found -- via any code path, full paint or measurement-only --
+   to contain an embedded view disproportionately taller than ordinary
+   text (e.g. a many-thousand-pixel HTML table kept as one view so its
+   own horizontal scroll stays in sync across rows). `self->lines[]`
+   itself can't be used for this, since it's only a moving window of
+   currently-rendered lines and forgets a line's real height once it
+   scrolls out of view, but the scrollbar's `total`/`position()`
+   encoding (see FINESCROLL above) needs to keep accounting for it
+   regardless of what's currently on screen. `position` is the line's
+   raw (pre-FINESCROLL-shift) character position; `extraWeight` is
+   already expressed in the same units `position()` returns, ready to
+   add/subtract directly.
+
+   Deliberately NOT a `struct textview` data field: `textview` is
+   subclassed in ~25+ places across the tree (`messages` among them,
+   built as its own separately-linked `messages.do`), and subclassing
+   here embeds the parent struct by value -- adding fields would shift
+   every subclass's own field offsets and require recompiling all of
+   them, or risk exactly the kind of silent ABI mismatch this project
+   has hit before (see the ".do Silent Underlink" bug class). Instead,
+   a small per-textview blob (`struct scrollweightlist`, textv.c) is
+   stashed via the existing `dictionary_Insert`/`LookUp` mechanism
+   (dict.ch) keyed by `self` -- the same mechanism this file already
+   uses for viewref tracking (see LinkTree/FinalizeObject) -- so no
+   struct layout changes anywhere. */
+struct scrollweight {
+    long position;
+    long extraWeight;
+    long height;	/* real pixel height, needed by DecodeWeight's
+			   proportional rescale -- see its own comment
+			   (textv.c, 2026-09-24) */
+};
+
 struct InsertStack {
     struct InsertStack *next;
     char *name;
