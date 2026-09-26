@@ -449,6 +449,15 @@ static int attr_allowed(const char *tag, const char *attr)
         return strcmp(attr, "src") == 0 || strcmp(attr, "alt") == 0
             || strcmp(attr, "width") == 0 || strcmp(attr, "height") == 0;
     }
+    if (strcmp(tag, "tr") == 0) {
+        /* bgcolor only -- unlike table/td/th below, a <tr> has no
+           meaningful colspan/rowspan/border/width of its own; added
+           2026-09-25 alongside table/td/th's bgcolor, same cascade
+           (CellBgColorX11Cascaded, htmlatk.c) for a template that
+           paints a row's background once at the <tr> instead of
+           repeating it on every cell. */
+        return strcmp(attr, "bgcolor") == 0;
+    }
     if (strcmp(tag, "table") == 0 || strcmp(tag, "td") == 0 || strcmp(tag, "th") == 0) {
         /* width added 2026-08-17: htmlatk.c's lset-based table renderer
            now reads a cell's (or its sole nested table's) bare-pixel
@@ -462,8 +471,14 @@ static int attr_allowed(const char *tag, const char *attr)
            (align, originally added here 2026-08-19 for exactly this
            group, is now handled by the any-element check above instead
            -- see its own comment.) */
+        /* bgcolor added 2026-09-25: the legacy pre-CSS way real mail
+           templates color a cell (e.g. bgcolor="#998B4A") -- htmlatk.c
+           reads it (falling back from style="background-color:...",
+           already filtered through separately) to paint the cell's own
+           lsetview leaf. */
         return strcmp(attr, "colspan") == 0 || strcmp(attr, "rowspan") == 0
-            || strcmp(attr, "border") == 0 || strcmp(attr, "width") == 0;
+            || strcmp(attr, "border") == 0 || strcmp(attr, "width") == 0
+            || strcmp(attr, "bgcolor") == 0;
     }
     if (strcmp(tag, "font") == 0) {
         return strcmp(attr, "color") == 0 || strcmp(attr, "size") == 0;

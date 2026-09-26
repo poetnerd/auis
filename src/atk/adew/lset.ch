@@ -92,6 +92,21 @@ data:
 	   Persisted as of the on-disk \V 5 format (lset__Read/Write); defaults
 	   to 0 for \V <5 files and every other lset caller in the tree. */
 	int minwidth;
+	/* An X11-ready color spec ("#rrggbb" or a named color) for this
+	   leaf's own cell background -- e.g. a real <td bgcolor="..."> or
+	   style="background-color:...". Empty means "no declared
+	   background, leave whatever the child view already paints" (every
+	   non-HTML-table lset caller, and any table cell with neither).
+	   Added 2026-09-25 for htmlatk.c's HTML table rendering (see
+	   roadmap.md item 2): consulted by lsetv.c's makeview() to set the
+	   leaf's child view's own background color once, at construction
+	   time, so every ordinary WhitePattern-based erase that view
+	   already does paints this color instead -- no drawtxtv.c/textv.c
+	   changes needed (see lsetv.c's makeview() for the full mechanism).
+	   Persisted as of the on-disk \V 6 format (lset__Read/Write);
+	   defaults to "" for \V <6 files and every other lset caller in
+	   the tree. */
+	char bgcolor[32];
 	char dataname[32];
 	char viewname[32];
 	char refname[64];

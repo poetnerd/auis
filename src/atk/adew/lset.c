@@ -269,25 +269,35 @@ putchar(c);
 	}
     }
     /* nobar (added \V 2), vcenter (added \V 3), autoheight (added \V 4),
-       and minwidth (added \V 5) are each only present starting with their
-       own version -- older data has fewer fields, so parse each
-       generation separately rather than let sscanf silently leave a
-       field uninitialized against short input. */
-    if (version >= 5)
+       minwidth (added \V 5), and bgcolor (added \V 6, read separately
+       below via lset_GetLine since it's a string, not a numeric sscanf
+       field) are each only present starting with their own version --
+       older data has fewer fields, so parse each generation separately
+       rather than let sscanf silently leave a field uninitialized
+       against short input. */
+    if (version >= 6)
 	sscanf(cbuf,"%d %d %d %d %d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->nobar),
 	     &(self->vcenter),&(self->autoheight),&(self->minwidth),&(self->application), &did,&lid,&rid,&textpending);
+    else if (version == 5) {
+	*self->bgcolor = '\0';
+	sscanf(cbuf,"%d %d %d %d %d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->nobar),
+	     &(self->vcenter),&(self->autoheight),&(self->minwidth),&(self->application), &did,&lid,&rid,&textpending);
+    }
     else if (version == 4) {
+	self->bgcolor[0] = '\0';
 	self->minwidth = 0;
 	sscanf(cbuf,"%d %d %d %d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->nobar),
 	     &(self->vcenter),&(self->autoheight),&(self->application), &did,&lid,&rid,&textpending);
     }
     else if (version == 3) {
+	self->bgcolor[0] = '\0';
 	self->autoheight = 0;
 	self->minwidth = 0;
 	sscanf(cbuf,"%d %d %d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->nobar),
 	     &(self->vcenter),&(self->application), &did,&lid,&rid,&textpending);
     }
     else if (version == 2) {
+	self->bgcolor[0] = '\0';
 	self->vcenter = 0;
 	self->autoheight = 0;
 	self->minwidth = 0;
@@ -295,6 +305,7 @@ putchar(c);
 	     &(self->application), &did,&lid,&rid,&textpending);
     }
     else {
+	self->bgcolor[0] = '\0';
 	self->nobar = 0;
 	self->vcenter = 0;
 	self->autoheight = 0;
@@ -306,6 +317,8 @@ putchar(c);
     cp = lset_GetLine(cp,self->dataname);
     cp = lset_GetLine(cp,self->viewname);
     cp = lset_GetLine(cp,self->refname);
+    if (version >= 6)
+	cp = lset_GetLine(cp,self->bgcolor);
     *buf = '\0';
     if(textpending){
 	self->pdoc = (struct text *) newobject;
@@ -334,12 +347,12 @@ long lset__Write(struct lset *self, FILE *file, long writeid, int level)
     self->header.dataobject.writeID = writeid;
 
     fprintf(file,"\\begindata{lset,%ld}\n",lset_GetID(self));
-    fprintf(file,"\\V 5\n"); /* Version Number -- bumped 2026-09-20 for minwidth, see lset.ch */
+    fprintf(file,"\\V 6\n"); /* Version Number -- bumped 2026-09-25 for bgcolor, see lset.ch */
     if(self->dobj){dataobject_Write(self->dobj,file,writeid,level+1); did = dataobject_UniqueID(self->dobj);}
     if(self->left){dataobject_Write(self->left,file,writeid,level+1);lid = dataobject_UniqueID(self->left);}
     if(self->right){ dataobject_Write(self->right,file,writeid,level+1);rid = dataobject_UniqueID(self->right);}
-    fprintf(file,"%d %d %d %d %d %d %d %ld %ld %ld %d\n>OBJ< %s\n>VIEW< %s\n>REF< %s\n" ,self->type,self->pct,self->nobar,self->vcenter,self->autoheight,self->minwidth,self->application,
-	 did,lid,rid,(self->pdoc != NULL),self->dataname,self->viewname,self->refname);
+    fprintf(file,"%d %d %d %d %d %d %d %ld %ld %ld %d\n>OBJ< %s\n>VIEW< %s\n>REF< %s\n>BGC< %s\n" ,self->type,self->pct,self->nobar,self->vcenter,self->autoheight,self->minwidth,self->application,
+	 did,lid,rid,(self->pdoc != NULL),self->dataname,self->viewname,self->refname,self->bgcolor);
     if(self->pdoc){
 	text_Write(self->pdoc,file,writeid,level+1);
     }
@@ -352,6 +365,7 @@ boolean lset__InitializeObject(struct classheader *classID, struct lset *self)
 *self->dataname = '\0';
 *self->viewname = '\0';
 *self->refname = '\0';
+*self->bgcolor = '\0';
 self->type = 0;
 self->pct = 0;
 self->nobar = 0;
