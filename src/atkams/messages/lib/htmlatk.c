@@ -2223,6 +2223,144 @@ static long TextMaxEmbeddedLsetMinwidth(struct text *t)
     return best;
 }
 
+/* Resolves ONE node's own declared background color (roadmap.md item
+   2), preferring style="background-color:...;" (already filtered
+   through htmlpart.c's hp_style_props allowlist) over the legacy
+   bgcolor="..." attribute (added to htmlpart.c's attr_allowed for
+   table/td/th/tr alongside this feature) when a node somehow has both
+   -- CSS wins the cascade in a real browser too. Both forms are run
+   through CssColorToX11 (rgb()/rgba() -> "#rrggbb"; a plain hex or
+   named color passes through unchanged) so lset->bgcolor always holds
+   something X11's color lookup can take directly. Returns 1 and fills
+   outbuf if a color was found, else 0 (outbuf untouched) -- the common
+   case, so callers should only act on a nonzero return. Generic over
+   node type -- used directly on a <td>/<th>, and by
+   CellBgColorX11Cascaded below on that cell's ancestor <tr>/<table>
+   too, since HTML lets any of the three declare it. */
+static int NodeOwnBgColorX11(const struct htmlnode *td, char *outbuf, size_t outbufsz)
+{
+    char *sv;
+    const char *resolved;
+
+    sv = htmlpart_GetStyleProp(td, "background-color");
+    if (sv) {
+        resolved = CssColorToX11(sv, outbuf, outbufsz);
+        if (resolved && resolved != outbuf) {
+            strncpy(outbuf, resolved, outbufsz - 1);
+            outbuf[outbufsz - 1] = '\0';
+        }
+        free(sv);
+        return resolved != NULL;
+    }
+    sv = (char *) htmlpart_GetAttr(td, "bgcolor");
+    if (sv && *sv) {
+        char tmp[16];
+        resolved = CssColorToX11(sv, tmp, sizeof(tmp));
+        if (resolved) {
+            strncpy(outbuf, resolved, outbufsz - 1);
+            outbuf[outbufsz - 1] = '\0';
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* A <td>/<th> with no background of its own inherits one from its row
+   or table, the same cascade a real browser applies when a template
+   paints its background once at the <table>/<tr> level instead of
+   repeating it on every cell -- confirmed a real, present case, not
+   hypothetical: revival/tests/bookrack.html has two such tables (the
+   page-wrapper and the content-wrap), neither repeating its bgcolor on
+   any child cell. tr may be NULL (BuildLsetCell's sole-nested-table
+   recursion doesn't always have the immediate row in hand); tableNode
+   is always real. Cell wins over row wins over table, same order a
+   real browser resolves it. */
+static int CellBgColorX11Cascaded(const struct htmlnode *td, const struct htmlnode *tr,
+                                   const struct htmlnode *tableNode, char *outbuf, size_t outbufsz)
+{
+    if (NodeOwnBgColorX11(td, outbuf, outbufsz)) return 1;
+    if (tr && NodeOwnBgColorX11(tr, outbuf, outbufsz)) return 1;
+    if (tableNode && NodeOwnBgColorX11(tableNode, outbuf, outbufsz)) return 1;
+    return 0;
+}
+
+/* Paints `color` onto every LEAF in this subtree that doesn't already
+   carry a more specific color of its own -- a SPLIT node's own
+   bgcolor field is never consulted by anything (lsetv.c's makeview(),
+   the only reader, only ever runs for a leaf being given a real child
+   view; a split has no view of its own to paint, just two panes), so
+   "this whole card is colored" has to mean "every real leaf inside it
+   is," not just a color sitting unused on the split root. Needed by
+   BuildLsetGrid's row-splice below: when a row's sole cell wraps a
+   nested table and gets discarded in favor of splicing that nested
+   table's own rows in directly (see that splice's own comment), the
+   discarded cell's bgcolor has nowhere left to live unless it's
+   pushed down into what's left -- confirmed live, Book Rack's book-
+   review cards (<td bgcolor="#EEF0D0"> wrapping a 2-row nested table):
+   without this, the splice silently dropped the card's own background
+   entirely, same failure mode as the trivial-wrapper peel in
+   BuildLsetCell already had to guard against, just one level of
+   nesting further out. Recursion is bounded by markup depth, not
+   document size, same reasoning as every other tree-walk in this
+   file.
+
+   A colored leaf's own content isn't always just character runs,
+   though -- BuildLsetCell's general path renders a cell's content into
+   a plain "text" object (ct) via htmlatk_RenderAmbient, and THAT walk
+   can itself embed a further nested lset view (a floated image beside
+   flowing text, another table, ...) as one character position inside
+   ct, entirely separate from this node's own left/right. The
+   split-tree walk above never reaches it, so without descending into
+   it too, a color set on this leaf would stop exactly at its own
+   boundary and never reach whatever's actually embedded inside it --
+   confirmed live 2026-09-25, Book Rack's "FEATURED TITLES" card (<td
+   bgcolor="#E2EFF0"> wrapping ambient content that itself embeds a
+   floated-cover-image-plus-text sub-layout): the outer leaf correctly
+   got bgcolor=#E2EFF0, but every leaf of the embedded sub-layout
+   stayed bgcolor=(none), rendering as a patchwork of colored and white
+   rectangles instead of one cohesive tinted card. Mutually recursive
+   with ApplyBgColorToTextEmbeds below (forward-declared here) -- same
+   "bounded by markup, not document size" reasoning; a real document
+   can only nest tables so many times before the source itself runs
+   out. */
+static void ApplyBgColorToTextEmbeds(struct text *t, const char *color);
+static void ApplyBgColorRecursive(struct lset *node, const char *color)
+{
+    if (!node) return;
+    if (node->left || node->right) {
+        ApplyBgColorRecursive((struct lset *) node->left, color);
+        ApplyBgColorRecursive((struct lset *) node->right, color);
+        return;
+    }
+    if (!node->bgcolor[0]) {
+        strncpy(node->bgcolor, color, sizeof(node->bgcolor) - 1);
+        node->bgcolor[sizeof(node->bgcolor) - 1] = '\0';
+    }
+    if (node->dobj && strcmp(class_GetTypeName(node->dobj), "text") == 0)
+        ApplyBgColorToTextEmbeds((struct text *) node->dobj, color);
+}
+
+/* Same per-character embedded-view scan TextMaxEmbeddedLsetMinwidth
+   (above) already uses to find a cell's own nested lset view(s) --
+   see its comment for why a plain per-character loop, not
+   GetNextChange's run-length optimization, is the right tool here
+   (only ever run over one cell's own short text, never a whole
+   message body). */
+static void ApplyBgColorToTextEmbeds(struct text *t, const char *color)
+{
+    long i, tlen;
+    if (!t) return;
+    tlen = text_GetLength(t);
+    for (i = 0; i < tlen; ++i) {
+        struct environment *env = environment_GetInnerMost(t->rootEnvironment, i);
+        if (env && env->type == environment_View && env->data.viewref) {
+            struct dataobject *dob = env->data.viewref->dataObject;
+            if (dob && strcmp(class_GetTypeName(dob), "lset") == 0)
+                ApplyBgColorRecursive((struct lset *) dob, color);
+        }
+    }
+}
+
 /* Builds one <td>/<th>'s lset leaf and reports its WEIGHT (its own
    colspan value, default 1 -- see TableColumnCount's comment above for
    why weight, not a boolean/count, is what cross-row alignment needs)
@@ -2234,14 +2372,17 @@ static long TextMaxEmbeddedLsetMinwidth(struct text *t)
    TableColumnCount/cross-row alignment (colspan-based) and
    BuildLsetChain's fixed-vs-proportional split choice are unrelated
    concerns -- see BuildLsetChain's own comment. */
-static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlnode *tableNode, struct hax_state *st, long *outWeight, long *outFixedPx)
+static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlnode *tr, const struct htmlnode *tableNode, struct hax_state *st, long *outWeight, long *outFixedPx)
 {
     struct lset *leaf = (struct lset *) class_NewObject("lset");
     const struct htmlnode *soleTable;
     struct text *ct;
+    char bgbuf[32];
+    int hasBg;
     *outWeight = ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
     *outFixedPx = CellFixedPixelWidth(td);
     if (!leaf) { st->hardfail = 1; return NULL; }
+    hasBg = CellBgColorX11Cascaded(td, tr, tableNode, bgbuf, sizeof(bgbuf));
 
     if (NodeIsSoleNestedTable(td, &soleTable)) {
         struct lsetvec innerRows;
@@ -2298,6 +2439,13 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
             struct lset *inner = innerRows.items[0];
             lsetvec_free(&innerRows);
             dataobject_Destroy((struct dataobject *) leaf);
+            /* This outer <td>'s own bgcolor would otherwise be lost
+               entirely along with the shell we just destroyed --
+               ApplyBgColorRecursive both fills it in only where
+               nothing more specific already exists AND reaches any
+               further nested lset embedded inside inner's own content
+               (see its comment). */
+            if (hasBg) ApplyBgColorRecursive(inner, bgbuf);
             return inner;
         }
         /* More than one row, or a single row that's itself a real
@@ -2352,6 +2500,12 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
            aborting the whole table over one cell. */
         st->hardfail = 1;
     }
+    /* ApplyBgColorRecursive, not a plain field assignment: leaf's own
+       ct (just built above, general path) may itself embed a further
+       nested lset view -- e.g. a floated image beside flowing text --
+       which a bare leaf->bgcolor write would never reach. See its
+       comment. */
+    if (hasBg) ApplyBgColorRecursive(leaf, bgbuf);
     return leaf;
 }
 
@@ -2483,8 +2637,13 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
             if (soleCell && NodeIsSoleNestedTable(soleCell, &soleTable)) {
                 struct lsetvec innerRows;
                 long j;
+                char bgbuf[32];
+                int hasBg = CellBgColorX11Cascaded(soleCell, tr, tablenode, bgbuf, sizeof(bgbuf));
                 if (BuildLsetGrid(soleTable, st, &innerRows)) {
-                    for (j = 0; j < innerRows.count; ++j) lsetvec_push(outRows, innerRows.items[j]);
+                    for (j = 0; j < innerRows.count; ++j) {
+                        if (hasBg) ApplyBgColorRecursive(innerRows.items[j], bgbuf);
+                        lsetvec_push(outRows, innerRows.items[j]);
+                    }
                 }
                 lsetvec_free(&innerRows);
                 continue;
@@ -2497,7 +2656,7 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
             long weight, fixedpx;
             if (!htmlpart_IsElement(td)) continue;
             if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
-            leaf = BuildLsetCell(td, tablenode, st, &weight, &fixedpx);
+            leaf = BuildLsetCell(td, tr, tablenode, st, &weight, &fixedpx);
             if (leaf) { wlvec_push(&cells, leaf, weight, fixedpx); rowWeight += weight; }
         }
         if (cells.count > 0) {
