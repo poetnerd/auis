@@ -122,6 +122,35 @@ static struct view * makeview(struct lsetview *self, struct lset *ls)
 	}
 	if(self->app == NULL) self->app = self->child;
 	view_LinkTree(self->app,self);
+	/* htmlatk.c's HTML table rendering (roadmap.md item 2, added
+	   2026-09-25): a real <td bgcolor="..."> or style="background-
+	   color:..."> resolves to an X11 color string on this leaf's own
+	   lset (lset.ch's bgcolor field). Setting it here, once, on the
+	   real content view's own graphic state is the entire fix -- every
+	   ordinary WhitePattern-based erase that view already does
+	   (drawtxtv.c/textv.c, completely unmodified) fills using the
+	   view's CURRENT BACKGROUND pixel, not literally hardcoded white
+	   (confirmed in xgraphic.c: a WhitePattern fill sets the fill GC's
+	   foreground to self->backgroundpixel before drawing) -- so this
+	   one call is enough to recolor every line's erase, the trailing-
+	   garbage clear, and the below-last-line fill alike, with no
+	   changes to any shared text-rendering code. Every other lset
+	   caller in the tree leaves bgcolor empty and gets no call here at
+	   all, so this is purely additive.
+
+	   MUST run after view_LinkTree, not before (found live 2026-09-25,
+	   crashed on first real use against Book Rack): self->child's own
+	   graphic state (self->drawable's X display/colormap wiring) isn't
+	   set up until LinkTree actually inserts it into the real view
+	   hierarchy -- calling SetBackgroundColor on an unlinked child
+	   dereferences a null colormap pointer inside xgraphic's color-
+	   allocation code (xgraphic_ApproximateColor). Same root invariant
+	   as lsetview__DesiredSize's/lsetscrollcontent__DesiredSize's
+	   existing view_GetIM guards elsewhere in this file/lsetscrlc.c --
+	   see project memory project_lazy_linking_invariant.md -- just a
+	   new call site hitting it instead of a new guard being needed. */
+	if(ls->bgcolor[0] != '\0')
+	    view_SetBackgroundColor(self->child, ls->bgcolor, 0, 0, 0);
 	self->mode = lsetview_FirstUpdate;
 	return self->child;
     }
@@ -473,6 +502,30 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
 	return result;
     }
     result = super_DesiredSize(self, width, height, pass, dWidth, dHeight);
+    /* A split's own composed minwidth (BuildLsetChain/BuildLsetGrid,
+       htmlatk.c -- bottom-up sum/max of a real HTML table's declared
+       column widths) is a genuine floor lpair's own DesiredSize above
+       never looks at: lpair only ever sums/maxes its two children's
+       OWN independently-reported sizes, and a plain text-column child
+       has no floor of its own (textview just reflows to fit whatever
+       it's offered) -- so a split combining a fixed-width image column
+       with a flowing text column never asked for more than it was
+       casually offered, no matter how wide the table's declared column
+       widths actually were. Found live 2026-09-25 (Book Rack's book-
+       review card pairs, TryPairFloatedTables/htmlatk.c): row->minwidth
+       verified correctly composed to 580 (htmlatktest.test dump), but
+       every split beneath the row root reported nothing close to that,
+       so ordinary percentage division crushed the text column to a
+       sliver and the two floated cards never got their own real 290px
+       columns either -- exactly the "single narrow stacked column,
+       misaligned image/text" symptom reported live. Only *dWidth is
+       bumped, never *dHeight -- minwidth is a horizontal-only floor by
+       definition (lset.ch), and super_DesiredSize's own height result
+       (from summing/maxing real child content) is already correct. */
+    if (self->mode == lsetview_IsSplit) {
+	long mw = Data(self)->minwidth;
+	if (mw > *dWidth) *dWidth = mw;
+    }
     return result;
 }
 
