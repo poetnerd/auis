@@ -352,19 +352,51 @@ being front-loaded here.
      real width silently got crushed to whatever narrow width its
      enclosing ambient cell happened to offer — fixed by having a split
      report `max(super's own result, its own composed minwidth)`.
-     **Two follow-ups found live, not yet fixed:**
+     **Both follow-ups found live, RESOLVED 2026-09-26** (same
+     investigation, wdc's own live screenshots pinpointed each one):
+     - A blank spacer `<tr>` between two sections was being dropped
+       unconditionally by `BuildLsetGrid`'s blank-row coalescing (an
+       optimization to avoid doubling row count for repeating spacer
+       patterns) — not miscolored, just gone, fusing an olive banner
+       directly against its own light-blue content section with no
+       gap where Thunderbird shows one. Fixed by keeping exactly one
+       row per blank run whenever dropping it would fuse two rows that
+       resolve to different colors (or colored/colorless), *or* when
+       either neighbor declares its own `border-bottom` even if both
+       sides share the same color (Book Rack's book-review cards are
+       each an independently bordered box, not one continuous wash) —
+       `RowEffectiveBgColor`/`RowHasVisibleBorder`, `htmlatk.c`. The
+       `border-bottom` check needed `border-bottom` added to
+       `htmlpart.c`'s CSS style-property allowlist first (silently
+       stripped before `htmlatk.c` ever saw it, same failure shape as
+       the earlier `font-size`/`font-family`/`text-align` additions).
      - Individual leaf rectangles inside a colored multi-cell card
-       (Book Rack's book-review cards) don't tile perfectly edge-to-
-       edge, leaving thin uncolored slivers between them — looks like
-       `lpair`'s own pixel-rounding in the percentage/fixed-width split
-       math, even with `nobar=1`; a layout-precision issue, not a color
-       gap (every leaf's own resolved color is correct).
-     - The cell -> row -> table cascade is more eager than a real
-       browser: a blank spacer `<td>` between two independently-colored
-       sections inherited a distant ancestor table's own background
-       instead of staying white, in a case where Thunderbird leaves it
-       white. Needs the same live-dump tracing as everything else here
-       to pin down which cascade tier is firing before narrowing it.
+       didn't tile perfectly edge-to-edge, leaving a visible seam
+       between cells that should touch exactly. Root cause was NOT
+       pixel-rounding as first suspected — traced live (temporary
+       `DesiredSize`/`ResetDimensions` instrumentation) to two separate,
+       always-on reservations in shared core classes: `lpair`'s
+       `lpair_ComputeSizesFromTotal`/`lpair_ResetDimensions` always
+       reserve 1px between a split's two children, even with `nobar`
+       set (`nobar` only suppresses the *drawn* divider line per its
+       own comment, not the reserved space — fine for lpair's original
+       resizable-window-pane job, visible as a stray line/seam once
+       HTML rendering expects cells to touch exactly); and `matte`
+       (which wraps every view embedded in text, `drawtxtv.c`) always
+       reserves a 2px picture-frame margin and draws an outline around
+       its child, appropriate for its original job of a manually
+       resizable embedded object, not a table that should have no
+       frame at all. Both are widely-shared classes (`lpair` under
+       every window split via `frame`; `matte` under every embedded
+       view in any text), so neither got its default behavior changed
+       — each gained a narrow, opt-in escape hatch instead:
+       `lpair_NOSEAM` (a new bit packed into the existing `movable`
+       parameter, same technique as `lpair_NOBAR`/`lpair_VCENTER`/
+       `lpair_AUTOHEIGHT`) and `matte`'s new `noborder` field (set once
+       in `matte__Create` by checking the embedded dataobject's own
+       class name against `"lset"`, zero signature change). `lset.ch`
+       gained a matching `noseam` field (`\V7`) that `htmlatk.c` sets
+       alongside `nobar` at both of its split-building sites.
   3. Paging isn't pixel-accurate — landing positions are approximate,
      not exact. Distinct from the forward-paging double-count bug
      fixed 2026-09-13 (`porting-assessment.md` item r.) — this is the
