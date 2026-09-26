@@ -1845,6 +1845,11 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
            this was National Grid header issue (2), the visually noisy
            divider lines lpair drew between the 5 social icons). */
         node->nobar = 1;
+        /* A real browser never leaves a gap between adjacent cells
+           either -- lpair's always-on 1px seam (lpair_NOSEAM, added
+           2026-09-26 to lset.ch/lpair.ch; found live as a stray line/
+           band between a colored card and its own background). */
+        node->noseam = 1;
         /* Real browsers default table-cell vertical-align to "middle" --
            lpair_VCENTER (see lpair.ch/lpair.c 2026-08-20) makes this
            split center whichever of its two children ends up shorter
@@ -1930,6 +1935,7 @@ static struct lset *BuildLsetBalancedVertStack(struct wleaf *cells, long lo, lon
     node = (struct lset *) class_NewObject("lset");
     if (!node) { st->hardfail = 1; return NULL; }
     node->nobar = 1;
+    node->noseam = 1;
     node->vcenter = 1;
     node->autoheight = 1;
     node->type = lsetview_MakeVert;
