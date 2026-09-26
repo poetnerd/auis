@@ -3416,6 +3416,8 @@ earlier, narrower size. Not investigated further yet — logged here to
 pick up next session. Also not yet addressed: `<td style=
 "background-color:...">` isn't honored at all (noticed via a
 Thunderbird comparison of the gas-meter icon's cell background).
+**RESOLVED 2026-09-25** — see `roadmap.md` item 2 for the fix and its
+two follow-ups.
 
 #### r. Forward paging through a long HTML message stops short of the true end; backward paging reaches it fine
 

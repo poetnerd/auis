@@ -317,8 +317,54 @@ being front-loaded here.
      confirmed live via file-based tracing (register/lldb weren't
      needed this time) across `scroll.c`'s `CheckBars`/`DoRepeatScroll`
      and `textv.c`'s `whatisat`/`position`/`setframe`/`DecodeWeight`.
-  2. `<td style="background-color:...">` isn't honored at all.
-     `porting-assessment.md` item q.'s trailing note.
+  2. **RESOLVED 2026-09-25.** `<td bgcolor="...">`/`style="background-
+     color:..."` (`porting-assessment.md` item q.'s trailing note) now
+     paints — found while investigating a live report of "missing
+     content" in a Book Rack newsletter that turned out to be white
+     section-header text rendered on top of this same never-painted
+     background, so genuinely invisible rather than absent (the text
+     itself was always in the parse tree, confirmed via
+     `htmlatktest.test dump`). A cell's own color, cascaded `td` ->
+     `tr` -> `table` when the cell/row don't declare one, resolves to
+     an X11 color string on the cell's own `lset` leaf (`lset.ch`'s new
+     `bgcolor` field, `\V6`); `lsetv.c`'s `makeview()` sets it once on
+     the leaf's real content view via `view_SetBackgroundColor` (after
+     `view_LinkTree`, not before — doing it earlier crashed live in
+     `xgraphic_ApproximateColor` on a not-yet-linked view's null
+     colormap, same lazy-linking invariant as
+     `project_lazy_linking_invariant.md`). That one call recolors every
+     ordinary `WhitePattern`-based erase `drawtxtv.c`/`textv.c` already
+     do, since a `WhitePattern` fill actually paints using the view's
+     *current background pixel*, not literally hardcoded white —
+     confirmed in `xgraphic.c` — so no shared text-rendering code
+     needed touching. A color found on a cell whose own content is
+     itself spliced/peeled/ambient-embedded (BuildLsetGrid's nested-
+     table splice, BuildLsetCell's sole-nested-table peel, or a cell's
+     ambient text embedding a further nested view) is pushed down
+     recursively into every real leaf inside it, however many levels
+     deep (`ApplyBgColorRecursive`/`ApplyBgColorToTextEmbeds`,
+     htmlatk.c) — a split node's own color is never enough on its own,
+     since nothing ever reads it (only a leaf has a real view to
+     paint). Fixing this also exposed a second, unrelated bug in the
+     same live test: a floated-table-pair's own composed `minwidth`
+     (`BuildLsetChain`) was never consulted by `lsetview__DesiredSize`'s
+     split-node case, so a book-review card pair asking for 580px of
+     real width silently got crushed to whatever narrow width its
+     enclosing ambient cell happened to offer — fixed by having a split
+     report `max(super's own result, its own composed minwidth)`.
+     **Two follow-ups found live, not yet fixed:**
+     - Individual leaf rectangles inside a colored multi-cell card
+       (Book Rack's book-review cards) don't tile perfectly edge-to-
+       edge, leaving thin uncolored slivers between them — looks like
+       `lpair`'s own pixel-rounding in the percentage/fixed-width split
+       math, even with `nobar=1`; a layout-precision issue, not a color
+       gap (every leaf's own resolved color is correct).
+     - The cell -> row -> table cascade is more eager than a real
+       browser: a blank spacer `<td>` between two independently-colored
+       sections inherited a distant ancestor table's own background
+       instead of staying white, in a case where Thunderbird leaves it
+       white. Needs the same live-dump tracing as everything else here
+       to pin down which cascade tier is firing before narrowing it.
   3. Paging isn't pixel-accurate — landing positions are approximate,
      not exact. Distinct from the forward-paging double-count bug
      fixed 2026-09-13 (`porting-assessment.md` item r.) — this is the
@@ -376,6 +422,18 @@ being front-loaded here.
      in the tree rather than two. `htmlview`'s composition/authoring
      side (hand-building a document, not parsing untrusted wire HTML)
      is a separate concern and doesn't need to change.
+  7. *Noticed while closing out item 2, not yet confirmed as a real
+     problem:* `NodeIsVisuallyEmpty`/`CellIsEmpty` (`htmlatk.c`) decide
+     "empty" purely from text/img/table content, unaware bgcolor now
+     exists — their own reasoning ("this renderer has no border/
+     background rendering at all, so a visually-empty cell genuinely
+     has nothing to show") predates item 2's fix and is now inaccurate
+     for a colored-but-textless decorative cell, which would
+     legitimately show a visible colored bar. Could mean such a cell's
+     row gets dropped (`RowIsEntirelyBlank`) or its content silently
+     discarded (the trivial-wrapper/sole-nested-table peels), losing a
+     real decorative color band. No fixture has shown this live yet —
+     confirm it's real before investing in a fix.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
