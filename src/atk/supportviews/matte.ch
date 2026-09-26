@@ -62,4 +62,21 @@ data:
     int Moving,resizing,WasMoving, WasResizing;
     struct menulist *menus;
     int drawing, OldMode,sizepending;
+    /* Set once, in matte__Create, from the embedded dataobject's own
+       class ("lset" -- htmlatk.c's HTML table rendering, see lset.ch).
+       matte's normal behavior always reserves a 1px border on every
+       side for its own drawn frame/resize-handle outline (matte__
+       FullUpdate's matte_DrawRect, matte__DesiredSize's unconditional
+       "-2"/"+2") -- appropriate for its original job (a manually
+       resizable/grabbable embedded object in the ez document editor),
+       but a real browser never draws a frame around a table, and the
+       reserved margin showed up live as a small stray band/line around
+       HTML-embedded table content (found 2026-09-26, wdc's own
+       screenshot: a card's own background color sat inside a 1px
+       inset from where the wrapping cell's background was painted,
+       leaving a visible seam that doesn't exist in Thunderbird's
+       rendering of the same message). No other matte caller sets this
+       -- every existing embedded-object use (ez's own inline objects,
+       etc.) keeps the original bordered/resizable behavior unchanged. */
+    int noborder;
 };
