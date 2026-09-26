@@ -556,20 +556,29 @@ static int href_scheme_ok(const char *href)
    `<td align="center">` -- that's the HTML attribute, not this CSS
    property (attr_allowed's own comment above covers the attribute
    side), but real mail uses both, and text-align was equally absent
-   from this allowlist. */
-static const char * const hp_style_props[10] = {
+   from this allowlist.
+
+   `border-bottom` was added 2026-09-26: htmlatk.c's blank-row-drop
+   logic (BuildLsetGrid) needs to know when a <td> declares its own
+   visible border to decide whether a blank spacer row next to it is
+   a real card boundary worth keeping, even when the card shares its
+   neighbor's exact background color (bookrack.html's book-review
+   cards: `style="border-bottom: 4px solid #B6D4D6;"` on each card's
+   wrapping <td>) -- silently stripped here before htmlatk.c ever saw
+   it, same failure shape as font-size/font-family/text-align above. */
+static const char * const hp_style_props[11] = {
     "color", "background-color", "font-weight", "font-style", "text-decoration",
-    "display", "visibility", "font-size", "font-family", "text-align"
+    "display", "visibility", "font-size", "font-family", "text-align", "border-bottom"
 };
 
 static char *filter_style(const char *raw)
 {
-    char *vals[10];
+    char *vals[11];
     int i;
     const char *p = raw;
     struct hpbuf_s out;
 
-    for (i = 0; i < 10; ++i) vals[i] = NULL;
+    for (i = 0; i < 11; ++i) vals[i] = NULL;
 
     while (*p) {
         const char *propstart, *propend, *valstart, *valend;
@@ -591,7 +600,7 @@ static char *filter_style(const char *raw)
             valend = p;
             while (valend > valstart && isspace((unsigned char) valend[-1])) --valend;
 
-            for (i = 0; i < 10; ++i) {
+            for (i = 0; i < 11; ++i) {
                 if ((long) strlen(hp_style_props[i]) == proplen
                     && strncasecmp(hp_style_props[i], propstart, (size_t) proplen) == 0) {
                     free(vals[i]);
@@ -608,7 +617,7 @@ static char *filter_style(const char *raw)
     }
 
     hpbuf_init(&out);
-    for (i = 0; i < 10; ++i) {
+    for (i = 0; i < 11; ++i) {
         if (vals[i]) {
             if (out.len > 0) hpbuf_putc(&out, ';');
             hpbuf_puts(&out, hp_style_props[i]);

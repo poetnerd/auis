@@ -2284,6 +2284,61 @@ static int CellBgColorX11Cascaded(const struct htmlnode *td, const struct htmlno
     return 0;
 }
 
+/* Does this source <tr> resolve to any background color at all, via
+   the same cell->row->table cascade CellBgColorX11Cascaded uses for a
+   real cell? Used only by BuildLsetGrid's blank-row-drop loop to
+   decide whether dropping a blank spacer row sitting between this row
+   and its neighbor would fuse two differently-colored (or colored/
+   colorless) sections together. Returns the first real cell's
+   resolved color -- a row's cells could in principle cascade to
+   different colors from each other, but that's not the common real-
+   mail case and isn't needed for this boundary check. */
+static int RowEffectiveBgColor(const struct htmlnode *tr, const struct htmlnode *tableNode, char *outbuf, size_t outbufsz)
+{
+    const struct htmlnode *td;
+    for (td = tr->children; td; td = td->next) {
+        if (!htmlpart_IsElement(td)) continue;
+        if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+        if (CellBgColorX11Cascaded(td, tr, tableNode, outbuf, outbufsz)) return 1;
+    }
+    return 0;
+}
+
+/* Does this one cell declare a real (non-zero, non-"none") border of
+   its own? A "same color on both sides" match isn't actually enough
+   to say a blank spacer row is safe to drop (see the blank-row-drop
+   loop's own comment) -- bookrack.html's book-review cards are each
+   their own independently bordered box (`style="border-bottom: 4px
+   solid #B6D4D6;" bgcolor="#E2EFF0"`, found live 2026-09-26, wdc's own
+   screenshot: two same-colored E2EFF0 cards were rendering as one
+   seamless blue block with no visible gap where a divider belongs)
+   even though consecutive cards happen to share the same bgcolor --
+   a real browser still paints a visible seam between them because
+   each bordered box is its own independent element, not a single
+   continuous painted region the way our same-color check assumed. */
+static int NodeHasVisibleBorderEdge(const struct htmlnode *td)
+{
+    char *v = htmlpart_GetStyleProp(td, "border-bottom");
+    int has;
+    if (!v) return 0;
+    has = !(strcmp(v, "0") == 0 || strcmp(v, "none") == 0 || strncmp(v, "0px", 3) == 0);
+    free(v);
+    return has;
+}
+
+/* Does any real cell in this row declare its own visible border? See
+   NodeHasVisibleBorderEdge. */
+static int RowHasVisibleBorder(const struct htmlnode *tr)
+{
+    const struct htmlnode *td;
+    for (td = tr->children; td; td = td->next) {
+        if (!htmlpart_IsElement(td)) continue;
+        if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+        if (NodeHasVisibleBorderEdge(td)) return 1;
+    }
+    return 0;
+}
+
 /* Paints `color` onto every LEAF in this subtree that doesn't already
    carry a more specific color of its own -- a SPLIT node's own
    bgcolor field is never consulted by anything (lsetv.c's makeview(),
@@ -2599,9 +2654,60 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
            always got recursed into and spliced in as its own row
            regardless. Every blank row is dropped, not just runs of 2+
            (see RowIsEntirelyBlank's own comment on why isolated blanks
-           turned out not to be safe to keep). */
+           turned out not to be safe to keep) -- UNLESS dropping it
+           would fuse two sections together with no visible seam
+           between them where a real browser shows one: either (a) the
+           two neighboring rows resolve to different colors (or
+           colored/colorless), or (b) either neighbor is its own
+           independently bordered box, even if it happens to share its
+           neighbor's exact color (found live 2026-09-25/26,
+           bookrack.html, two bugs in the same feature: first, a blank
+           spacer between an olive "FEATURED TITLES" banner and its
+           own light-blue content section was rendering as a seamless
+           patch of blue instead of Thunderbird's white gap -- the
+           spacer wasn't miscolored, it was just gone, so the two
+           differently-colored rows became directly adjacent; second,
+           once that was fixed, wdc's own follow-up screenshot showed
+           two SAME-colored book-review cards -- each its own `style=
+           "border-bottom: ...px solid ...;" bgcolor="#E2EFF0"` box --
+           still fusing into one seamless block with no visible divider,
+           because same-color rows were still being dropped
+           unconditionally; matching colors don't make two independently
+           bordered boxes into one continuous painted region). Only the
+           FIRST row of a run is checked (a run's later rows always see
+           their immediate predecessor as blank and drop unconditionally,
+           which naturally coalesces the run down to at most one kept
+           spacer, same as the old runs-of-2+ behavior); the checks look
+           at the source <tr> nodes directly (RowEffectiveBgColor,
+           RowHasVisibleBorder), not at anything already built, so they
+           work the same whether the neighboring row is an ordinary cell
+           row or itself a sole-nested-table splice below. */
         if (RowIsEntirelyBlank(tr)) {
-            continue;
+            int keepAsSpacer = 0;
+            if (r == 0 || !RowIsEntirelyBlank(rows.items[r - 1])) {
+                char prevBuf[32], nextBuf[32];
+                int prevHas = (r > 0) &&
+                    RowEffectiveBgColor(rows.items[r - 1], tablenode, prevBuf, sizeof(prevBuf));
+                long runEnd = r;
+                int nextHas;
+                while (runEnd < rows.count && RowIsEntirelyBlank(rows.items[runEnd]))
+                    ++runEnd;
+                nextHas = (runEnd < rows.count) &&
+                    RowEffectiveBgColor(rows.items[runEnd], tablenode, nextBuf, sizeof(nextBuf));
+                if (prevHas != nextHas || (prevHas && nextHas && strcmp(prevBuf, nextBuf) != 0))
+                    keepAsSpacer = 1;
+                else if ((r > 0 && RowHasVisibleBorder(rows.items[r - 1])) ||
+                         (runEnd < rows.count && RowHasVisibleBorder(rows.items[runEnd])))
+                    keepAsSpacer = 1;
+            }
+            if (!keepAsSpacer) continue;
+            /* else fall through: build this one row the ordinary way
+               below -- it's still genuinely colorless itself
+               (RowIsEntirelyBlank guarantees no real content, and this
+               table/row/cell's own cascade is checked fresh by
+               BuildLsetCell same as any other cell), so it renders as
+               a plain blank line, giving the color boundary a real
+               visible gap instead of a false seam. */
         }
 
         {
