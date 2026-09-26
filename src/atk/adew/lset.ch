@@ -107,6 +107,22 @@ data:
 	   defaults to "" for \V <6 files and every other lset caller in
 	   the tree. */
 	char bgcolor[32];
+	/* When set, this split reserves zero pixels between its two
+	   children (lpair_NOSEAM, lpair.ch) instead of lpair's always-on
+	   1px gap (lpair_ComputeSizesFromTotal's unconditional "totalsize
+	   -= 1", present even when nobar is set -- nobar only suppresses
+	   the drawn divider line, per its own comment in lpair.ch, not the
+	   reserved space). Harmless for lpair's original window-split use
+	   (a stable 1px seam regardless of movable state), but a real,
+	   visible seam wherever HTML rendering stacks colored cells edge-
+	   to-edge expecting them to touch exactly -- found live 2026-09-26
+	   (wdc's own screenshot): a 1px line between a card and its own
+	   background color that Thunderbird doesn't show. Added alongside
+	   nobar wherever htmlatk.c builds an HTML-table split. Persisted
+	   as of the on-disk \V 7 format (lset__Read/Write); defaults to 0
+	   (1px seam, the original behavior) for \V <7 files and every
+	   other lset caller in the tree. */
+	int noseam;
 	char dataname[32];
 	char viewname[32];
 	char refname[64];

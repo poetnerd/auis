@@ -449,7 +449,9 @@ static void lpair_ComputeSizesFromTotal(struct lpair *l, int totalsize)
 {
 	int	i = 0;
 
-	if (l->movable)
+	if (l->movable & lpair_NOSEAM)
+		;	/* lpair_NOSEAM (lpair.ch): no reserved gap at all. */
+	else if (l->movable)
 		totalsize -= 2 * BARWIDTH + 1;		/* If movable allocate an area for move mouse hits. */
 	else
 		totalsize -= 1;	/* Make room for the bar in the middle. */
@@ -572,12 +574,12 @@ static void lpair_ResetDimensions(struct lpair *self)
 				}
 				rectangle_SetRectSize(&enclosingRect, x, childY, self->objcvt[i], childH);
 				view_InsertView(child, self, &enclosingRect);
-				x += self->objcvt[i] + 2 * BARWIDTH + 1;
+				x += self->objcvt[i] + ((self->movable & lpair_NOSEAM) ? 0 : 2 * BARWIDTH + 1);
 			}
 			else {
 				rectangle_SetRectSize(&enclosingRect, x, y, lpair_GetLogicalWidth(self),  self->objcvt[i]);
 				view_InsertView(child, self, &enclosingRect);
-				y += self->objcvt[i] + 2 * BARWIDTH + 1;
+				y += self->objcvt[i] + ((self->movable & lpair_NOSEAM) ? 0 : 2 * BARWIDTH + 1);
 			}
 	}
 }

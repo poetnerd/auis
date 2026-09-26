@@ -99,6 +99,23 @@
    fallback shape as lpair_VCENTER above. */
 #define lpair_AUTOHEIGHT	8
 
+/* A fifth bit, same packing rationale as lpair_NOBAR/lpair_VCENTER/
+   lpair_AUTOHEIGHT above. Added 2026-09-26 for htmlatk.c's HTML table
+   rendering: lpair_ComputeSizesFromTotal (this file) always reserves
+   1 pixel between a pair's two children -- "totalsize -= 1" fires
+   unconditionally, EVEN when lpair_NOBAR is set (NOBAR only suppresses
+   the drawn divider line per its own comment above, not the reserved
+   space, so a stable 1px seam survives regardless of movable state --
+   fine for lpair's original resizable-window-pane use). Found live
+   2026-09-26 (wdc's own screenshot): a real browser never leaves any
+   gap between two HTML table cells/rows that don't declare their own
+   spacing, so this 1px seam showed up as a visible stray line/band
+   between a colored card and its own neighboring cell. lpair_ResetDim-
+   ensions (lpair.c) and lpair_ComputeSizesFromTotal (lpair.c) are the
+   only places that read this bit: when set, both skip their "+1"/"-1"
+   entirely, so the pair's two children touch with zero reserved gap. */
+#define lpair_NOSEAM		16
+
 /* values for lpair.sizeform */
 #define lpair_PERCENTAGE		0
 #define lpair_FIXED			1 /* Compatibility is the mother of hacks... */
