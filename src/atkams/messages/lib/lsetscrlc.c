@@ -127,11 +127,26 @@ void lsetscrollcontent__LinkTree(struct lsetscrollcontent *self, struct view *pa
 static void place_inner(struct lsetscrollcontent *self)
 {
     struct rectangle ownBounds, r;
-    long naturalWidth, w;
+    long naturalWidth;
     lsetscrollcontent_GetLogicalBounds(self, &ownBounds);
     naturalWidth = EffectiveNaturalWidth(self);
-    w = (naturalWidth > ownBounds.width) ? naturalWidth : ownBounds.width;
-    rectangle_SetRectSize(&r, ownBounds.left - self->panx, ownBounds.top, w, ownBounds.height);
+    /* CORRECTION (2026-09-27, found live -- "whole document reflows
+       wider when the window grows," wdc's own live comparison against
+       Thunderbird's fixed-width rendering): this used to be
+       max(naturalWidth, ownBounds.width), which stretched the inner
+       view past its own natural width whenever the surrounding window
+       (hence ownBounds, this object's OWN placed rectangle) was WIDER
+       than the table's real design width -- backwards from this
+       function's own header comment just above, which always
+       describes fixed natural-width placement. naturalWidth alone is
+       correct in both directions: a NARROWER ownBounds already gets
+       the excess simply clipped by self's own window bounds (per that
+       same comment), and a wider one now leaves the genuine extra
+       space blank instead of inflating the content into it -- matching
+       lsetscrollview__DesiredSize's now-fixed report one layer up
+       (lsetscrlv.c), which should mean ownBounds rarely exceeds
+       naturalWidth at all now, but this stays correct even if it does. */
+    rectangle_SetRectSize(&r, ownBounds.left - self->panx, ownBounds.top, naturalWidth, ownBounds.height);
     /* CORRECTION (2026-09-25, found live -- endzone-jump-back-to-left-
        margin misdraw): DoFullUpdate (lpair.c) never clears background
        ahead of recursing into children -- only lpair__Update's OWN

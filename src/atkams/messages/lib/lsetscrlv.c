@@ -106,11 +106,32 @@ void lsetscrollview__SetDataObject(struct lsetscrollview *self, struct dataobjec
 enum view_DSattributes lsetscrollview__DesiredSize(struct lsetscrollview *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
     struct view *content = lsetscrollview_GetChild(self);
-    long dw, dh, barheight, borderpad;
+    struct dataobject *dob = lsetscrollview_GetDataObject(self);
+    long naturalWidth, dw, dh, barheight, borderpad;
     if (!content) {
         return super_DesiredSize(self, width, height, pass, dWidth, dHeight);
     }
-    view_DesiredSize(content, width, height, pass, &dw, &dh);
+    /* CORRECTION (2026-09-27, found live -- "whole document reflows
+       wider when the window grows," wdc's own live comparison against
+       Thunderbird's fixed-width rendering): this used to query content
+       at the OFFERED `width`, and lsetscrollcontent's own DesiredSize
+       is deliberately passive (echoes back whatever width it's asked
+       about, see lsetscrlc.c's own comment) -- so *dWidth here just
+       echoed the offered width straight back up, meaning this whole
+       tableau row's reported size grew right along with the window
+       instead of staying pinned to its own real design width. A
+       tableau table is fixed-size by definition (that's the entire
+       reason it's wrapped in a scrollable inset instead of an
+       ordinary reflowing lsetview) -- always query at this object's
+       own natural width instead, mirroring the exact same "query at
+       natural width, not offered width" idiom lsetscrollcontent's own
+       DesiredSize already uses one layer down (lsetscrlc.c). Falls
+       back to the offered width only if minwidth isn't set (defensive;
+       shouldn't happen for a real lsetscrollview, which only ever gets
+       constructed for a row with nonzero minwidth -- htmlatk.c). */
+    naturalWidth = (dob) ? ((struct lset *) dob)->minwidth : 0;
+    if (naturalWidth <= 0) naturalWidth = width;
+    view_DesiredSize(content, naturalWidth, height, pass, &dw, &dh);
     /* CORRECTION (2026-09-23, found live-testing): this used to key
        barheight/borderpad off (lset->minwidth > width) -- but `width`
        here is this CALL's own offered-width parameter, and repeated
@@ -134,7 +155,7 @@ enum view_DSattributes lsetscrollview__DesiredSize(struct lsetscrollview *self, 
        disagree. */
     barheight = LSETSCROLLVIEW_BAR_HEIGHT;
     borderpad = LSETSCROLLVIEW_BORDER_PAD;
-    *dWidth = dw + borderpad;
+    *dWidth = naturalWidth + borderpad;
     *dHeight = dh + borderpad + barheight;
     return view_Fixed;
 }
