@@ -129,31 +129,35 @@ enum view_DSattributes matte__DesiredSize(struct matte *self, long width, long h
 {
     enum view_DSattributes val;
     long pwidth , pheight ;
+    /* noborder (matte.ch): HTML-table content wrapped in this matte
+       wants zero reserved border, not the usual 2px picture-frame
+       margin -- see matte.ch's own comment on the field. */
+    int border = self->noborder ? 0 : 2;
     self->sizepending = FALSE;
     if(matte_ChildReady(self) && self->desw == UNSET && self->desh == UNSET) {
-	val = view_DesiredSize(self->child, width -2 , height -2 , pass, dWidth, dHeight);
-	*dWidth += 2;
-	*dHeight += 2;
+	val = view_DesiredSize(self->child, width -border , height -border , pass, dWidth, dHeight);
+	*dWidth += border;
+	*dHeight += border;
 	return val;
     }
-    pheight = (self->desh != UNSET) ? self->desh : height - 2;
-    pwidth = (self->desw != UNSET) ? self->desw : width - 2;
+    pheight = (self->desh != UNSET) ? self->desh : height - border;
+    pwidth = (self->desw != UNSET) ? self->desw : width - border;
     switch(pass){
 	case view_HeightSet:
-	    pheight = height -2;
+	    pheight = height -border;
 	    if(self->desw != UNSET){
 		*dWidth = self->desw;
 		return view_Fixed;
 	    }
 	    break;
 	case view_WidthSet:
-	    pwidth = width - 2;
+	    pwidth = width - border;
 	    if(self->desh != UNSET ){
 		*dHeight = self->desh;
 		return view_Fixed;
 	    }
 	    break;
-	case view_NoSet:	
+	case view_NoSet:
 	    if(self->desh != UNSET && self->desw != UNSET){
 		*dHeight = self->desh;
 		*dWidth = self->desw;
@@ -165,12 +169,12 @@ enum view_DSattributes matte__DesiredSize(struct matte *self, long width, long h
     if(matte_ChildReady(self))val = view_DesiredSize(self->child, pwidth , pheight , pass, dWidth, dHeight);
     else{
 	val = view_HeightFlexible | view_WidthFlexible;
-	*dHeight = height - 2;
-	*dWidth = width - 2;
+	*dHeight = height - border;
+	*dWidth = width - border;
     }
-    if(self->desh == UNSET) *dHeight += 2;
+    if(self->desh == UNSET) *dHeight += border;
     else  *dHeight = self->desh;
-    if(self->desw == UNSET) *dWidth += 2;
+    if(self->desw == UNSET) *dWidth += border;
     else *dWidth = self->desw;
     if(*dWidth > width) *dWidth = width;
     if(*dHeight > height ) *dHeight = height;
@@ -285,21 +289,30 @@ void matte__FullUpdate(struct matte *self, enum view_UpdateType type, long left,
     enclosingRect.top = 0; enclosingRect.left = 0;
     enclosingRect.width  = matte_GetLogicalWidth(self) -1 ;
     enclosingRect.height = matte_GetLogicalHeight(self) -1 ;
-    if(type != view_Remove){
+    if(type != view_Remove && !self->noborder){
 	UpdateCursors(self);
 	if(type != view_MoveNoRedraw){
 	    matte_SetTransferMode(self,graphic_WHITE);
 	    matte_DrawRect(self,&enclosingRect);
 	    matte_SetTransferMode(self,graphic_INVERT);
-	    if(self->drawing){ 
+	    if(self->drawing){
 		matte_DrawRect(self,&enclosingRect);
 	    }
 	    self->OldMode = self->drawing;
 	}
+    } else if(type != view_Remove) {
+	UpdateCursors(self);
     }
-    enclosingRect.top++; enclosingRect.left++;
-    enclosingRect.width--  ;
-    enclosingRect.height-- ;
+    /* noborder (matte.ch): give the child the whole rect -- no 1px
+       frame margin reserved, matching DesiredSize's border=0. */
+    if(!self->noborder) {
+	enclosingRect.top++; enclosingRect.left++;
+	enclosingRect.width--  ;
+	enclosingRect.height-- ;
+    } else {
+	enclosingRect.width++;
+	enclosingRect.height++;
+    }
 
     if(self->child) {
 	view_InsertView(self->child, self, &enclosingRect);
@@ -319,8 +332,10 @@ struct matte * matte__Create(struct classheader *classID, struct viewref *vr, st
     self->ref = vr;
     self->desh = self->ref->desh;
     self->desw = self->ref->desw;
+    self->noborder = (vr->dataObject != NULL) &&
+	class_IsTypeByName(class_GetTypeName(vr->dataObject), "lset");
     matte_LinkTree(self,parent);
-    
+
     if(vr->dataObject && class_IsTypeByName(class_GetTypeName(vr->dataObject), "unknown")) {
 	if(viewT==NULL || !class_IsTypeByName(viewT, "unknownv")) {
 	    viewT="unknownv";
@@ -365,6 +380,7 @@ boolean matte__InitializeObject(struct classheader *classID, struct matte *self)
     self->menus = menulist_DuplicateML(matteMenus, self);
     self->drawing = environ_GetProfileSwitch("DrawInsetBorder", DRAWING);
     self->sizepending = TRUE;
+    self->noborder = FALSE;
     return TRUE;
 }
 void matte__SetResizing(struct matte *self, long key)
