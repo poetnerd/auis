@@ -149,12 +149,55 @@ static struct view * makeview(struct lsetview *self, struct lset *ls)
 	   existing view_GetIM guards elsewhere in this file/lsetscrlc.c --
 	   see project memory project_lazy_linking_invariant.md -- just a
 	   new call site hitting it instead of a new guard being needed. */
-	if(ls->bgcolor[0] != '\0')
+	if(ls->bgcolor[0] != '\0') {
 	    view_SetBackgroundColor(self->child, ls->bgcolor, 0, 0, 0);
+	    /* The leaf itself too, for the band placechild() erases
+	       around a shorter, valign-placed child. */
+	    lsetview_SetBackgroundColor(self, ls->bgcolor, 0, 0, 0);
+	}
 	self->mode = lsetview_FirstUpdate;
 	return self->child;
     }
     return NULL;
+}
+/* Shrinks *rr to where a leaf's content goes within the full
+   rectangle its parent split gave it, per the leaf's halign and valign
+   (lset.ch, added 2026-09-27 for htmlatk.c's table cells, roadmap.md
+   item 10) and padding, and fills the rest of the rectangle with the leaf's own
+   background (its bgcolor, set on self in makeview) so a cell's color
+   reaches the full row height. With neither set, *rr is untouched: the
+   child fills the whole rectangle and paints its own background, the
+   original behavior. When doErase is FALSE only the geometry is
+   computed. */
+static void placechild(struct lsetview *self, struct rectangle *rr, boolean doErase)
+{
+    struct lset *ls = Data(self);
+    struct rectangle full;
+    long dw, dh, slack;
+    if (ls == NULL || rr->width <= 0 || rr->height <= 0 || view_GetIM(self->app) == NULL)
+	return;
+    full = *rr;
+    if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && ls->contentwidth < rr->width) {
+	if (ls->halign == lset_HALIGN_CENTER) rr->left += (rr->width - ls->contentwidth) / 2;
+	else if (ls->halign == lset_HALIGN_RIGHT) rr->left += rr->width - ls->contentwidth;
+	rr->width = ls->contentwidth;
+    }
+    if (ls->padding > 0 && rr->width > 2 * ls->padding && rr->height > 2 * ls->padding) {
+	rr->left += ls->padding; rr->top += ls->padding;
+	rr->width -= 2 * ls->padding; rr->height -= 2 * ls->padding;
+    }
+    if (ls->valign == lset_VALIGN_MIDDLE || ls->valign == lset_VALIGN_BOTTOM) {
+	view_DesiredSize(self->app, rr->width, rr->height, view_WidthSet, &dw, &dh);
+	if (dh > 0 && dh < rr->height) {
+	    slack = rr->height - dh;
+	    rr->top += (ls->valign == lset_VALIGN_BOTTOM) ? slack : slack / 2;
+	    rr->height = dh;
+	}
+    }
+    if (doErase && (rr->width != full.width || rr->height != full.height)) {
+	lsetview_SetTransferMode(self, graphic_COPY);
+	lsetview_EraseRect(self, &full);
+    }
 }
 int lsetview_SetMode(struct lsetview *self, int mode)
 {
@@ -251,7 +294,8 @@ struct view *vw;
 		DeleteMode = NULL;
 		return (struct view *)self;
 	    }
-	    return(view_Hit(self->app,action,x,y,numberOfClicks));
+	    /* The child may sit offset within this leaf (placechild). */
+	    return(view_Hit(self->app,action,view_EnclosedXToLocalX(self->app,x),view_EnclosedYToLocalY(self->app,y),numberOfClicks));
         default:
 	    if(DeleteMode ){
 		message_DisplayString(NULL,0,"Delete Mode Canceled");
@@ -500,7 +544,18 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
        default, exactly like the existing "no child at all" case below,
        and self-corrects on the next real layout pass once linked. */
     if (self->mode != lsetview_IsSplit && self->child && view_GetIM(self->child)) {
-	result = view_DesiredSize(self->child, width, height, pass, dWidth, dHeight);
+	struct lset *ls = Data(self);
+	long w = width, h = height, pad2 = 2 * ls->padding;
+	/* Ask the child about the space placechild() will actually give
+	   it: a centered contentwidth, less padding on each side. */
+	if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && ls->contentwidth < w)
+	    w = ls->contentwidth;
+	if (pad2 > 0 && w > pad2) w -= pad2;
+	if (pad2 > 0 && h > pad2) h -= pad2;
+	result = view_DesiredSize(self->child, w, h, pass, dWidth, dHeight);
+	*dHeight += pad2;
+	/* An HTML cell's height="N" (lset.ch's minheight) is a floor. */
+	if (ls->minheight > *dHeight) *dHeight = ls->minheight;
 	return result;
     }
     result = super_DesiredSize(self, width, height, pass, dWidth, dHeight);
@@ -527,6 +582,7 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
     if (self->mode == lsetview_IsSplit) {
 	long mw = Data(self)->minwidth;
 	if (mw > *dWidth) *dWidth = mw;
+	if (Data(self)->minheight > *dHeight) *dHeight = Data(self)->minheight;
     }
     return result;
 }
@@ -546,6 +602,7 @@ void lsetview__Update(struct lsetview *self)
 	    struct rectangle rr;
 	    long foo1,foo2;
 	    lsetview_GetVisualBounds(self,&rr);
+	    placechild(self, &rr, TRUE);
 	    view_InsertView(self->app, self, &rr);
 	    view_RetractViewCursors(self->app,self->app);
 	    view_DesiredSize(self->app,rr.width,rr.height,view_NoSet,&foo1,&foo2);
@@ -616,6 +673,7 @@ void lsetview__FullUpdate(struct lsetview *self, enum view_UpdateType type, long
 /*	lsetview_RestoreGraphicsState(self); */
 /*	lsetview_GetVisualBounds(self,&rr); */
 	lsetview_GetLogicalBounds(self,&rr);
+	placechild(self, &rr, type == view_FullRedraw || type == view_PartialRedraw);
 	view_InsertView(self->app, self, &rr);
 	view_RetractViewCursors(self->app,self->app);
 	view_DesiredSize(self->app,width,height,view_NoSet,&foo1,&foo2);

@@ -33,6 +33,18 @@
 #define LONG 2
 #define FLOAT 3
 
+/* Values for lset's valign field (see its comment below). */
+#define lset_VALIGN_NONE 0
+#define lset_VALIGN_TOP 1
+#define lset_VALIGN_MIDDLE 2
+#define lset_VALIGN_BOTTOM 3
+
+/* Values for lset's halign field. */
+#define lset_HALIGN_NONE 0
+#define lset_HALIGN_LEFT 1
+#define lset_HALIGN_CENTER 2
+#define lset_HALIGN_RIGHT 3
+
 class lset : dataobject[dataobj] {
 overrides:
     Read (FILE *file, long id) returns long;
@@ -123,6 +135,40 @@ data:
 	   (1px seam, the original behavior) for \V <7 files and every
 	   other lset caller in the tree. */
 	int noseam;
+	/* A leaf's vertical placement of its content within the height
+	   its parent split gives it (lset_VALIGN_*, above) -- a real HTML
+	   cell's valign. Added 2026-09-27 for htmlatk.c's table rendering
+	   (roadmap.md item 10): side-by-side splits now give every cell
+	   the full row height, so the leaf paints its whole rectangle in
+	   its bgcolor and places a shorter child at the top, middle or
+	   bottom itself (lsetv.c's placechild). NONE and TOP both give the
+	   child the full rectangle, the original behavior. Persisted as of
+	   the on-disk \V 8 format (lset__Read/Write); defaults to NONE for
+	   \V <8 files and every other lset caller in the tree. */
+	int valign;
+	/* A floor, in pixels, on the height this leaf or split reports
+	   upward (lsetview__DesiredSize) -- a real HTML cell's or table's
+	   height="N". Zero means none. Added 2026-09-27 with valign, same
+	   motivation: bookrack.html's review cards declare height="225"
+	   on the cover/synopsis cells, which sets where the Buy row below
+	   them starts. Persisted as of \V 8 alongside valign; defaults
+	   to 0 for \V <8 files and every other lset caller. */
+	int minheight;
+	/* A leaf's horizontal placement of a child whose natural width,
+	   contentwidth pixels, is narrower than the leaf (lset_HALIGN_*,
+	   above). Added 2026-09-27 with valign for htmlatk.c's
+	   <table align="center"> of fixed-width cells (bookrack.html's
+	   Buy button): the leaf centers the child and paints the sides in
+	   its bgcolor. LEFT and RIGHT (2026-09-28) place a shrink-to-fit
+	   nested table (no width=) at one side instead. NONE (or
+	   contentwidth 0) gives the child the full width, the original
+	   behavior. Persisted as of \V 8. */
+	int halign;
+	int contentwidth;
+	/* Pixels of blank space, in the leaf's bgcolor, between the leaf's
+	   edges and its child on all four sides -- an HTML table's
+	   cellpadding. Added 2026-09-28 with halign; persisted as of \V 8. */
+	int padding;
 	char dataname[32];
 	char viewname[32];
 	char refname[64];
