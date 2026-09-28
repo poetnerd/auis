@@ -357,6 +357,45 @@ row is split off as one right-fixed node holding their summed width
 form, trailing fixed cells got 0px, and a symmetric gutter frame like
 bookrack.html's outer `[1|10|4|content|4|10|1]` lost its right side.
 
+Two exceptions to "a spanning cell renders in its first row"
+(2026-09-28). Cells at the start or end of the first row whose
+`rowspan` covers every row become a side column
+(`FindSideColumns`): the table is built as one row, `[side cells |
+the other rows, stacked | side cells]`, so a star icon spanning a title
+row and an author row sits beside both instead of pushing the author
+below it. And where a later row's cell overlaps a `rowspan` cell whose
+own row holds nothing else (legal in HTML; browsers draw the cells
+over each other), the overlapping row is placed first
+(`RowFirstPlacement`), which puts bookrack.html's star badge above its
+cover rather than below.
+
+Splits between cells give every cell the full row height; the leaf
+places its own content (2026-09-28, `lset` format `\V 8`, all in
+`lsetv.c`'s `placechild`). It paints its whole rectangle in its
+`bgcolor`, insets the content by the table's `cellpadding`
+(`padding`), and places it horizontally by `halign`/`contentwidth`
+and vertically by the cell's `valign` (default middle). Cell and table
+`height="N"` is a minimum (`minheight`). Horizontal placement serves
+nested tables inlined as one leaf: a `<table align="center">` of pixel
+width is centered, and a table with no `width=` whose content has a
+fixed width (a lone image) shrinks to that width, placed by the outer
+cell's alignment. The previous approach, `lpair_VCENTER` on each split,
+shrank the shorter cell's whole rectangle, so its background stopped
+short of the row's bottom, and it could only center.
+
+Floated tables (`align="left|right"`) are laid out as runs
+(`TryPairFloatedTables`, 2026-09-28): a floated table and any floated
+tables directly after it, up to a CSS `clear`, become one row, left
+floats from the left edge and right floats from the right. A pixel
+`width=` gives a fixed column; a lone icon or cover with no `width=` is
+measured from the loaded image; otherwise the member gets a
+proportional share. When every member is fixed, a filler takes the
+leftover width in the surrounding color, the gap a browser leaves
+between two 290px review cards in a 600px column. A paragraph that
+opens with a floated `<img>` is handled the same way in miniature
+(`TryRenderFloatImageBlock`): image column plus text column, since ATK
+text can't flow around an image.
+
 **Rows are deliberately NOT stacked via a second `lset`/`lpair` split
 layer.** An earlier version of this renderer did that, and it's wrong
 for the same reason `table`/`spread` was rejected: `lpair`'s
@@ -715,6 +754,11 @@ project:
   and later a right-fixed form (`lsetview_MakeHorzFixedRight`,
   `9e9ff1ce73`) using `lpair`'s existing but previously unexposed
   `lpair_BOTTOMFIXED`.
+- An `lset` leaf can place its child within its rectangle
+  (`a232e8403c`): `valign`, `halign`/`contentwidth`, `padding`, and a
+  `minheight` floor on its reported height, painting the uncovered
+  band in its `bgcolor`. The on-disk format is now `\V 8`; older files
+  load with the new fields zeroed, which is the original behavior.
 - `lpair__DesiredSize`'s "pathological content" height clamp — a
   hardcoded 2048px cutoff from before any caller routinely exceeded it
   — raised to a practically-unreachable 1,000,000; real HTML mail
@@ -814,6 +858,10 @@ than one screen:
   pixel width instead (`FloatTableSoleImageWidth`, reusing
   `BuildLsetChain`'s existing `fixedpx` mechanism), leaving the text
   side to take whatever's left.
+- Pairing two at a time, by percentage only, couldn't express two
+  pixel-width floats with a gap between them, or three or more floats
+  in a row. Replaced 2026-09-28 by float runs (see the Table strategy
+  section above).
 - `image__Zoom` (`atk/basics/common/image.c`, core ATK, not
   HTML-mail-specific) truncated its output pixel count instead of
   rounding, systematically clipping a scaled image's right/bottom edge
