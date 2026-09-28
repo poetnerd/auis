@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Last updated: 2026-09-27
+Last updated: 2026-09-28
 
 This document is intended primarily for AUIS revival participants,
 with a summary of what's running, what's active, what's next, and the
@@ -499,15 +499,67 @@ being front-loaded here.
      for the reported width and the scroll decision; the border pad now
      applies to height only, since the border is drawn only when the
      table scrolls.
-  10. bookrack.html layout differences from Thunderbird still visible
-      after item 8:
-      - Side-by-side cells don't fill the row's height, so cell
-        backgrounds end at different heights, and `valign="top"` isn't
-        honored (every split is vertically centered, `lpair_VCENTER`).
-      - The Buy button isn't pinned to the bottom of its 225px card
-        (`valign="bottom"`, `height="225"`).
-      - Table-cell text renders fully justified; Thunderbird
-        left-aligns it. Source not yet found.
+  10. **RESOLVED 2026-09-28** (`a232e8403c`, `ee0de0a0af`,
+      `36b73f69ce`), wdc-confirmed against bookrack.html, with
+      national-grid and the piano document regression-tested. The
+      remaining bookrack.html differences from Thunderbird, and several
+      found while fixing them:
+      - Cells now get the full row height, so backgrounds line up, and
+        each leaf places its content by the cell's `valign` (default
+        middle) and paints the rest in its color. `lpair_VCENTER`,
+        which shrank the whole cell, is no longer used for tables.
+      - Cell and table `height="N"` is a minimum height; a table's
+        `cellpadding` insets every cell.
+      - Cell text was fully justified because a `text` object with no
+        global style defaults to `style_LeftAndRightJustified`
+        (`text.c`); cells now get a left-justified global style, as
+        the message body already did (`text822.c`).
+      - `<div>` breaks lines, not paragraphs, and a one-`<br>` spacer
+        `div` with a line-height under 8px is dropped.
+      - Cells at a table's edge whose `rowspan` covers every row
+        become a side column beside the other rows, stacked (title and
+        author beside the Featured Titles star).
+      - A row that overlaps a span-only row's `rowspan` cell is placed
+        above it; `lset` can't overlap cells (the starred cover).
+      - Consecutive floated tables form one run: left floats from the
+        left, right floats from the right, pixel `width=` as a fixed
+        column, a gap filler between when all are fixed. A floated
+        cover or icon with no `width=` is measured from the loaded
+        image, on either side.
+      - `<table align="center">` of pixel width is centered; a table
+        with no `width=` whose content has a fixed width shrinks to
+        it, placed by the outer cell's alignment.
+      - A paragraph opening with a floated `<img>` becomes a row: the
+        image in a fixed column, the text beside it.
+      The new `lset` fields (`valign`, `minheight`, `halign`,
+      `contentwidth`, `padding`) are persisted as `\V 8`.
+  11. bookrack.html differences from Thunderbird still visible after
+      item 10, none yet flagged as wanting a fix:
+      - Featured Titles titles render smaller than Thunderbird's 20px
+        Georgia.
+      - `border-bottom` rules (the 4px line under each Featured card)
+        aren't drawn.
+      - The starred cover's star sits above the cover instead of
+        overlapping its corner (item 10), so that card is a little
+        taller than its partner.
+      - A floated-image paragraph whose text is taller than the image
+        stays in its narrower column; a browser wraps the rest under
+        the image.
+  12. Validate the `<div>` change (item 10) beyond Gmail. A `div` no
+      longer gets paragraph spacing, which is browser-correct, but a
+      template that spaces paragraph `div`s with CSS `margin` (not
+      honored) now shows none. It removed the most newlines from the
+      Amazon fixture (43 of 112); compare that fixture and an Apple
+      Mail message against a browser. If spacing is lost, honor a
+      `div`'s vertical margin as a blank line. One real Gmail message
+      ("Re: Apartment for Holly Folly") already matches Thunderbird.
+  13. Two gaps seen in that Gmail message, both older than item 10:
+      - `<blockquote>` gets a paragraph break but no indent, so
+        quoted replies are flush left; Thunderbird indents each level
+        and draws a bar.
+      - Gmail's narrow no-break space (U+202F, as in "12:25 PM")
+        renders as "?". Mapping the Unicode space characters to a plain
+        space would catch this common case of the non-Latin gap below.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not

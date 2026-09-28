@@ -938,6 +938,36 @@ table that fit the window was clipped on the right without a scrollbar.
 Two separately chosen safety margins (8px and 12px) had drifted apart;
 they are now one shared constant.
 
+Closing the remaining differences from Thunderbird turned up one more
+old default. Text in table cells was fully justified, stretched to both
+margins, and nothing in the HTML asked for it. A `text` object with no
+global style starts from `style_LeftAndRightJustified` (`text.c`), a
+default that dates back to AUIS itself. The message body had never
+shown it only because `text822.c` gives the body its own left-justified
+style; the cell text objects the table renderer creates had none.
+
+The rest were places where the table builder fell short of how a
+browser lays out a table, each visible in the same newsletter:
+
+- A cell got only the height of its content, so side-by-side cells
+  with different backgrounds ended at different heights. Each cell now
+  takes the full row height, paints its background across it, and
+  places its content by `valign`.
+- A cell whose `rowspan` covers the whole table put its full height
+  into the first row; since rows are built as separate strips, that
+  pushed an author's name far below its title. Such cells now become a
+  column beside the other rows.
+- Floated tables were paired two at a time and sized only by
+  percentage, so two 290px review cards stretched to meet each other.
+  A run of floats now keeps each pixel width and leaves the gap between
+  them.
+- `<div>` was treated like `<p>`, with a blank line before and after.
+  Browsers give a `div` no margins, and Gmail writes one per line, so
+  its mail was double-spaced.
+- ATK text can't flow around an image, so a paragraph opening with a
+  floated author photo put one line beside the photo and the rest
+  below it. The paragraph now becomes two columns, image and text.
+
 ## Word size issues
 
 The largest, most systemic category of defect came from a single
