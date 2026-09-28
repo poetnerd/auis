@@ -60,6 +60,12 @@
    the three places that actually need to know about these. */
 #define lsetview_MakeHorzFixed 11
 #define lsetview_MakeVertFixed 12
+/* Mirror of lsetview_MakeHorzFixed: the RIGHT child gets exactly ls->pct
+   pixels (lpair_HFixed, i.e. lpair_BOTTOMFIXED side by side) and the
+   left child the remainder. Lets a builder express a trailing run of
+   fixed-width cells, e.g. an HTML table's right-hand gutter/border
+   columns, which a left-fixed-only chain collapsed to zero width. */
+#define lsetview_MakeHorzFixedRight 13
 
 class lsetview[lsetv]:lpair {
 overrides:
