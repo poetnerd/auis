@@ -1587,6 +1587,7 @@ static void lsetvec_free(struct lsetvec *v) { free(v->items); v->items = NULL; v
 static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st, struct lsetvec *outRows);
 static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnode **outTable);
 static long FloatTableSoleImageWidth(const struct htmlnode *n);
+static long LsetFixedContentWidth(struct lset *ls);
 static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct htmlnode *root,
     const struct htmlnode *ambientNode1, const struct htmlnode *ambientNode2,
     htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut, int nested);
@@ -1652,6 +1653,17 @@ struct tablegrid {
     long nrows, stride, ncols;
     struct gridslot *occ;
     char *collapsible;
+    /* overlap[r]: a cell in row r spans into a column that a rowspan
+       cell from row r-1 already occupies (see RowFirstPlacement). */
+    char *overlap;
+    int anyoverlap;	/* some cell spans into an already-occupied column */
+    /* Side columns (FindSideColumns): row-0 cells at the table's left
+       or right edge whose rowspan covers every row. The first nleft
+       entries of side[] are the left ones, the rest the right ones.
+       The row loop skips them and their columns. */
+    const struct htmlnode *side[8];
+    int nleft, nside;
+    long sidecols;
 };
 
 static int NodeIsCell(const struct htmlnode *td)
@@ -1674,6 +1686,10 @@ static void ComputeTableGrid(const struct nodevec *rows, struct tablegrid *g)
     g->ncols = 0;
     g->occ = NULL;
     g->collapsible = NULL;
+    g->overlap = NULL;
+    g->anyoverlap = 0;
+    g->nleft = g->nside = 0;
+    g->sidecols = 0;
     for (r = 0; r < rows->count; ++r) {
         rowsum = 0;
         for (td = rows->items[r]->children; td; td = td->next) {
@@ -1689,9 +1705,11 @@ static void ComputeTableGrid(const struct nodevec *rows, struct tablegrid *g)
     if (g->nrows == 0 || g->stride == 0) return;
     g->occ = (struct gridslot *) calloc(g->nrows * g->stride, sizeof(struct gridslot));
     colstate = (char *) calloc(g->stride, 1);
-    if (!g->occ || !colstate) {
-        free(g->occ); free(colstate);
+    g->overlap = (char *) calloc(g->nrows, 1);
+    if (!g->occ || !colstate || !g->overlap) {
+        free(g->occ); free(colstate); free(g->overlap);
         g->occ = NULL;
+        g->overlap = NULL;
         g->ncols = maxrow;
         return;
     }
@@ -1706,6 +1724,11 @@ static void ComputeTableGrid(const struct nodevec *rows, struct tablegrid *g)
             if (c + cs > g->stride) cs = g->stride - c;
             if (cs <= 0) break;
             rs = ParsePositiveInt(htmlpart_GetAttr(td, "rowspan"), 1, 1000);
+            for (k = c + 1; k < c + cs; ++k) {
+                if (g->occ[r * g->stride + k].td) g->anyoverlap = 1;
+                if (r > 0 && g->occ[r * g->stride + k].tr == rows->items[r - 1])
+                    g->overlap[r] = 1;
+            }
             for (rr = r + 1; rr < r + rs && rr < g->nrows; ++rr) {
                 for (k = c; k < c + cs; ++k) {
                     if (!g->occ[rr * g->stride + k].td) {
@@ -1733,6 +1756,80 @@ static void FreeTableGrid(struct tablegrid *g)
 {
     free(g->occ); g->occ = NULL;
     free(g->collapsible); g->collapsible = NULL;
+    free(g->overlap); g->overlap = NULL;
+}
+
+/* A row whose only real content is a rowspan cell: every other cell is
+   empty. A browser gives such a row almost no height of its own. */
+static int RowIsSpanOnly(const struct htmlnode *tr)
+{
+    const struct htmlnode *td;
+    int spans = 0;
+    for (td = tr->children; td; td = td->next) {
+        if (!NodeIsCell(td)) continue;
+        if (ParsePositiveInt(htmlpart_GetAttr(td, "rowspan"), 1, 1000) > 1) ++spans;
+        else if (!CellIsEmpty(td)) return 0;
+    }
+    return spans > 0;
+}
+
+/* Should row r be placed before row r-1? True when row r's cells
+   overlap the rowspan cell of a span-only row r-1: a browser draws
+   them over the top of that cell (overlapping cells are legal HTML
+   table layout). bookrack.html's starred review cards do this to put
+   a star badge on the cover's corner: <tr><td /><td rowspan="2">cover
+   </td></tr><tr><td colspan="2">star</td></tr>. lset can't overlap,
+   so the closest placement is above the cover rather than below it,
+   where plain row order would put it. */
+static int RowFirstPlacement(const struct tablegrid *g, const struct nodevec *rows, long r)
+{
+    return g->overlap && r > 0 && g->overlap[r] && RowIsSpanOnly(rows->items[r - 1]);
+}
+
+static int GridIsSide(const struct tablegrid *g, const struct htmlnode *td)
+{
+    int i;
+    for (i = 0; i < g->nside; ++i) if (g->side[i] == td) return 1;
+    return 0;
+}
+
+/* Finds side columns: cells at the start or end of row 0 whose rowspan
+   covers every row of the table, e.g. bookrack.html's Featured Titles
+   heading, <tr><td rowspan="3">star</td><td rowspan="3" width="20" />
+   <td>title</td></tr> followed by a spacer row and an author row. Rows
+   are built as separate side-by-side strips, so a rowspan cell's whole
+   height otherwise lands in its first row, pushing the author far
+   below the title. A side column is instead built beside a stack of
+   the other rows (BuildLsetGrid). Tables with overlapping cells are
+   left alone (RowFirstPlacement handles those). */
+static void FindSideColumns(struct tablegrid *g, const struct nodevec *rows)
+{
+    const struct htmlnode *cellv[64];
+    const struct htmlnode *td;
+    long n = 0, i, j, rowsum = 0;
+    if (!g->occ || g->anyoverlap || rows->count < 2) return;
+    for (td = rows->items[0]->children; td && n < 64; td = td->next) {
+        if (!NodeIsCell(td)) continue;
+        cellv[n++] = td;
+        rowsum += CellColspan(td);
+    }
+    for (i = 0; i < n && g->nside < 8; ++i) {
+        if (ParsePositiveInt(htmlpart_GetAttr(cellv[i], "rowspan"), 1, 1000) < rows->count) break;
+        g->side[g->nside++] = cellv[i];
+        g->sidecols += CellColspan(cellv[i]);
+    }
+    g->nleft = g->nside;
+    if (i == n) {	/* every row-0 cell spans the table: nothing beside it */
+        g->nleft = g->nside = 0; g->sidecols = 0;
+        return;
+    }
+    if (rowsum != g->ncols) return;	/* row 0 doesn't reach the right edge */
+    for (j = n - 1; j > i && g->nside < 8; --j) {
+        if (ParsePositiveInt(htmlpart_GetAttr(cellv[j], "rowspan"), 1, 1000) < rows->count) break;
+        g->sidecols += CellColspan(cellv[j]);
+    }
+    /* right side cells go in left-to-right order */
+    for (++j; j < n && g->nside < 8; ++j) g->side[g->nside++] = cellv[j];
 }
 
 /* The percentage assigned to one binary lset split's RIGHT child,
@@ -1889,7 +1986,7 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
             suffix = BuildLsetChain(cells + k, count - k, splittype, fixedsplittype, st);
             node = (struct lset *) class_NewObject("lset");
             if (!prefix || !suffix || !node) { st->hardfail = 1; return NULL; }
-            node->nobar = node->noseam = node->vcenter = node->autoheight = 1;
+            node->nobar = node->noseam = node->autoheight = 1;
             node->type = lsetview_MakeHorzFixedRight;
             node->pct = (int) px;
             node->minwidth = prefix->minwidth + suffix->minwidth;
@@ -1917,14 +2014,13 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
            2026-09-26 to lset.ch/lpair.ch; found live as a stray line/
            band between a colored card and its own background). */
         node->noseam = 1;
-        /* Real browsers default table-cell vertical-align to "middle" --
-           lpair_VCENTER (see lpair.ch/lpair.c 2026-08-20) makes this
-           split center whichever of its two children ends up shorter
-           within the shared row height, instead of pinning it to the
-           top. Every split BuildLsetChain builds is exactly such a
-           table-cell pairing, so this is unconditional here, matching
-           nobar just above. */
-        node->vcenter = 1;
+        /* No vcenter (lpair_VCENTER): as of 2026-09-27 (roadmap.md
+           item 10) every cell gets the full row height, so its
+           background reaches the bottom of the row as in a browser,
+           and each leaf places its own content by the cell's valign
+           instead (lset.ch's valign, set in BuildLsetCell). VCENTER
+           shrank the shorter child's whole rectangle, background
+           included, and could only center. */
         /* A stacked (lsetview_MakeVert) split built by this function
            gives its top child (obj[0]/left, i.e. cells[i].leaf here)
            its own real desired height instead of an equal/weighted
@@ -2003,7 +2099,6 @@ static struct lset *BuildLsetBalancedVertStack(struct wleaf *cells, long lo, lon
     if (!node) { st->hardfail = 1; return NULL; }
     node->nobar = 1;
     node->noseam = 1;
-    node->vcenter = 1;
     node->autoheight = 1;
     node->type = lsetview_MakeVert;
     node->pct = 50;
@@ -2466,6 +2561,9 @@ static void ApplyBgColorRecursive(struct lset *node, const char *color)
     }
     if (node->dobj && strcmp(class_GetTypeName(node->dobj), "text") == 0)
         ApplyBgColorToTextEmbeds((struct text *) node->dobj, color);
+    /* CenteredRowLeaf's wrapper holds its row as an lset dobj. */
+    if (node->dobj && strcmp(class_GetTypeName(node->dobj), "lset") == 0)
+        ApplyBgColorRecursive((struct lset *) node->dobj, color);
 }
 
 /* Same per-character embedded-view scan TextMaxEmbeddedLsetMinwidth
@@ -2487,6 +2585,134 @@ static void ApplyBgColorToTextEmbeds(struct text *t, const char *color)
                 ApplyBgColorRecursive((struct lset *) dob, color);
         }
     }
+}
+
+/* A cell's valign (lset.ch's lset_VALIGN_*): the cell's own
+   valign=, else its row's, else "middle", the browser default. HTML
+   also allows valign="baseline", treated here as top. */
+static int CellValign(const struct htmlnode *td, const struct htmlnode *tr)
+{
+    const char *v = htmlpart_GetAttr(td, "valign");
+    if (!v && tr) v = htmlpart_GetAttr(tr, "valign");
+    if (!v) return lset_VALIGN_MIDDLE;
+    if (strcasecmp(v, "top") == 0 || strcasecmp(v, "baseline") == 0) return lset_VALIGN_TOP;
+    if (strcasecmp(v, "bottom") == 0) return lset_VALIGN_BOTTOM;
+    return lset_VALIGN_MIDDLE;
+}
+
+/* A <td>'s or <table>'s pixel height="N" (lset.ch's minheight), 0 if
+   none or a percentage. Browsers treat it as a minimum. */
+static int NodeMinHeight(const struct htmlnode *n)
+{
+    long h = ParseFixedPixelWidth(htmlpart_GetAttr(n, "height"));
+    return (h > 0 && h <= 4000) ? (int) h : 0;
+}
+
+static void RaiseMinHeight(struct lset *ls, int h)
+{
+    if (ls && h > ls->minheight) ls->minheight = h;
+}
+
+/* The pixel width of a <table align="center">: its own width="N", or,
+   failing that, the summed widths of its one row when every cell has
+   a fixed pixel width (CellFixedPixelWidth); 0 otherwise. Examples
+   from bookrack.html: each Featured Titles card, width="560" centered
+   in its colored cell; the review cards' Buy button, an 85px image
+   cell beside a 95px spacer. */
+static long CenteredFixedTableWidth(const struct htmlnode *tablenode)
+{
+    struct nodevec rows;
+    const struct htmlnode *td;
+    const char *a = htmlpart_GetAttr(tablenode, "align");
+    long w = 0;
+    if (!a || strcasecmp(a, "center") != 0) return 0;
+    w = ParseFixedPixelWidth(htmlpart_GetAttr(tablenode, "width"));
+    if (w > 0) return w;
+    nodevec_init(&rows);
+    CollectRows(tablenode, &rows);
+    if (rows.count == 1) {
+        for (td = rows.items[0]->children; td; td = td->next) {
+            long px;
+            if (!NodeIsCell(td)) continue;
+            px = CellFixedPixelWidth(td);
+            if (px <= 0) { w = 0; break; }
+            w += px;
+        }
+    }
+    nodevec_free(&rows);
+    return w;
+}
+
+/* Wraps a fixed-width row in a leaf that places it (lset.ch's
+   halign/contentwidth, placed by lsetv.c's placechild), centered by
+   default. lpair can split off a fixed width only at an edge, so a
+   centered block needs the leaf to do it. Returns row itself if the
+   wrapper can't be made. */
+static struct lset *CenteredRowLeaf(struct lset *row, long width, struct hax_state *st)
+{
+    struct lset *leaf = (struct lset *) class_NewObject("lset");
+    if (!leaf) { st->hardfail = 1; return row; }
+    leaf->dobj = (struct dataobject *) row;
+    strcpy(leaf->dataname, "lset");
+    strcpy(leaf->viewname, "lsetview");
+    leaf->halign = lset_HALIGN_CENTER;
+    leaf->contentwidth = (int) width;
+    leaf->minwidth = row->minwidth;
+    return leaf;
+}
+
+/* Sizes and places the one lset standing in for a whole nested table
+   (the sole content of cell td):
+   - <table align="center"> of fixed width (CenteredFixedTableWidth)
+     is centered;
+   - a table with no width= at all is shrink-to-fit in a browser, as
+     wide as its content, so when that content has a fixed width (a
+     lone image, or all fixed-width cells) it gets that width, at the
+     side td's own alignment puts it (left by default). bookrack.html's
+     Featured Titles Buy button: <td valign="bottom"><table><tr><td
+     align="center"><img width="110">, which a browser draws at the
+     left, the inner align="center" having nothing to center within.
+   A leaf places its own child; a split gets a wrapper leaf
+   (CenteredRowLeaf). */
+static struct lset *CenterFixedTable(struct lset *ls, const struct htmlnode *tablenode,
+                                     const struct htmlnode *td, struct hax_state *st)
+{
+    long w = CenteredFixedTableWidth(tablenode);
+    int side = lset_HALIGN_CENTER;
+    if (!ls) return ls;
+    if (w <= 0 && !htmlpart_GetAttr(tablenode, "width")) {
+        const char *a = td ? htmlpart_GetAttr(td, "align") : NULL;
+        char *ta = td ? htmlpart_GetStyleProp(td, "text-align") : NULL;
+        const char *how = ta ? ta : a;
+        long img = FloatTableSoleImageWidth(tablenode);
+        w = (img > 0) ? img + ICONCELL_WIDTH_PAD : 0;
+        if (w <= 0) {
+            long m = LsetFixedContentWidth(ls);
+            if (m > 0) w = m + ICONCELL_WIDTH_PAD;
+        }
+        if (how && strcasecmp(how, "center") == 0) side = lset_HALIGN_CENTER;
+        else if (how && strcasecmp(how, "right") == 0) side = lset_HALIGN_RIGHT;
+        else side = lset_HALIGN_LEFT;
+        free(ta);
+    }
+    if (w <= 0) return ls;
+    if (ls->left != NULL) {
+        ls = CenteredRowLeaf(ls, w, st);
+        if (ls->left == NULL) ls->halign = side;
+        return ls;
+    }
+    if (ls->halign == lset_HALIGN_NONE) {
+        ls->halign = side;
+        ls->contentwidth = (int) w;
+    }
+    return ls;
+}
+
+/* A table's cellpadding="N", 0 if none. */
+static int TableCellPadding(const struct htmlnode *tablenode)
+{
+    long p = ParsePositiveInt(tablenode ? htmlpart_GetAttr(tablenode, "cellpadding") : NULL, 0, 100);
+    return (int) p;
 }
 
 /* Builds one <td>/<th>'s lset leaf and reports its WEIGHT (its own
@@ -2574,6 +2800,14 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
                further nested lset embedded inside inner's own content
                (see its comment). */
             if (hasBg) ApplyBgColorRecursive(inner, bgbuf);
+            /* inner is a leaf (the guard above) standing in for the
+               whole nested table, which in a browser is placed by
+               this outer cell's valign, not the inner cell's. */
+            inner->valign = CellValign(td, tr);
+            RaiseMinHeight(inner, NodeMinHeight(td));
+            RaiseMinHeight(inner, NodeMinHeight(soleTable));
+            inner->padding += TableCellPadding(tableNode);
+            inner = CenterFixedTable(inner, soleTable, td, st);
             return inner;
         }
         /* More than one row, or a single row that's itself a real
@@ -2590,6 +2824,15 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
 
     ct = (struct text *) class_NewObject("text");
     if (ct) {
+        /* A bare text object with no global style lays out fully
+           justified (text.c's InitStateVector default,
+           style_LeftAndRightJustified); the message body avoids that
+           only through text822.c's own left-justified GlobalStyle.
+           Give each cell the same default -- browsers left-align --
+           which align=/text-align marks inside the cell still
+           override (roadmap.md item 10, 2026-09-27). */
+        struct style *leftSt = JustificationStyleFor(style_LeftJustified);
+        if (leftSt) text_SetGlobalStyle(ct, leftSt);
         if (!CellIsEmpty(td)) {
             long celllen = 0;
             if (!htmlatk_RenderAmbient(ct, 0, td->children, tableNode, td, st->resolver, st->resolverRock, &celllen, TRUE))
@@ -2634,6 +2877,9 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
        which a bare leaf->bgcolor write would never reach. See its
        comment. */
     if (hasBg) ApplyBgColorRecursive(leaf, bgbuf);
+    leaf->valign = CellValign(td, tr);
+    RaiseMinHeight(leaf, NodeMinHeight(td));
+    leaf->padding = TableCellPadding(tableNode);
     return leaf;
 }
 
@@ -2715,6 +2961,10 @@ static long PushRowspanPlaceholders(const struct tablegrid *g, long r, long c, i
         long start = c, fixedpx = 0;
         struct lset *leaf;
         char bgbuf[32];
+        if (slot->td && GridIsSide(g, slot->td)) {
+            while (c < g->ncols && g->occ[r * g->stride + c].td == slot->td) ++c;
+            continue;	/* built beside the rows instead (FindSideColumns) */
+        }
         if (slot->td) {
             while (c < g->ncols && g->occ[r * g->stride + c].td == slot->td) ++c;
             fixedpx = CellFixedPixelWidth(slot->td);
@@ -2739,11 +2989,16 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
     struct nodevec rows;
     struct tablegrid grid;
     long r, ncols;
+    long *rowStart;
 
     lsetvec_init(outRows);
     CollectRows(tablenode, &rows);
     ComputeTableGrid(&rows, &grid);
-    ncols = grid.ncols;
+    FindSideColumns(&grid, &rows);
+    ncols = grid.ncols - grid.sidecols;
+    /* outRows index where each source row's output begins, for the
+       RowFirstPlacement reordering after the loop. */
+    rowStart = (long *) malloc((rows.count + 1) * sizeof(long));
 
     for (r = 0; r < rows.count; ++r) {
         const struct htmlnode *tr = rows.items[r];
@@ -2751,6 +3006,8 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
         struct wlvec cells;
         struct lset *rowRoot;
         long rowWeight = 0;
+
+        if (rowStart) rowStart[r] = outRows->count;
 
         /* Blank-row dropping has to run BEFORE the sole-nested-table
            splice check below, not after -- NodeIsVisuallyEmpty now
@@ -2844,6 +3101,7 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
             for (td = tr->children; td; td = td->next) {
                 if (!htmlpart_IsElement(td)) continue;
                 if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+                if (GridIsSide(&grid, td)) continue;
                 if (soleCellSeen) { soleCell = NULL; break; } /* more than one real cell */
                 soleCell = td;
                 soleCellSeen = 1;
@@ -2854,6 +3112,17 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                 char bgbuf[32];
                 int hasBg = CellBgColorX11Cascaded(soleCell, tr, tablenode, bgbuf, sizeof(bgbuf));
                 if (BuildLsetGrid(soleTable, st, &innerRows)) {
+                    /* One spliced leaf stands in for the whole nested
+                       table, which the outer cell's valign places (e.g.
+                       bookrack's <td valign="bottom"> Buy button), same
+                       as BuildLsetCell's own sole-nested-table case. */
+                    if (innerRows.count == 1)
+                        innerRows.items[0] = CenterFixedTable(innerRows.items[0], soleTable, soleCell, st);
+                    if (innerRows.count == 1 && innerRows.items[0]->left == NULL) {
+                        innerRows.items[0]->valign = CellValign(soleCell, tr);
+                        RaiseMinHeight(innerRows.items[0], NodeMinHeight(soleCell));
+                        innerRows.items[0]->padding += TableCellPadding(tablenode);
+                    }
                     for (j = 0; j < innerRows.count; ++j) {
                         if (hasBg) ApplyBgColorRecursive(innerRows.items[j], bgbuf);
                         lsetvec_push(outRows, innerRows.items[j]);
@@ -2872,6 +3141,7 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                 long weight, fixedpx;
                 if (!NodeIsCell(td)) continue;
                 if (grid.occ) col = PushRowspanPlaceholders(&grid, r, col, 0, tablenode, st, &cells, &rowWeight);
+                if (GridIsSide(&grid, td)) { col += CellColspan(td); continue; }
                 leaf = BuildLsetCell(td, tr, tablenode, st, &weight, &fixedpx);
                 if (grid.occ && weight == 1 && fixedpx == 0 && col < grid.ncols && grid.collapsible[col])
                     fixedpx = 1;
@@ -2902,6 +3172,49 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
             if (rowRoot) lsetvec_push(outRows, rowRoot);
         }
         wlvec_free(&cells);
+    }
+    if (rowStart) {
+        rowStart[rows.count] = outRows->count;
+        for (r = 1; r < rows.count; ++r) {
+            long a = rowStart[r - 1], b = rowStart[r], e = rowStart[r + 1], k;
+            struct lset **tmp;
+            if (!RowFirstPlacement(&grid, &rows, r) || a == b || b == e) continue;
+            tmp = (struct lset **) malloc((e - a) * sizeof(*tmp));
+            if (!tmp) continue;
+            for (k = b; k < e; ++k) tmp[k - b] = outRows->items[k];
+            for (k = a; k < b; ++k) tmp[(e - b) + (k - a)] = outRows->items[k];
+            for (k = a; k < e; ++k) outRows->items[k] = tmp[k - a];
+            free(tmp);
+        }
+        free(rowStart);
+    }
+    if (grid.nside > 0) {
+        /* Side columns (FindSideColumns): [left side cells | the other
+           rows, stacked | right side cells], one row in all. */
+        struct wlvec cells, stack;
+        struct lset *middle = NULL, *row;
+        long k;
+        int i;
+        wlvec_init(&stack);
+        for (k = 0; k < outRows->count; ++k) wlvec_push(&stack, outRows->items[k], 1, 0);
+        if (stack.count > 0) middle = BuildLsetBalancedVertStack(stack.items, 0, stack.count, st);
+        if (!middle) middle = MakeFillerLeaf(st);
+        wlvec_free(&stack);
+        wlvec_init(&cells);
+        for (i = 0; i < grid.nside; ++i) {
+            long weight, fixedpx;
+            struct lset *leaf;
+            if (i == grid.nleft && middle) wlvec_push(&cells, middle, ncols > 0 ? ncols : 1, 0);
+            leaf = BuildLsetCell(grid.side[i], rows.items[0], tablenode, st, &weight, &fixedpx);
+            if (leaf) wlvec_push(&cells, leaf, weight, fixedpx);
+        }
+        if (grid.nleft == grid.nside && middle) wlvec_push(&cells, middle, ncols > 0 ? ncols : 1, 0);
+        row = (cells.count > 0) ? BuildLsetChain(cells.items, cells.count, lsetview_MakeHorz, lsetview_MakeHorzFixed, st) : NULL;
+        wlvec_free(&cells);
+        if (row) {
+            outRows->count = 0;
+            lsetvec_push(outRows, row);
+        }
     }
     nodevec_free(&rows);
     FreeTableGrid(&grid);
@@ -3053,6 +3366,61 @@ static long ParsePercentForFloatWeight(const char *s)
     return v;
 }
 
+/* The pixel width a built lset subtree genuinely needs when its only
+   content is loaded images and fixed-width spacers, -1 if it holds
+   real text or anything else whose width isn't fixed. Measured from
+   the loaded image objects, so it works where the HTML gives no
+   width= -- bookrack.html's Featured Titles covers declare only
+   height="200". */
+static long LsetFixedContentWidth(struct lset *ls);
+
+static long TextFixedContentWidth(struct text *t)
+{
+    long i, tlen, best = 0;
+    if (!t) return 0;
+    tlen = text_GetLength(t);
+    for (i = 0; i < tlen; ++i) {
+        struct environment *env = environment_GetInnerMost(t->rootEnvironment, i);
+        if (env && env->type == environment_View && env->data.viewref) {
+            struct dataobject *dob = env->data.viewref->dataObject;
+            long w;
+            if (!dob) continue;
+            if (class_IsTypeByName(class_GetTypeName(dob), "image"))
+                w = image_Width((struct image *) dob);
+            else if (strcmp(class_GetTypeName(dob), "lset") == 0)
+                w = LsetFixedContentWidth((struct lset *) dob);
+            else return -1;
+            if (w < 0) return -1;
+            if (w > best) best = w;
+        } else if (!is_collapsible_space((unsigned char) text_GetChar(t, i))) {
+            return -1;
+        }
+    }
+    return best;
+}
+
+static long LsetFixedContentWidth(struct lset *ls)
+{
+    long l, r;
+    if (!ls) return 0;
+    if (!ls->left && !ls->right) {
+        if (!ls->dobj) return 0;
+        if (strcmp(class_GetTypeName(ls->dobj), "text") == 0)
+            return TextFixedContentWidth((struct text *) ls->dobj);
+        if (strcmp(class_GetTypeName(ls->dobj), "lset") == 0)
+            return LsetFixedContentWidth((struct lset *) ls->dobj);
+        return -1;
+    }
+    l = LsetFixedContentWidth((struct lset *) ls->left);
+    r = LsetFixedContentWidth((struct lset *) ls->right);
+    if (ls->type == lsetview_MakeHorzFixed) l = ls->pct;
+    else if (ls->type == lsetview_MakeHorzFixedRight) r = ls->pct;
+    if (l < 0 || r < 0) return -1;
+    if (ls->type == lsetview_MakeVert || ls->type == lsetview_MakeVertFixed)
+        return (l > r) ? l : r;
+    return l + r;
+}
+
 /* Returns the declared pixel width of the sole <img> in n's subtree if
    n's only real content (ignoring whitespace-only text and pass-
    through wrapper tags like <a>/<center>/<font>/<td>/<tr>) is exactly
@@ -3148,6 +3516,10 @@ static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode
            like the one that crashed bookrack.html's main table. */
         leaf = (cells.count > 0) ? BuildLsetBalancedVertStack(cells.items, 0, cells.count, st) : NULL;
         wlvec_free(&cells);
+        /* The floated table's own height="N" (bookrack's Featured
+           Titles text column, height="200"); the stack's last row
+           takes the slack (lpair_AUTOHEIGHT). */
+        RaiseMinHeight(leaf, NodeMinHeight(tablenode));
         return leaf ? leaf : MakeFillerLeaf(st);
     }
     lsetvec_free(&rows);
@@ -3294,16 +3666,28 @@ static void ws_push_siblings(struct hax_walkstack *ws, const struct htmlnode *fi
    there's no real next sibling or it isn't a <table> -- the caller
    falls through to the ordinary single-column RenderTableAsLset path
    for n in that case, same as before this feature existed. */
+#define FLOATRUN_MAX 8
+
+static int TextIsAllSpace(const struct htmlnode *t)
+{
+    long i;
+    for (i = 0; i < t->textlen; ++i)
+        if (!is_collapsible_space((unsigned char) t->text[i])) return 0;
+    return 1;
+}
+
 static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
                                  const char *floatAlign, struct hax_walkstack *ws)
 {
     long peek = ws->count - 1;
     const struct htmlnode *partner;
-    const struct htmlnode *leftNode;
-    struct lset *leftLeaf, *rightLeaf, *row;
-    struct wleaf cells[2];
-    long nWeight, partnerWeight, leftImgWidth;
-    int nIsRight;
+    const struct htmlnode *members[FLOATRUN_MAX];
+    struct lset *leaves[FLOATRUN_MAX], *row;
+    struct wleaf cells[FLOATRUN_MAX + 1];
+    long weights[FLOATRUN_MAX], fixed[FLOATRUN_MAX];
+    int sides[FLOATRUN_MAX];	/* 1 = floats right */
+    long nm, nc, i, lastPeek, pctSum, nUnweighted;
+    int nIsRight, allFixed, stoppedByClear;
 
     while (peek >= 0 && !ws->items[peek].post && htmlpart_IsText(ws->items[peek].node)) {
         const struct htmlnode *t = ws->items[peek].node;
@@ -3319,36 +3703,96 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
     partner = ws->items[peek].node;
     if (!htmlpart_IsElement(partner) || strcmp(partner->tag, "table") != 0) return FALSE;
 
-    nIsRight = (strcmp(floatAlign, "right") == 0);
-    nWeight = ParsePercentForFloatWeight(htmlpart_GetAttr(n, "width"));
-    partnerWeight = ParsePercentForFloatWeight(htmlpart_GetAttr(partner, "width"));
-    if (nWeight <= 0 && partnerWeight <= 0) { nWeight = 1; partnerWeight = 1; }
-    else if (nWeight <= 0) { nWeight = (partnerWeight < 100) ? 100 - partnerWeight : 1; }
-    else if (partnerWeight <= 0) { partnerWeight = (nWeight < 100) ? 100 - nWeight : 1; }
+    /* The run: n, then every floated table directly after it (only
+       whitespace between), stopping before one with CSS clear set,
+       which starts a new line of floats in a browser. With no floated
+       follower, the next table pairs with n as before, taking the side
+       n leaves free. (Float runs added 2026-09-28; this was a 2-table
+       pair only, with percentage widths only.) */
+    members[0] = n; sides[0] = nIsRight = (strcmp(floatAlign, "right") == 0);
+    nm = 1;
+    lastPeek = peek;
+    stoppedByClear = 0;
+    for (;;) {
+        const char *fa = TableFloatAlign(partner);
+        char *clr;
+        int cleared = 0;
+        if (!fa) break;
+        clr = htmlpart_GetStyleProp(partner, "clear");
+        if (clr) { cleared = (strcasecmp(clr, "none") != 0); free(clr); }
+        if (cleared) { stoppedByClear = 1; break; }
+        members[nm] = partner; sides[nm] = (strcmp(fa, "right") == 0); ++nm;
+        lastPeek = peek;
+        if (nm >= FLOATRUN_MAX) break;
+        --peek;
+        while (peek >= 0 && !ws->items[peek].post && htmlpart_IsText(ws->items[peek].node)
+               && TextIsAllSpace(ws->items[peek].node))
+            --peek;
+        if (peek < 0 || ws->items[peek].post) break;
+        partner = ws->items[peek].node;
+        if (!htmlpart_IsElement(partner) || strcmp(partner->tag, "table") != 0) break;
+    }
+    if (nm == 1 && stoppedByClear) return FALSE;	/* next float starts its own line */
+    if (nm == 1) {	/* plain pair with the non-floated table found above */
+        members[1] = ws->items[lastPeek].node; sides[1] = !nIsRight; nm = 2;
+    }
+    peek = lastPeek;
 
-    leftNode = nIsRight ? partner : n;
-    leftLeaf = BuildLsetLeafFromFloatTable(leftNode, st);
-    rightLeaf = BuildLsetLeafFromFloatTable(nIsRight ? n : partner, st);
-    if (!leftLeaf || !rightLeaf) { st->hardfail = 1; return FALSE; }
+    /* Widths: a pixel width= is a fixed column; failing that, a lone
+       icon or cover is fixed at its measured width (FloatTableSoleImageWidth,
+       or LsetFixedContentWidth for a loaded image with no width=,
+       bookrack.html's Featured Titles covers), even if the table also
+       gives a percentage (National Grid's gas-meter icon); otherwise
+       the member gets a proportional share, by its percentage width
+       if it has one. */
+    pctSum = 0; nUnweighted = 0; allFixed = 1;
+    for (i = 0; i < nm; ++i) {
+        long px = ParseFixedPixelWidth(htmlpart_GetAttr(members[i], "width"));
+        leaves[i] = BuildLsetLeafFromFloatTable(members[i], st);
+        if (!leaves[i]) { st->hardfail = 1; return FALSE; }
+        weights[i] = ParsePercentForFloatWeight(htmlpart_GetAttr(members[i], "width"));
+        fixed[i] = 0;
+        if (px > 0) fixed[i] = px;
+        else {	/* a lone icon wins over a percentage width, as it always has */
+            long w = FloatTableSoleImageWidth(members[i]);
+            if (w <= 0) w = LsetFixedContentWidth(leaves[i]);
+            /* + ICONCELL_WIDTH_PAD: see its own comment (CellFixedPixelWidth,
+               above) -- the same textview-embedded-border shortfall
+               applies here too (live-confirmed against National Grid's
+               gas-meter icon, 2026-08-20: 81px native, only 75px drawn
+               without this pad). */
+            if (w > 0 && w <= 400) fixed[i] = w + ICONCELL_WIDTH_PAD;
+        }
+        if (fixed[i] == 0) {
+            allFixed = 0;
+            if (weights[i] > 0) pctSum += weights[i]; else ++nUnweighted;
+        }
+    }
+    for (i = 0; i < nm; ++i) {
+        if (fixed[i] == 0 && weights[i] <= 0) {
+            long rest = (pctSum < 100) ? (100 - pctSum) / nUnweighted : 1;
+            weights[i] = (rest > 0) ? rest : 1;
+        }
+        if (fixed[i] > 0) weights[i] = 1;
+    }
 
-    /* Only the LEFT slot can use a fixed pixel width -- BuildLsetChain
-       only ever folds a fixedpx cell in as the left/top child (see its
-       own comment), never the last/right one, so a would-be fixed
-       right-hand icon (e.g. an align="right" icon beside align="left"
-       text, not seen in the corpus so far) just falls through to the
-       existing proportional split below instead of being silently
-       wrong. */
-    leftImgWidth = FloatTableSoleImageWidth(leftNode);
-
-    cells[0].leaf = leftLeaf; cells[0].weight = nIsRight ? partnerWeight : nWeight;
-    /* + ICONCELL_WIDTH_PAD: see its own comment (CellFixedPixelWidth,
-       above) -- the same textview-embedded-border shortfall applies
-       here too (live-confirmed against this exact gas-meter-icon
-       fixture, 2026-08-20: 81px native, only 75px actually drawn
-       without this pad). */
-    cells[0].fixedpx = (leftImgWidth > 0) ? leftImgWidth + ICONCELL_WIDTH_PAD : 0;
-    cells[1].leaf = rightLeaf; cells[1].weight = nIsRight ? nWeight : partnerWeight; cells[1].fixedpx = 0;
-    row = BuildLsetChain(cells, 2, lsetview_MakeHorz, lsetview_MakeHorzFixed, st);
+    /* Left floats in source order from the left edge, then (if every
+       member is fixed) a filler for the leftover width, then right
+       floats with the first one rightmost. The filler takes the
+       surrounding cell's color (ApplyBgColorRecursive reaches it like
+       any other uncolored leaf), which is the gap a browser shows
+       between, say, two 290px review cards in a 600px column. */
+    nc = 0;
+    for (i = 0; i < nm; ++i)
+        if (!sides[i]) { cells[nc].leaf = leaves[i]; cells[nc].weight = weights[i]; cells[nc].fixedpx = fixed[i]; ++nc; }
+    if (allFixed) {
+        cells[nc].leaf = MakeFillerLeaf(st);
+        if (!cells[nc].leaf) return FALSE;
+        cells[nc].weight = 1; cells[nc].fixedpx = 0; ++nc;
+    }
+    for (i = nm - 1; i >= 0; --i)
+        if (sides[i]) { cells[nc].leaf = leaves[i]; cells[nc].weight = weights[i]; cells[nc].fixedpx = fixed[i]; ++nc; }
+    row = BuildLsetChain(cells, nc, lsetview_MakeHorz, lsetview_MakeHorzFixed, st);
     if (!row) return FALSE;
 
     FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
@@ -3377,16 +3821,55 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
     st->anyContent = 1;
     st->spacePending = 0;
 
-    ws->count = peek; /* discard partner's still-queued entry, and any whitespace already skipped past above -- both fully accounted for by the combined row just inserted */
+    ws->count = peek; /* discard the other members' still-queued entries, and any whitespace skipped past above -- all fully accounted for by the combined row just inserted */
     return TRUE;
 }
 
+/* <div> is not here: a browser gives it no margins, so it only starts
+   and ends a line (EnsureLineBreak in htmlatk_Render's walker), where
+   <p> leaves a blank line. Treating it as a paragraph turned
+   "text<div><br /></div>link" into two blank lines (2026-09-27,
+   bookrack.html's review cards). */
 static int tag_is_para(const char *t)
 {
-    return strcmp(t, "p") == 0 || strcmp(t, "div") == 0 || strcmp(t, "blockquote") == 0
+    return strcmp(t, "p") == 0 || strcmp(t, "blockquote") == 0
         || strcmp(t, "h1") == 0 || strcmp(t, "h2") == 0 || strcmp(t, "h3") == 0
         || strcmp(t, "h4") == 0 || strcmp(t, "h5") == 0 || strcmp(t, "h6") == 0
         || strcmp(t, "dl") == 0;
+}
+
+/* A <div> whose only content is one <br> and whose line-height is
+   tiny -- a template's few-pixel vertical spacer, e.g. bookrack.html's
+   <div style="line-height: 5px;"><br /></div>. This renderer has no
+   sub-line spacing, so a full blank line would be far too much; the
+   div renders as a plain line break instead. */
+static int IsTinySpacerDiv(const struct htmlnode *n)
+{
+    const struct htmlnode *c;
+    int brs = 0;
+    char *lh, *end;
+    double v;
+    int tiny;
+    for (c = n->children; c; c = c->next) {
+        if (htmlpart_IsText(c)) {
+            long i;
+            for (i = 0; i < c->textlen; ++i)
+                if (!is_collapsible_space((unsigned char) c->text[i])) return 0;
+        } else if (htmlpart_IsElement(c) && strcmp(c->tag, "br") == 0 && c->children == NULL) {
+            ++brs;
+        } else return 0;
+    }
+    if (brs != 1) return 0;
+    lh = htmlpart_GetStyleProp(n, "line-height");
+    if (!lh) return 0;
+    v = strtod(lh, &end);
+    while (*end == ' ') ++end;
+    if (end == lh) tiny = 0;
+    else if (strncasecmp(end, "px", 2) == 0) tiny = (v < 8.0);
+    else if (*end == '\0' || strncasecmp(end, "em", 2) == 0) tiny = (v < 0.5);
+    else tiny = 0;
+    free(lh);
+    return tiny;
 }
 
 static int tag_is_suppressed(const char *t)
@@ -3526,6 +4009,134 @@ static int PushFormattingMarks(struct hax_state *st, const struct htmlnode *n)
     }
 
     return count;
+}
+
+/* The <img> a <p>/<div> opens with, if it floats left or right
+   (style="float:..." or align="left|right"); *right says which. */
+static const struct htmlnode *LeadingFloatImage(const struct htmlnode *blk, int *right)
+{
+    const struct htmlnode *c;
+    for (c = blk->children; c; c = c->next) {
+        char *fl;
+        const char *side;
+        if (htmlpart_IsText(c) && TextIsAllSpace(c)) continue;
+        if (!htmlpart_IsElement(c) || strcmp(c->tag, "img") != 0) return NULL;
+        fl = htmlpart_GetStyleProp(c, "float");
+        side = fl ? fl : htmlpart_GetAttr(c, "align");
+        *right = (side && strcasecmp(side, "right") == 0);
+        if (!side || (!*right && strcasecmp(side, "left") != 0)) c = NULL;
+        free(fl);
+        return c;
+    }
+    return NULL;
+}
+
+/* An image's horizontal CSS margin in pixels: the one value of
+   "margin: 7px", the second of "margin: 3px 7px" or longer forms. */
+static long ImageHorizontalMargin(const struct htmlnode *img)
+{
+    char *mv = htmlpart_GetStyleProp(img, "margin");
+    char *p, *end;
+    long v[4];
+    int n = 0;
+    if (!mv) return 0;
+    for (p = mv; *p && n < 4; ) {
+        while (*p == ' ') ++p;
+        if (!*p) break;
+        v[n] = strtol(p, &end, 10);
+        if (end == p) break;
+        ++n;
+        p = end;
+        while (*p && *p != ' ') ++p;
+    }
+    free(mv);
+    if (n == 0) return 0;
+    return (n >= 2) ? v[1] : v[0];
+}
+
+/* A paragraph opening with a floated image: a browser wraps the text
+   around the image; ATK text can't, so the image sat on the first
+   line and everything after it flowed underneath (bookrack.html's The
+   Writer's Life and Rediscover author photos, 2026-09-28). Renders
+   the block instead as one row: the image in a fixed column on its
+   side, the rest of the block's content in a text column beside it.
+   That differs from a browser only when the text is taller than the
+   image, where a browser wraps the remainder under it. Returns FALSE,
+   with nothing inserted, if the image doesn't resolve or isn't a
+   sensible column width; the caller then renders the block normally. */
+static int TryRenderFloatImageBlock(struct hax_state *st, const struct htmlnode *blk,
+                                    const struct htmlnode *img, int right)
+{
+    boolean beaconBlocked;
+    char *hint = NULL;
+    struct dataobject *dob = ResolveImageDataObject(st, img, &beaconBlocked, &hint);
+    struct text *ct, *it;
+    struct lset *textLeaf, *imgLeaf, *row;
+    struct wleaf cells[2];
+    long w, margin, len = 0, i;
+    free(hint);
+    if (!dob) return FALSE;
+    w = class_IsTypeByName(class_GetTypeName(dob), "image") ? image_Width((struct image *) dob)
+        : ParseFixedPixelWidth(htmlpart_GetAttr(img, "width"));
+    if (w <= 0 || w > 400) { dataobject_Destroy(dob); return FALSE; }
+    margin = ImageHorizontalMargin(img);
+    if (margin < 0 || margin > 50) margin = 0;
+
+    it = (struct text *) class_NewObject("text");
+    ct = (struct text *) class_NewObject("text");
+    imgLeaf = (struct lset *) class_NewObject("lset");
+    textLeaf = (struct lset *) class_NewObject("lset");
+    if (!it || !ct || !imgLeaf || !textLeaf) { st->hardfail = 1; return FALSE; }
+
+    text_AlwaysAddView(it, 0, dataobject_ViewName(dob), dob);
+    text_SetReadOnly(it, TRUE);
+    imgLeaf->dobj = (struct dataobject *) it;
+    strcpy(imgLeaf->dataname, "text");
+    strcpy(imgLeaf->viewname, "htmllinkview");
+    imgLeaf->padding = (int) margin;
+    imgLeaf->valign = lset_VALIGN_TOP;
+
+    {
+        struct style *leftSt = JustificationStyleFor(style_LeftJustified);
+        if (leftSt) text_SetGlobalStyle(ct, leftSt);
+    }
+    if (!htmlatk_RenderAmbient(ct, 0, img->next, NULL, blk, st->resolver, st->resolverRock, &len, TRUE))
+        st->hardfail = 1;
+    /* The styles open around this block (e.g. the enclosing table's
+       font-family/font-size) belong to st->dest's flow, which this
+       separate text object isn't part of. */
+    len = text_GetLength(ct);
+    if (len > 0)
+        for (i = 0; i < st->markcount; ++i)
+            environment_WrapStyle(ct->rootEnvironment, 0, len, st->marks[i].style);
+    text_SetReadOnly(ct, TRUE);
+    textLeaf->dobj = (struct dataobject *) ct;
+    strcpy(textLeaf->dataname, "text");
+    strcpy(textLeaf->viewname, "htmllinkview");
+    textLeaf->minwidth = TextMaxEmbeddedLsetMinwidth(ct);
+    textLeaf->valign = lset_VALIGN_TOP;
+
+    if (right) {
+        cells[0].leaf = textLeaf; cells[0].weight = 1; cells[0].fixedpx = 0;
+        cells[1].leaf = imgLeaf; cells[1].weight = 1; cells[1].fixedpx = w + 2 * margin + ICONCELL_WIDTH_PAD;
+    } else {
+        cells[0].leaf = imgLeaf; cells[0].weight = 1; cells[0].fixedpx = w + 2 * margin + ICONCELL_WIDTH_PAD;
+        cells[1].leaf = textLeaf; cells[1].weight = 1; cells[1].fixedpx = 0;
+    }
+    row = BuildLsetChain(cells, 2, lsetview_MakeHorz, lsetview_MakeHorzFixed, st);
+    if (!row) return FALSE;
+
+    FlushPendingSpace(st);
+    {
+        /* Same routing rule as RenderTableAsLset's row loop. */
+        const char *rowViewName = (row->minwidth > 0 && !st->nested) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) row);
+        text_AlwaysAddView(st->dest, st->pos, rowViewName, (struct dataobject *) row);
+    }
+    ++st->pos;
+    st->trailingNL = 0;
+    st->anyContent = 1;
+    st->spacePending = 0;
+    return TRUE;
 }
 
 /* The public entry point wraps this with ambientNode1=ambientNode2=
@@ -3695,12 +4306,28 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 EnsureParaBreak(&st);
                 continue;
             }
+            if (strcmp(n->tag, "p") == 0 || strcmp(n->tag, "div") == 0) {
+                int right;
+                const struct htmlnode *fimg = LeadingFloatImage(n, &right);
+                if (fimg) {
+                    int isP = (strcmp(n->tag, "p") == 0);
+                    if (isP) EnsureParaBreak(&st); else EnsureLineBreak(&st);
+                    if (TryRenderFloatImageBlock(&st, n, fimg, right)) {
+                        if (isP) EnsureParaBreak(&st); else EnsureLineBreak(&st);
+                        continue;
+                    }
+                }
+            }
             if (strcmp(n->tag, "ul") == 0) { EnsureParaBreak(&st); listctx_push(&st, 0); }
             else if (strcmp(n->tag, "ol") == 0) { EnsureParaBreak(&st); listctx_push(&st, 1); }
             else if (strcmp(n->tag, "li") == 0) { emit_li_marker(&st); }
             else if (strcmp(n->tag, "dt") == 0) { EnsureLineBreak(&st); }
             else if (strcmp(n->tag, "dd") == 0) { EnsureLineBreak(&st); InsertLiteral(&st, "    "); }
             else if (strcmp(n->tag, "pre") == 0) { EnsureParaBreak(&st); ++st.predepth; }
+            else if (strcmp(n->tag, "div") == 0) {
+                EnsureLineBreak(&st);
+                if (IsTinySpacerDiv(n)) continue;	/* no children, no close */
+            }
             else if (tag_is_para(n->tag)) { EnsureParaBreak(&st); }
 
             {
@@ -3738,6 +4365,8 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 EnsureLineBreak(&st);
             } else if (strcmp(n->tag, "pre") == 0) {
                 --st.predepth; EnsureParaBreak(&st);
+            } else if (strcmp(n->tag, "div") == 0) {
+                EnsureLineBreak(&st);
             } else if (tag_is_para(n->tag)) {
                 EnsureParaBreak(&st);
             }
