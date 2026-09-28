@@ -63,26 +63,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <fcntl.h>
 #include <unistd.h>
 
-/* TEMPORARY diagnostic tracing -- see the matching Trace() in
-   httpimg.c and its comment for why write()-not-stdio, and why this
-   exists (national-grid.html's images stopping at the same one every
-   time, not explained yet). Writes to the same /tmp/httpimg-trace.log
-   so both files' output interleaves into one chronological narrative.
-   Remove once the actual cause is found. */
-static void Trace822(const char *fmt, ...)
-{
-    char buf[512];
-    va_list ap;
-    int len;
-    int fd = open("/tmp/httpimg-trace.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if (fd < 0) return;
-    va_start(ap, fmt);
-    len = vsnprintf(buf, sizeof(buf), fmt, ap);
-    va_end(ap);
-    if (len > 0) write(fd, buf, (size_t) ((len < (int) sizeof(buf)) ? len : (int) sizeof(buf) - 1));
-    close(fd);
-}
-
 static int FindParam(char *ct, char *paramname, char *ValueBuf);
 static char * GetHeader(char *LineBuf, int lim, FILE *fp);
 static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip);
@@ -2159,10 +2139,8 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
 	       *same* image on every repro, including repros after this
 	       fix and after a proper `make dependInstall` confirmed the
 	       fix was actually deployed. A same-every-time cutoff is not
-	       what a race predicts; something else deterministic is the
-	       real cause, not yet found. See the Trace() calls in
-	       httpimg.c (temporary, /tmp/httpimg-trace.log) added to
-	       observe it directly instead of guessing again. */
+	       what a race predicts; something else deterministic was the
+	       real cause. */
 	    im_SetCleanUpZombies(FALSE);
 	}
 
@@ -2176,9 +2154,7 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
 	    resolverRock = &cidRock;
 	}
 
-	Trace822("RenderHtmlPart: loadImages=%d imageMaxSeconds=%d imagePerFetchSeconds=%d\n", loadImages, imageMaxSeconds, imagePerFetchSeconds);
 	ok = htmlatk_Render((struct text *) d, (long) *ShowPos, tree, resolver, resolverRock, &lengthOut);
-	Trace822("RenderHtmlPart: htmlatk_Render returned ok=%d lengthOut=%ld\n", ok, lengthOut);
 	if (loadImages) im_SetCleanUpZombies(TRUE);
 	if (loadImages) httpimg_FreeBudget(&imgBudget); /* frees the cache's malloc'd copies (httpimg.h) -- imgBudget itself is stack-local, nothing to free for it */
 	t2 = time(NULL);

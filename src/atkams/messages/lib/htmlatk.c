@@ -1035,31 +1035,6 @@ static boolean TryReadImageInto(struct dataobject *targetObj, const char *mimety
     return ok;
 }
 
-/* TEMPORARY diagnostic tracing -- same shape/rationale as httpimg.c's
-   Trace() (raw write(), not stdio, see that comment), and deliberately
-   writing to the same /tmp/httpimg-trace.log so a repro's network-
-   fetch trace and this decode-layer trace interleave into one
-   chronological narrative instead of two files to cross-reference by
-   hand. Added because httpimg.c's own trace only covers whether the
-   *fetch* succeeded -- it has no visibility into what RenderImageInline
-   does with the bytes afterward, and a real repro (a shelf-awareness
-   book cover still showing as a placeholder after the sniff-retry
-   fix) needs exactly that visibility to diagnose. Remove once the
-   actual cause is found. */
-static void TraceDecode(const char *fmt, ...)
-{
-    char buf[512];
-    va_list ap;
-    int len;
-    int fd = open("/tmp/httpimg-trace.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if (fd < 0) return;
-    va_start(ap, fmt);
-    len = vsnprintf(buf, sizeof(buf), fmt, ap);
-    va_end(ap);
-    if (len > 0) write(fd, buf, (size_t) ((len < (int) sizeof(buf)) ? len : (int) sizeof(buf) - 1));
-    close(fd);
-}
-
 /* Redirects fd 2 (stderr) to /dev/null for the duration of a single
    speculative decode attempt this function expects to fail routinely
    now that a first attempt failing is a normal, handled step (trigger
@@ -1268,9 +1243,6 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
         resolved = (*st->resolver)(st->resolverRock, src, &bytes, &len, &mimetype);
     }
 
-    TraceDecode("DECODE ENTER src=%s resolved=%d bytes=%p len=%ld mimetype=%s\n",
-        src ? src : "(null)", resolved, (void *) bytes, len, mimetype ? mimetype : "(null)");
-
     if (resolved && bytes) {
         int savedErr;
         const char *dobClass;
@@ -1280,11 +1252,9 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
         savedErr = SuppressStderrBegin(); /* speculative: a labeled-decode failure here is expected/routine now, see SuppressStderrBegin's own comment */
         ok = dob && TryReadImageInto(dob, mimetype, bytes, len);
         SuppressStderrEnd(savedErr);
-        TraceDecode("  attempt1 class=%s ok=%d\n", dobClass, ok);
 
         if (!ok) {
             const char *sniffed = SniffImageMimetype(bytes, len);
-            TraceDecode("  sniffed=%s\n", sniffed ? sniffed : "(null)");
             if (sniffed && (!mimetype || strcmp(sniffed, mimetype) != 0)) {
                 if (dob) dataobject_Destroy(dob);
                 dobClass = ImageClassForMimetype(sniffed);
@@ -1292,11 +1262,9 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
                 ok = dob && TryReadImageInto(dob, sniffed, bytes, len);
                 free(*outPlaceholderHint);
                 *outPlaceholderHint = strdup(sniffed); /* the truth, whether or not this retry itself succeeded */
-                TraceDecode("  attempt2 class=%s ok=%d\n", dobClass, ok);
             }
         }
 
-        TraceDecode("  -> final ok=%d\n", ok);
         if (ok) {
             /* "raster" (ImageClassForMimetype's fallback for anything
                not gif/jpeg/png/pbm) is a plain dataobject, not an
