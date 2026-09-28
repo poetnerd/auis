@@ -62,6 +62,14 @@
    scroll's ->scrollee, and scroll.c's own generic machinery
    (scroll.c:580-581) queries *this* object's GetInterface, not
    lsetscrollview's. */
+/* Safety margin added to the lset's minwidth wherever the tableau's
+   natural width is used (lsetscrlc.c's EffectiveNaturalWidth, and
+   lsetscrlv.c's reported width and scroll decision). Shared so the two
+   classes agree: when lsetscrollview reported minwidth+8 but this class
+   laid out at minwidth+12, a table that fit got no scrollbar and lost
+   its rightmost 4px (roadmap item 9). */
+#define lsetscrollcontent_MINWIDTH_SAFETY_PAD 12
+
 class lsetscrollcontent[lsetscrlc] : view {
 classprocedures:
     InitializeObject(struct lsetscrollcontent *self) returns boolean;

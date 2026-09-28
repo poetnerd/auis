@@ -74,12 +74,12 @@
    Rather than chase which specific cell/border source is responsible
    in every fixture, pad the number actually used for scrolling a
    little: a few extra px of scrollable blank space past the true edge
-   is harmless, a chopped edge is not. */
-#define MINWIDTH_SAFETY_PAD 12
+   is harmless, a chopped edge is not. The pad itself lives in
+   lsetscrlc.ch so lsetscrollview uses the same number. */
 static long EffectiveNaturalWidth(struct lsetscrollcontent *self)
 {
     long mw = ((struct lset *) lsetscrollcontent_GetDataObject(self))->minwidth;
-    return (mw > 0) ? (mw + MINWIDTH_SAFETY_PAD) : mw;
+    return (mw > 0) ? (mw + lsetscrollcontent_MINWIDTH_SAFETY_PAD) : mw;
 }
 
 boolean lsetscrollcontent__InitializeObject(struct classheader *classID, struct lsetscrollcontent *self)
