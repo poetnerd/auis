@@ -931,6 +931,13 @@ cell's placed position and width against its visible clip rectangle for
 one run of the HTML previewer. It showed a 15px inset on the left and
 none on the right, which pointed straight at the frame columns.
 
+The same measurement exposed a fourth, smaller gap, outside the table
+builder: the scrolling wrapper around a pixel-width table reported
+itself 4px narrower than the width its content was laid out at, so a
+table that fit the window was clipped on the right without a scrollbar.
+Two separately chosen safety margins (8px and 12px) had drifted apart;
+they are now one shared constant.
+
 ## Word size issues
 
 The largest, most systemic category of defect came from a single
