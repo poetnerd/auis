@@ -333,8 +333,29 @@ gets a proportionally larger split weight in its own row's chain
 (`lpair` can't represent a genuine merged cell — it's a guillotine
 split tree); cross-row column alignment for a colspan header over a
 plain data row is preserved by expressing every row's weights as
-fractions of one shared `TableColumnCount`, not each row's own local
-cell count.
+fractions of one shared table-wide column count, not each row's own
+local cell count.
+
+That column count comes from a whole-table grid pass
+(`ComputeTableGrid`, 2026-09-27), run over every source row before any
+row is built. It honors `rowspan`: a spanning cell's content still
+renders only in its first row, since separately built rows share no
+vertical coordinate system, but the rows below it reserve its columns
+with empty placeholder cells of the same fixed width and color, so
+their own cells land in the right columns. Before this, rows under a
+spanning cell looked one cell short and got padded with a proportional
+filler (bookrack.html's review cards lost half their text width to
+one). The same pass marks a column whose cells are all empty and have
+no `width=` as collapsible, and those columns get 1px instead of an
+equal share, matching a browser.
+
+Cells with a pixel width (spacers, icon columns) become fixed-pixel
+splits. A fixed cell before proportional content is the split's left
+child (`lsetview_MakeHorzFixed`); a run of fixed cells at the end of a
+row is split off as one right-fixed node holding their summed width
+(`lsetview_MakeHorzFixedRight`, 2026-09-27). Without the right-fixed
+form, trailing fixed cells got 0px, and a symmetric gutter frame like
+bookrack.html's outer `[1|10|4|content|4|10|1]` lost its right side.
 
 **Rows are deliberately NOT stacked via a second `lset`/`lpair` split
 layer.** An earlier version of this renderer did that, and it's wrong
@@ -348,6 +369,22 @@ flow — the exact mechanism this renderer already uses for every other
 block (paragraphs, images) — and relies on `lsetview`'s own
 `DesiredSize` (added to core ATK by this project, see below) to report
 each row's real height correctly within that flow.
+
+**Exception: pixel-width ("tableau") tables are stacked** (2026-09-22).
+A table that declares a pixel `width=`, or has a row with a nonzero
+composed `minwidth`, gets all its rows folded into one vertically
+stacked `lset` subtree so the whole table can scroll horizontally as a
+unit inside `lsetscrollview` (see `html-scroll-plan.md`). This became
+possible once `lpair`'s stacking branch was fixed to sum its children's
+heights (`b38e9fda90`) and stacked splits gained `lpair_AUTOHEIGHT`. The
+stack is a balanced binary tree (`BuildLsetBalancedVertStack`) rather
+than a linear chain, to bound recursion depth for tables with many
+rows. Percentage-width tables still embed each row separately, as
+above. One consequence: a newsletter built as a single pixel-width
+table, like bookrack.html, renders as one embedded view in a
+one-character document, so scrolling depends on the pixel-weighted
+elevator described in `roadmap.md` item 1, not on the peeling heuristic
+below.
 
 **Two core ATK toolkit gaps, not specific to this renderer, found and
 fixed along the way** (both in `src/atk/adew/lsetv.c`/`.ch`, additive,
@@ -407,7 +444,7 @@ wrappers collapse all the way down, not just one level):
   `NodeIsSoleNestedTable`) has that inner table's rows spliced in
   directly — each inner table rebuilt **recursively and
   independently**, with its own separately-computed
-  `TableColumnCount`/column alignment, not flattened into one raw row
+  column count and column alignment, not flattened into one raw row
   list and re-padded against the *outer* table's column count. That
   distinction mattered in practice: an earlier version of this fix did
   the naive flatten-then-pad, and a single genuinely 2-column row
@@ -670,7 +707,10 @@ project:
   `lpair`'s generic no-op fallback, which never consulted a leaf's real
   content size) and `WantNewSize` escalation to its parent.
 - `lset` gained real fixed-pixel splits (`lsetview_MakeHorzFixed`/
-  `MakeVertFixed`), for small, non-reflowing decoration/spacer cells.
+  `MakeVertFixed`), for small, non-reflowing decoration/spacer cells,
+  and later a right-fixed form (`lsetview_MakeHorzFixedRight`,
+  `9e9ff1ce73`) using `lpair`'s existing but previously unexposed
+  `lpair_BOTTOMFIXED`.
 - `lpair__DesiredSize`'s "pathological content" height clamp — a
   hardcoded 2048px cutoff from before any caller routinely exceeded it
   — raised to a practically-unreachable 1,000,000; real HTML mail

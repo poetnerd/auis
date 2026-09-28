@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Last updated: 2026-09-16
+Last updated: 2026-09-27
 
 This document is intended primarily for AUIS revival participants,
 with a summary of what's running, what's active, what's next, and the
@@ -465,7 +465,45 @@ being front-loaded here.
      row gets dropped (`RowIsEntirelyBlank`) or its content silently
      discarded (the trivial-wrapper/sole-nested-table peels), losing a
      real decorative color band. No fixture has shown this live yet —
-     confirm it's real before investing in a fix.
+     confirm it's real before investing in a fix. Item 8's
+     zero-width-column rule (2026-09-27) uses the same `CellIsEmpty`
+     test, so a colored empty column with no `width=` now also
+     collapses to 1px.
+  8. **RESOLVED 2026-09-27** (`9e9ff1ce73`, `5d9b7447e7`), wdc-confirmed
+     against bookrack.html. Three table-layout bugs in `htmlatk.c`'s
+     grid builder, previously misdiagnosed as a textview width-cascade
+     problem (see `revival.md`, "Old bugs never found till now"):
+     - `rowspan` was ignored when counting columns, so a row under a
+       spanning cell looked one cell short and got a proportional
+       filler. The Book Reviews text column lost half its width to a
+       filler standing in for a 15px `rowspan="5"` spacer. Fixed with
+       a whole-table grid pre-pass (`ComputeTableGrid`) that reserves
+       spanned columns with placeholders.
+     - An empty `<td>` with no `width=` took an equal share of its
+       row; a browser gives such a column no width. It clipped the
+       starred Book Reviews cover to half its cell. Columns whose cells
+       are all empty and width-less are now 1px.
+     - A run of fixed-width cells at the right end of a row got 0px,
+       because a fixed cell could only be a split's left child. The
+       newsletter's outer `[1|10|4|content|4|10|1]` frame lost its
+       right 15px, putting text flush against the right edge. Fixed
+       with a new right-fixed split type, `lsetview_MakeHorzFixedRight`
+       (`lsetv.ch`, backed by `lpair`'s existing `lpair_BOTTOMFIXED`).
+  9. `lsetscrollview` reports its width as the table's `minwidth` + 8
+     (`LSETSCROLLVIEW_BORDER_PAD`, `lsetscrlv.c`), but `lsetscrollcontent`
+     lays its content out at `minwidth` + 12 (`MINWIDTH_SAFETY_PAD`,
+     `lsetscrlc.c`), so the table's right 4px are clipped when it fits
+     without a scrollbar. Measured live 2026-09-27: box 648px, content
+     652px. Now eats part of item 8's restored right gutter.
+  10. bookrack.html layout differences from Thunderbird still visible
+      after item 8:
+      - Side-by-side cells don't fill the row's height, so cell
+        backgrounds end at different heights, and `valign="top"` isn't
+        honored (every split is vertically centered, `lpair_VCENTER`).
+      - The Buy button isn't pinned to the bottom of its 225px card
+        (`valign="bottom"`, `height="225"`).
+      - Table-cell text renders fully justified; Thunderbird
+        left-aligns it. Source not yet found.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
