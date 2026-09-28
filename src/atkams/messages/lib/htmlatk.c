@@ -1577,7 +1577,7 @@ static int CellIsEmpty(const struct htmlnode *cellnode)
  * "merging" or a shared grid at all -- it just needs to be a wider-
  * WEIGHTED leaf in its own row's split chain (LsetChainPctWeighted,
  * BuildLsetChain below), with every row's weights expressed as
- * fractions of the same table-wide column count (TableColumnCount) so
+ * fractions of the same table-wide column count (ComputeTableGrid) so
  * cells in different rows still align visually, the way a real
  * `Date | Description(colspan=3) | Status` header would need to.
  * Reuses CollectRows/CellIsEmpty/htmlatk_Render, the same shared
@@ -1587,8 +1587,9 @@ static int CellIsEmpty(const struct htmlnode *cellnode)
  * text's own flow with no shared vertical coordinate system, so a
  * cell "reaching down" into a later row has no natural
  * representation here; a rowspan cell's content renders fully within
- * its own starting row instead (accepted degradation -- the real
- * fixture corpus has zero rowspan occurrences, see Gate 1's report). *
+ * its own starting row instead. Later rows it spans still reserve its
+ * column(s) with an empty placeholder (see ComputeTableGrid), so
+ * their own cells land in the right columns. *
  * ==================================================================== */
 
 /* Small growable vector of struct lset* -- same shape as this file's
@@ -1657,41 +1658,113 @@ static void wlvec_push(struct wlvec *v, struct lset *leaf, long weight, long fix
 
 static void wlvec_free(struct wlvec *v) { free(v->items); v->items = NULL; v->count = v->cap = 0; }
 
-/* The table-wide column count a colspan cell's weight is expressed
-   against, so cells in DIFFERENT rows still align visually even
-   though each row builds its own fully independent lset split tree
-   (see this section's header comment) -- e.g. a `Date | Description
-   (colspan=3) | Status` header row and a `Jan1 | ItemA | ItemB |
-   ItemC | Shipped` data row both need their cells sized as fractions
-   of the same total (5, here), not of their own row's local cell
-   count (3 vs. 5), or Description's 3/5 share wouldn't line up with
-   ItemA+ItemB+ItemC's combined 3/5. Deliberately simpler than the old
-   BuildTableGrid's own Pass A: no rowspan carry-over bookkeeping,
-   since rowspan gets no cross-row vertical handling at all here (see
-   this section's header comment) and so cannot affect which column a
-   later row's cells logically start at the way it would in a real
-   shared-grid model. Just the max, over all rows, of that row's own
-   colspan values summed -- a plain <td> with no colspan attribute
-   counts as 1 (ParsePositiveInt's own default). */
-static long TableColumnCount(const struct htmlnode *tablenode)
-{
-    struct nodevec rows;
-    long r, ncols = 0;
+/* A table's column layout, computed once up front from every source
+   row (including ones BuildLsetGrid later drops or splices), so a
+   rowspan cell keeps its column(s) reserved in the rows below it.
 
-    CollectRows(tablenode, &rows);
-    for (r = 0; r < rows.count; ++r) {
-        const struct htmlnode *tr = rows.items[r];
-        const struct htmlnode *td;
-        long rowsum = 0;
-        for (td = tr->children; td; td = td->next) {
-            if (!htmlpart_IsElement(td)) continue;
-            if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
-            rowsum += ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
+   ncols is the table-wide column count a cell's weight is expressed
+   against, so cells in DIFFERENT rows still line up even though each
+   row builds its own independent lset split tree -- e.g. a `Date |
+   Description(colspan=3) | Status` header over a 5-cell data row. It
+   now includes columns reserved by rowspan: bookrack.html's review
+   cards put a 15px `rowspan="5"` spacer beside the review text, and
+   without the reservation the text row looked one cell short and was
+   padded with a proportional filler that took half its width.
+
+   occ[r*stride+c] is the <td> (and its <tr>) that reserves column c
+   of row r from an earlier row, else NULL. collapsible[c] is set when
+   every single-column cell in column c is empty and declares no width:
+   a browser gives such a column no width at all, where an equal share
+   here pushed real content aside (bookrack.html's starred card: an
+   empty <td></td> beside the cover took half the cover's cell). On
+   allocation failure occ is NULL and callers fall back to plain
+   per-row padding. */
+struct gridslot { const struct htmlnode *td, *tr; };
+struct tablegrid {
+    long nrows, stride, ncols;
+    struct gridslot *occ;
+    char *collapsible;
+};
+
+static int NodeIsCell(const struct htmlnode *td)
+{
+    return htmlpart_IsElement(td) && (strcmp(td->tag, "td") == 0 || strcmp(td->tag, "th") == 0);
+}
+
+static long CellColspan(const struct htmlnode *td)
+{
+    return ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
+}
+
+static void ComputeTableGrid(const struct nodevec *rows, struct tablegrid *g)
+{
+    const struct htmlnode *td;
+    char *colstate;	/* 0 no single-column cell seen, 1 only empty width-less ones, 2 otherwise */
+    long r, c, rowsum, spansum = 0, maxrow = 0;
+
+    g->nrows = rows->count;
+    g->ncols = 0;
+    g->occ = NULL;
+    g->collapsible = NULL;
+    for (r = 0; r < rows->count; ++r) {
+        rowsum = 0;
+        for (td = rows->items[r]->children; td; td = td->next) {
+            if (!NodeIsCell(td)) continue;
+            rowsum += CellColspan(td);
+            if (ParsePositiveInt(htmlpart_GetAttr(td, "rowspan"), 1, 1000) > 1) spansum += CellColspan(td);
         }
-        if (rowsum > ncols) ncols = rowsum;
+        if (rowsum > maxrow) maxrow = rowsum;
     }
-    nodevec_free(&rows);
-    return ncols;
+    /* A row's cells can be pushed right by at most every rowspan
+       cell's own width, so this bounds any column index reached. */
+    g->stride = maxrow + spansum;
+    if (g->nrows == 0 || g->stride == 0) return;
+    g->occ = (struct gridslot *) calloc(g->nrows * g->stride, sizeof(struct gridslot));
+    colstate = (char *) calloc(g->stride, 1);
+    if (!g->occ || !colstate) {
+        free(g->occ); free(colstate);
+        g->occ = NULL;
+        g->ncols = maxrow;
+        return;
+    }
+    for (r = 0; r < rows->count; ++r) {
+        const struct htmlnode *tr = rows->items[r];
+        c = 0;
+        for (td = tr->children; td; td = td->next) {
+            long cs, rs, rr, k;
+            if (!NodeIsCell(td)) continue;
+            while (c < g->stride && g->occ[r * g->stride + c].td) ++c;
+            cs = CellColspan(td);
+            if (c + cs > g->stride) cs = g->stride - c;
+            if (cs <= 0) break;
+            rs = ParsePositiveInt(htmlpart_GetAttr(td, "rowspan"), 1, 1000);
+            for (rr = r + 1; rr < r + rs && rr < g->nrows; ++rr) {
+                for (k = c; k < c + cs; ++k) {
+                    if (!g->occ[rr * g->stride + k].td) {
+                        g->occ[rr * g->stride + k].td = td;
+                        g->occ[rr * g->stride + k].tr = tr;
+                    }
+                }
+            }
+            if (cs == 1) {
+                if (CellIsEmpty(td) && !htmlpart_GetAttr(td, "width")) {
+                    if (colstate[c] == 0) colstate[c] = 1;
+                } else {
+                    colstate[c] = 2;
+                }
+            }
+            c += cs;
+            if (c > g->ncols) g->ncols = c;
+        }
+    }
+    for (c = 0; c < g->stride; ++c) colstate[c] = (colstate[c] == 1);
+    g->collapsible = colstate;
+}
+
+static void FreeTableGrid(struct tablegrid *g)
+{
+    free(g->occ); g->occ = NULL;
+    free(g->collapsible); g->collapsible = NULL;
 }
 
 /* The percentage assigned to one binary lset split's RIGHT child,
@@ -1699,7 +1772,7 @@ static long TableColumnCount(const struct htmlnode *tablenode)
    still inside it, left and right together) is `remainingWeight`, and
    the leaf being peeled off as this split's LEFT child has weight
    `thisWeight` (a plain cell's weight is 1; a colspan="N" cell's
-   weight is N -- see TableColumnCount above for why weights, not
+   weight is N -- see ComputeTableGrid above for why weights, not
    counts, are what alignment across rows actually needs).
 
    Traced (not assumed) from real ATK source: lsetv.c's initkids()
@@ -1831,6 +1904,32 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
     long restMinwidth;
 
     if (count <= 0) return NULL;
+    /* A trailing run of fixed cells (a right-hand gutter/border, or a
+       rowspan spacer placeholder) can't be folded in as left children
+       like the rest: the proportional split just before it would give
+       it pct=0, i.e. no width at all. bookrack.html's outer frame is
+       [1|10|4|content|4|10|1] px, and its right three columns vanished,
+       leaving content flush against the right edge. Split the run off
+       as one right-fixed node holding their summed width instead. */
+    if (fixedsplittype == lsetview_MakeHorzFixed && count > 1 && cells[count - 1].fixedpx > 0) {
+        long k = count - 1, px = 0;
+        while (k > 0 && cells[k - 1].fixedpx > 0) --k;
+        if (k > 0) {
+            struct lset *prefix, *suffix, *node;
+            for (i = k; i < count; ++i) px += cells[i].fixedpx;
+            prefix = BuildLsetChain(cells, k, splittype, fixedsplittype, st);
+            suffix = BuildLsetChain(cells + k, count - k, splittype, fixedsplittype, st);
+            node = (struct lset *) class_NewObject("lset");
+            if (!prefix || !suffix || !node) { st->hardfail = 1; return NULL; }
+            node->nobar = node->noseam = node->vcenter = node->autoheight = 1;
+            node->type = lsetview_MakeHorzFixedRight;
+            node->pct = (int) px;
+            node->minwidth = prefix->minwidth + suffix->minwidth;
+            node->left = (struct dataobject *) prefix;
+            node->right = (struct dataobject *) suffix;
+            return node;
+        }
+    }
     rest = cells[count - 1].leaf;
     remainingWeight = (cells[count - 1].fixedpx > 0) ? 0 : cells[count - 1].weight;
     restMinwidth = CellMinwidth(&cells[count - 1]);
@@ -1947,7 +2046,7 @@ static struct lset *BuildLsetBalancedVertStack(struct wleaf *cells, long lo, lon
 }
 
 /* A leaf with real content but no text of its own to hold -- used to
-   pad a row out to the table's shared column count (TableColumnCount)
+   pad a row out to the table's shared column count (ComputeTableGrid)
    when that row's own cells' colspans don't sum to it, so alignment
    across rows holds even for a genuinely ragged/shorter row rather
    than letting its real cells silently stretch to fill 100% and drift
@@ -2423,14 +2522,14 @@ static void ApplyBgColorToTextEmbeds(struct text *t, const char *color)
 }
 
 /* Builds one <td>/<th>'s lset leaf and reports its WEIGHT (its own
-   colspan value, default 1 -- see TableColumnCount's comment above for
+   colspan value, default 1 -- see ComputeTableGrid's comment above for
    why weight, not a boolean/count, is what cross-row alignment needs)
    via *outWeight, and its FIXED PIXEL width (see CellFixedPixelWidth
    above), 0 if none, via *outFixedPx -- both set on every path through
    this function regardless of which branch actually builds the leaf.
    The two are independent/orthogonal: *outWeight still reflects this
    cell's real colspan even when *outFixedPx is also set, since
-   TableColumnCount/cross-row alignment (colspan-based) and
+   ComputeTableGrid/cross-row alignment (colspan-based) and
    BuildLsetChain's fixed-vs-proportional split choice are unrelated
    concerns -- see BuildLsetChain's own comment. */
 static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlnode *tr, const struct htmlnode *tableNode, struct hax_state *st, long *outWeight, long *outFixedPx)
@@ -2573,7 +2672,7 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
 /* Fills a fresh root lset tree from tablenode's row/cell structure:
    one lset per real row, each row an lsetview_MakeHorz chain of that
    row's own cells (colspan cells get a proportionally larger weight
-   in that chain -- see TableColumnCount/LsetChainPctWeighted above).
+   in that chain -- see ComputeTableGrid/LsetChainPctWeighted above).
    Reuses CollectRows for row collection; cells within a row are the
    row node's own direct <td>/<th> children only -- HTML rows never
    nest their cells inside a transparent wrapper the way
@@ -2634,14 +2733,49 @@ static int RowIsEntirelyBlank(const struct htmlnode *tr)
    that an isolated blank row was "ordinary, real, intentional
    spacing" worth preserving -- that theory doesn't survive contact
    with a template that alternates content/spacer on every row. */
+/* Reserves grid columns [c, end) of row r that are held by rowspan
+   cells from earlier rows, stopping at the first free column; with
+   toEnd, fills free gaps too (proportional filler) and runs to the end.
+   Each run owned by one spanning cell becomes a single empty leaf,
+   pixel-fixed when that cell is, colored like it. Returns the new c. */
+static long PushRowspanPlaceholders(const struct tablegrid *g, long r, long c, int toEnd,
+                                    const struct htmlnode *tablenode, struct hax_state *st,
+                                    struct wlvec *cells, long *rowWeight)
+{
+    while (c < g->ncols) {
+        const struct gridslot *slot = &g->occ[r * g->stride + c];
+        long start = c, fixedpx = 0;
+        struct lset *leaf;
+        char bgbuf[32];
+        if (slot->td) {
+            while (c < g->ncols && g->occ[r * g->stride + c].td == slot->td) ++c;
+            fixedpx = CellFixedPixelWidth(slot->td);
+            if (fixedpx == 0 && c - start == 1 && g->collapsible[start]) fixedpx = 1;
+        } else if (toEnd) {
+            while (c < g->ncols && !g->occ[r * g->stride + c].td) ++c;
+        } else {
+            break;
+        }
+        leaf = MakeFillerLeaf(st);
+        if (!leaf) continue;
+        if (slot->td && CellBgColorX11Cascaded(slot->td, slot->tr, tablenode, bgbuf, sizeof(bgbuf)))
+            ApplyBgColorRecursive(leaf, bgbuf);
+        wlvec_push(cells, leaf, c - start, fixedpx);
+        *rowWeight += c - start;
+    }
+    return c;
+}
+
 static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st, struct lsetvec *outRows)
 {
     struct nodevec rows;
+    struct tablegrid grid;
     long r, ncols;
 
     lsetvec_init(outRows);
     CollectRows(tablenode, &rows);
-    ncols = TableColumnCount(tablenode);
+    ComputeTableGrid(&rows, &grid);
+    ncols = grid.ncols;
 
     for (r = 0; r < rows.count; ++r) {
         const struct htmlnode *tr = rows.items[r];
@@ -2763,18 +2897,30 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
         }
 
         wlvec_init(&cells);
-        for (td = tr->children; td; td = td->next) {
-            struct lset *leaf;
-            long weight, fixedpx;
-            if (!htmlpart_IsElement(td)) continue;
-            if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
-            leaf = BuildLsetCell(td, tr, tablenode, st, &weight, &fixedpx);
-            if (leaf) { wlvec_push(&cells, leaf, weight, fixedpx); rowWeight += weight; }
+        {
+            long col = 0, realCells = 0;
+            for (td = tr->children; td; td = td->next) {
+                struct lset *leaf;
+                long weight, fixedpx;
+                if (!NodeIsCell(td)) continue;
+                if (grid.occ) col = PushRowspanPlaceholders(&grid, r, col, 0, tablenode, st, &cells, &rowWeight);
+                leaf = BuildLsetCell(td, tr, tablenode, st, &weight, &fixedpx);
+                if (grid.occ && weight == 1 && fixedpx == 0 && col < grid.ncols && grid.collapsible[col])
+                    fixedpx = 1;
+                if (leaf) { wlvec_push(&cells, leaf, weight, fixedpx); rowWeight += weight; ++realCells; }
+                col += weight;
+            }
+            if (realCells == 0) {	/* only placeholders: drop the row, as before */
+                long k;
+                for (k = 0; k < cells.count; ++k) dataobject_Destroy((struct dataobject *) cells.items[k].leaf);
+                cells.count = 0;
+            }
+            else if (grid.occ) PushRowspanPlaceholders(&grid, r, col, 1, tablenode, st, &cells, &rowWeight);
         }
         if (cells.count > 0) {
             /* Pad out to the table's shared column count so this
                row's cells stay aligned with sibling rows that have a
-               different local cell count (see TableColumnCount's own
+               different local cell count (see ComputeTableGrid's own
                comment) -- e.g. a colspan-free data row under a
                colspan header, or a genuinely ragged row. Filler is
                always proportional (fixedpx=0) -- it exists purely for
@@ -2790,6 +2936,7 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
         wlvec_free(&cells);
     }
     nodevec_free(&rows);
+    FreeTableGrid(&grid);
 
     if (outRows->count == 0) {
         /* A structurally empty/malformed table (no real rows anywhere)
@@ -3057,7 +3204,7 @@ static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode
    border= attribute to control, and per-column width hints have no
    real signal in the fixture corpus to act on (see htmlatk.h's
    judgment-call log); column proportions come entirely from
-   colspan-derived weights (TableColumnCount/LsetChainPctWeighted
+   colspan-derived weights (ComputeTableGrid/LsetChainPctWeighted
    above) instead. */
 static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablenode)
 {
