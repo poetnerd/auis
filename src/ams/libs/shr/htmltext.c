@@ -323,6 +323,16 @@ static int htx_value_contains_ci(const char *hay, const char *needle)
     return 0;
 }
 
+/* True for a CSS length that is zero: "0", "0px", "0 !important". */
+static int htx_css_length_is_zero(const char *v)
+{
+    char *end;
+    double d;
+    while (*v == ' ' || *v == '\t') ++v;
+    d = strtod(v, &end);
+    return end != v && d == 0.0;
+}
+
 /* `display:none`/`visibility:hidden` -- see htmlatk.c's own
    NodeIsStyleHidden for the full story (the "hidden preheader" trick
    in commercial marketing email: a <div style="display:none"> whose
@@ -340,6 +350,18 @@ static int NodeIsStyleHidden(const struct htmlnode *n)
     if (!hidden) {
         sv = htmlpart_GetStyleProp(n, "visibility");
         if (sv) { if (htx_value_contains_ci(sv, "hidden")) hidden = 1; free(sv); }
+    }
+    if (!hidden) {
+        /* max-height:0 plus overflow:hidden is the other common way
+           to hide a preheader (The Economist, 2026-09-28). */
+        sv = htmlpart_GetStyleProp(n, "overflow");
+        if (sv) {
+            if (htx_value_contains_ci(sv, "hidden")) {
+                char *mh = htmlpart_GetStyleProp(n, "max-height");
+                if (mh) { hidden = htx_css_length_is_zero(mh); free(mh); }
+            }
+            free(sv);
+        }
     }
     return hidden;
 }

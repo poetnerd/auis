@@ -234,7 +234,8 @@ static const char * const hp_zerowidth_names[] = {
 static int is_zerowidth_codepoint(long code)
 {
     return code == 0x200B || code == 0x200C || code == 0x200D
-        || code == 0x200E || code == 0x200F || code == 0xFEFF;
+        || code == 0x200E || code == 0x200F || code == 0xFEFF
+        || code == 0x2060 || code == 0x034F;
 }
 
 /* Same ASCII-fallback set as mimepart_Utf8ToLatin1's own
@@ -259,6 +260,8 @@ static int try_smart_punct(struct hpbuf_s *out, long code)
     case 0x2013: hpbuf_putc(out, '-'); return 1;
     case 0x2014: hpbuf_puts(out, "--"); return 1;
     case 0x2026: hpbuf_puts(out, "..."); return 1;
+    case 0x2192: hpbuf_puts(out, "->"); return 1;
+    case 0x2007: case 0x2009: case 0x200A: case 0x202F: hpbuf_putc(out, ' '); return 1;
     default: return 0;
     }
 }
@@ -272,6 +275,9 @@ static long smart_punct_codepoint_for_name(const char *name)
     if (strcmp(name, "ndash") == 0) return 0x2013;
     if (strcmp(name, "mdash") == 0) return 0x2014;
     if (strcmp(name, "hellip") == 0) return 0x2026;
+    if (strcmp(name, "rarr") == 0) return 0x2192;
+    if (strcmp(name, "thinsp") == 0) return 0x2009;
+    if (strcmp(name, "hairsp") == 0) return 0x200A;
     return 0;
 }
 
@@ -584,12 +590,21 @@ static int href_scheme_ok(const char *href)
    `float` and `margin` were added 2026-09-28 for a paragraph that
    opens with <img style="float: right; margin: 7px"> (bookrack.html's
    The Writer's Life): htmlatk.c's TryRenderFloatImageBlock puts the
-   text beside the image instead of below it. */
-#define HP_NSTYLEPROPS 15
+   text beside the image instead of below it.
+
+   `max-height` and `overflow` were added 2026-09-28: together,
+   max-height:0 and overflow:hidden hide a preheader the same way
+   display:none does (The Economist). `margin-top` and `margin-bottom`
+   came with them, so htmlatk.c can tell a zero-margin <p>/<h1> from
+   one with a browser's default blank line. `max-width` came right
+   after: htmlatk.c centers the tables inside a <div style="max-width:
+   600px; margin: 0 auto"> page column at that width. */
+#define HP_NSTYLEPROPS 20
 static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "color", "background-color", "font-weight", "font-style", "text-decoration",
     "display", "visibility", "font-size", "font-family", "text-align", "border-bottom",
-    "line-height", "clear", "float", "margin"
+    "line-height", "clear", "float", "margin", "max-height", "overflow",
+    "margin-top", "margin-bottom", "max-width"
 };
 
 static char *filter_style(const char *raw)
@@ -620,6 +635,17 @@ static char *filter_style(const char *raw)
             while (*p && *p != ';') ++p;
             valend = p;
             while (valend > valstart && isspace((unsigned char) valend[-1])) --valend;
+            /* "!important" only ranks the declaration against a
+               stylesheet this parser never reads; left in, it spoiled
+               values like color:#404040 !important (2026-09-28). */
+            if (valend - valstart >= 10 && strncasecmp(valend - 9, "important", 9) == 0) {
+                const char *bang = valend - 9;
+                while (bang > valstart && isspace((unsigned char) bang[-1])) --bang;
+                if (bang > valstart && bang[-1] == '!') {
+                    valend = bang - 1;
+                    while (valend > valstart && isspace((unsigned char) valend[-1])) --valend;
+                }
+            }
 
             for (i = 0; i < HP_NSTYLEPROPS; ++i) {
                 if ((long) strlen(hp_style_props[i]) == proplen
