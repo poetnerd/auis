@@ -895,6 +895,42 @@ showed" bug. Fixed by dropping the erroneous re-add
 forward now advances linearly too (18 requests to cap, matching
 backward's 19). Committed 2026-09-13.
 
+**Book Rack's review cards and page margin (2026-09-27) — also this
+project's own code, and misdiagnosed for several sessions.** In
+bookrack.html, each Book Reviews card's text was crushed to a word or
+two per line, one card's cover was clipped to half its width, and
+Featured Titles text ran flush against the right edge of the page. The
+working theory was that ATK couldn't pass a table's declared width down
+through a text view embedded in another text view. Several fixes built
+on that theory were tried and reverted. The dump of the table tree built
+by the HTML renderer (`htmlatktest.test dump`) already showed a simpler
+cause, and a screenshot confirmed the theory wrong: the card pair was
+getting its full 630px. The table builder (`htmlatk.c`) had three
+separate gaps:
+
+- It ignored `rowspan` when counting columns. Each review card places a
+  15px spacer beside its text with `rowspan="5"`; the rows below it
+  looked one cell short and were padded with a proportional filler
+  that took half the text's width. The renderer's own comments assumed
+  real mail never uses `rowspan`, from an early fixture survey that
+  predated bookrack.html, which uses it 17 times.
+- An empty `<td>` with no `width=` got an equal share of its row, where
+  a browser gives it no width. One card uses such a cell beside its
+  cover, so the cover got half the space.
+- A fixed-width cell could only be placed as the left child of a
+  split, so fixed-width cells at the right end of a row got no width.
+  The newsletter's whole body sits in a row framed by 1, 10 and 4px
+  columns on each side; the left frame rendered and the right one
+  vanished, leaving no right margin. `lpair` already supported a
+  fixed-width right child in AUIS 6.3.1 (`lpair_BOTTOMFIXED`), but `lset`
+  had never exposed it; a new `lset` split type now does.
+
+The page margin was found by measurement, not by reading code: a
+temporary trace, enabled by an environment variable, logged each table
+cell's placed position and width against its visible clip rectangle for
+one run of the HTML previewer. It showed a 15px inset on the left and
+none on the right, which pointed straight at the frame columns.
+
 ## Word size issues
 
 The largest, most systemic category of defect came from a single
