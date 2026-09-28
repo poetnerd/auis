@@ -12,6 +12,7 @@
 #include <view.ih>
 #include <scroll.ih>
 #include <lset.ih>
+#include <lsetscrlc.ih>
 #include <rect.h>
 
 /* Deferred to here (not InitializeObject, where the dataobject isn't
@@ -131,6 +132,7 @@ enum view_DSattributes lsetscrollview__DesiredSize(struct lsetscrollview *self, 
        constructed for a row with nonzero minwidth -- htmlatk.c). */
     naturalWidth = (dob) ? ((struct lset *) dob)->minwidth : 0;
     if (naturalWidth <= 0) naturalWidth = width;
+    else naturalWidth += lsetscrollcontent_MINWIDTH_SAFETY_PAD;
     view_DesiredSize(content, naturalWidth, height, pass, &dw, &dh);
     /* CORRECTION (2026-09-23, found live-testing): this used to key
        barheight/borderpad off (lset->minwidth > width) -- but `width`
@@ -155,7 +157,11 @@ enum view_DSattributes lsetscrollview__DesiredSize(struct lsetscrollview *self, 
        disagree. */
     barheight = LSETSCROLLVIEW_BAR_HEIGHT;
     borderpad = LSETSCROLLVIEW_BORDER_PAD;
-    *dWidth = naturalWidth + borderpad;
+    /* Width gets no borderpad (2026-09-27, roadmap item 9): the border
+       is only drawn when the table scrolls (FullUpdate below), and then
+       the box is narrower than this anyway. Reporting exactly the width
+       lsetscrollcontent lays out at keeps a fitting table unclipped. */
+    *dWidth = naturalWidth;
     *dHeight = dh + borderpad + barheight;
     return view_Fixed;
 }
@@ -204,7 +210,8 @@ void lsetscrollview__FullUpdate(struct lsetscrollview *self, enum view_UpdateTyp
            sufficient; no throwaway pass needed. */
         lsetscrollview_GetLogicalBounds(self, &ownBounds);
         if (ownBounds.width > 0) {
-            long naturalWidth = ((struct lset *) dob)->minwidth;
+            long naturalWidth = ((struct lset *) dob)->minwidth
+                + lsetscrollcontent_MINWIDTH_SAFETY_PAD;
             boolean needsScroll = naturalWidth > ownBounds.width;
             lsetscrollview_SetLocation(self, needsScroll ? scroll_TOP : 0);
             /* scroll.ch's new SetDrawBorder (2026-09-22): border chrome
