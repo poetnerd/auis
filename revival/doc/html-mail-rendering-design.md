@@ -385,6 +385,10 @@ table, like bookrack.html, renders as one embedded view in a
 one-character document, so scrolling depends on the pixel-weighted
 elevator described in `roadmap.md` item 1, not on the peeling heuristic
 below.
+The wrapper and its content child must agree on the table's width:
+both use `minwidth` plus `lsetscrollcontent_MINWIDTH_SAFETY_PAD`
+(`lsetscrlc.ch`), for layout, the reported `DesiredSize` width, and the
+scroll-or-not decision (`roadmap.md` item 9).
 
 **Two core ATK toolkit gaps, not specific to this renderer, found and
 fixed along the way** (both in `src/atk/adew/lsetv.c`/`.ch`, additive,

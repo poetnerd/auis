@@ -489,12 +489,16 @@ being front-loaded here.
        right 15px, putting text flush against the right edge. Fixed
        with a new right-fixed split type, `lsetview_MakeHorzFixedRight`
        (`lsetv.ch`, backed by `lpair`'s existing `lpair_BOTTOMFIXED`).
-  9. `lsetscrollview` reports its width as the table's `minwidth` + 8
-     (`LSETSCROLLVIEW_BORDER_PAD`, `lsetscrlv.c`), but `lsetscrollcontent`
-     lays its content out at `minwidth` + 12 (`MINWIDTH_SAFETY_PAD`,
-     `lsetscrlc.c`), so the table's right 4px are clipped when it fits
-     without a scrollbar. Measured live 2026-09-27: box 648px, content
-     652px. Now eats part of item 8's restored right gutter.
+  9. **RESOLVED 2026-09-27** (`99fd1423e0`), wdc-confirmed against bookrack.html.
+     `lsetscrollview` reported its width as the table's `minwidth` + 8
+     and decided whether to scroll against bare `minwidth`, but
+     `lsetscrollcontent` laid its content out at `minwidth` + 12, so a
+     table that fit lost its right 4px with no scrollbar to reach them
+     (measured: box 648px, content 652px). Both classes now use one
+     constant, `lsetscrollcontent_MINWIDTH_SAFETY_PAD` (`lsetscrlc.ch`),
+     for the reported width and the scroll decision; the border pad now
+     applies to height only, since the border is drawn only when the
+     table scrolls.
   10. bookrack.html layout differences from Thunderbird still visible
       after item 8:
       - Side-by-side cells don't fill the row's height, so cell
