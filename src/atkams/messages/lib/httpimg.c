@@ -72,34 +72,6 @@
 
 #include "httpimg.h"
 
-/* TEMPORARY diagnostic tracing -- see the 2026-08-18 national-grid.html
-   "gives up partway through, at the same image every time" bug. Two
-   fixes (budget sizing, then the im.c SIGCHLD wildcard-reap race) were
-   deployed and neither changed the failure point at all, which is the
-   opposite of what either theory predicts (a race should move around
-   run to run; a too-small budget should move if the budget changes) --
-   so before guessing a fourth time, this traces every call so the next
-   repro can be read instead of inferred from a screenshot. Uses raw
-   write(), not fprintf/stdio, deliberately: see feedback_lldb_
-   debugging_workflow's note that fprintf can stay silent even when a
-   function is proven to have run, most likely stdio buffering not
-   getting flushed before something (a signal, _exit() in the forked
-   child, the app itself) cuts output short. write() has no such
-   buffer. Remove once the actual cause is found. */
-static void Trace(const char *fmt, ...)
-{
-    char buf[512];
-    va_list ap;
-    int len;
-    int fd = open("/tmp/httpimg-trace.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if (fd < 0) return;
-    va_start(ap, fmt);
-    len = vsnprintf(buf, sizeof(buf), fmt, ap);
-    va_end(ap);
-    if (len > 0) write(fd, buf, (size_t) ((len < (int) sizeof(buf)) ? len : (int) sizeof(buf) - 1));
-    close(fd);
-}
-
 #define TRUE 1
 #define FALSE 0
 
@@ -383,10 +355,8 @@ boolean httpimg_ResolveImage(void *rock, const char *src,
     long len = -1;
     boolean result = FALSE;
 
-    Trace("ENTER src=%s rock=%p\n", src ? src : "(null)", rock);
-
-    if (!budget || !src) { Trace("  -> FALSE: no budget/src\n"); return FALSE; }
-    if (!SchemeOk(src)) { Trace("  -> FALSE: bad scheme\n"); return FALSE; } /* free rejection: never touches the network or the budget */
+    if (!budget || !src) return FALSE;
+    if (!SchemeOk(src)) return FALSE; /* free rejection: never touches the network or the budget */
 
     /* Cache lookup before the budget check below (not after): a
        repeat src that's already cached costs neither a fetch nor
@@ -397,35 +367,29 @@ boolean httpimg_ResolveImage(void *rock, const char *src,
         for (ci = 0; ci < budget->cacheCount; ++ci) {
             if (strcmp(budget->cache[ci].src, src) == 0) {
                 boolean hit = CacheHit(&budget->cache[ci], bytesOut, lenOut, mimetypeOut);
-                Trace("  cache hit for %s ok=%d\n", src, hit);
                 return hit;
             }
         }
     }
 
     now = time(NULL);
-    if (now >= budget->deadline) { Trace("  -> FALSE: deadline passed (now=%ld deadline=%ld)\n", (long) now, (long) budget->deadline); return FALSE; }
+    if (now >= budget->deadline) return FALSE;
     remain = budget->deadline - now;
     perFetchTime = (remain < budget->perFetchMaxSeconds) ? (int) remain : budget->perFetchMaxSeconds;
     if (perFetchTime < 1) perFetchTime = 1;
 
-    Trace("  budget before: remain=%lds perFetchTime=%d\n", (long) remain, perFetchTime);
-
     bodyFd = mkstemp(bodyPath);
-    if (bodyFd < 0) { Trace("  -> FALSE: mkstemp(body) failed errno=%d (%s)\n", errno, strerror(errno)); return FALSE; }
+    if (bodyFd < 0) return FALSE;
     close(bodyFd);
     headerFd = mkstemp(headerPath);
-    if (headerFd < 0) { Trace("  -> FALSE: mkstemp(header) failed errno=%d (%s)\n", errno, strerror(errno)); unlink(bodyPath); return FALSE; }
+    if (headerFd < 0) { unlink(bodyPath); return FALSE; }
     close(headerFd);
 
     curlOk = RunCurl(src, perFetchTime, bodyPath, headerPath);
-    Trace("  RunCurl returned %d\n", curlOk);
     if (curlOk) {
         contentType = ExtractContentType(headerPath);
-        Trace("  contentType=%s\n", contentType ? contentType : "(none)");
         if (contentType && strncmp(contentType, "image/", 6) == 0) {
             len = ReadFileCapped(bodyPath, &bytes);
-            Trace("  ReadFileCapped returned len=%ld\n", len);
         }
     }
 
@@ -437,13 +401,11 @@ boolean httpimg_ResolveImage(void *rock, const char *src,
         *bytesOut = bytes;
         *lenOut = len;
         *mimetypeOut = contentType;
-        Trace("  -> TRUE len=%ld\n", len);
         return TRUE;
     }
 
     CacheStore(budget, src, FALSE, NULL, 0, NULL);
     if (bytes) free(bytes);
     if (contentType) free(contentType);
-    Trace("  -> FALSE (fell through: curlOk=%d)\n", curlOk);
     return result;
 }

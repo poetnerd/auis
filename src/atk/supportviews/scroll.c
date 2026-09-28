@@ -1683,7 +1683,7 @@ static void HandleThumbing(struct scroll *self, enum view_MouseAction action, lo
 	   relation to where the mouse actually is along the whole track.
 
 	   from_bar_to_range() is the right tool after all -- confirmed via
-	   live trace (/tmp/elevator-debug.log) to be smooth and monotonic
+	   a live trace to be smooth and monotonic
 	   with coord throughout every capture, unlike what_is_at() here.
 	   Its only real problem was downstream: centering des->seen.beg on
 	   posn via `- self->seenLength/2` (and, briefly, clamping using
@@ -1699,25 +1699,10 @@ static void HandleThumbing(struct scroll *self, enum view_MouseAction action, lo
 	   navigation math entirely; it's still used below only for the
 	   elevator's own drawn/visual size, a cosmetic-only concern.
 
-	   STATUS (2026-09-24): STILL NOT CORRECT with this form, reported
-	   live against national-grid.html: "elevator stuck at bottom,
-	   dragging goes back to top" -- but a genuine partial improvement
-	   over the what_is_at() attempt (not fully stuck: drag can reach
-	   the header lines and first message chunk, which are normally
-	   scrolled off-screen on open). Separately, on revival/testing.ez
-	   (the big-raster .ez file) drag is reportedly back to normal/
-	   legacy behavior with this form -- so whatever's still wrong here
-	   is specific to the extreme density case again, not a general
-	   regression. Not yet root-caused with a live trace against this
-	   exact build (the trace above is from the what_is_at() attempt,
-	   not this one) -- that's the next step: reproduce with
-	   /tmp/elevator-debug.log freshly cleared and read the actual
-	   from_bar_to_range()/HandleThumbing values for this specific
-	   "stuck at bottom" case before changing this again. wdc's own
-	   read: "I think your understanding of how drag works is
-	   incomplete" -- true for the what_is_at() attempt (see above,
-	   now understood); may still be true here too, not yet confirmed
-	   either way. */
+	   RESOLVED 2026-09-25 (1f71b5b4c9): the remaining "stuck at
+	   bottom" with this form was downstream of this function, in
+	   set_frame()'s int/long truncation and textv.c's setframe()
+	   resetting its offset past the document end. */
 	posn = from_bar_to_range(self, self->side, cur, coord);
 	if(ABS(posn-cur->seen.beg)>=MAX(1,self->seenLength/10) || posn==cur->total.beg || posn==cur->total.end) {
 	    int location=self->current.location;
