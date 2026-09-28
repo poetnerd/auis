@@ -456,7 +456,11 @@ static int attr_allowed(const char *tag, const char *attr)
            (CellBgColorX11Cascaded, htmlatk.c) for a template that
            paints a row's background once at the <tr> instead of
            repeating it on every cell. */
-        return strcmp(attr, "bgcolor") == 0;
+        /* valign added 2026-09-27 (roadmap.md item 10): a row's
+           valign is its cells' default (CellValign, htmlatk.c). The
+           same change added valign and height for table/td/th below,
+           and cellpadding for table (2026-09-28). */
+        return strcmp(attr, "bgcolor") == 0 || strcmp(attr, "valign") == 0;
     }
     if (strcmp(tag, "table") == 0 || strcmp(tag, "td") == 0 || strcmp(tag, "th") == 0) {
         /* width added 2026-08-17: htmlatk.c's lset-based table renderer
@@ -478,7 +482,9 @@ static int attr_allowed(const char *tag, const char *attr)
            lsetview leaf. */
         return strcmp(attr, "colspan") == 0 || strcmp(attr, "rowspan") == 0
             || strcmp(attr, "border") == 0 || strcmp(attr, "width") == 0
-            || strcmp(attr, "bgcolor") == 0;
+            || strcmp(attr, "bgcolor") == 0 || strcmp(attr, "valign") == 0
+            || strcmp(attr, "height") == 0
+            || (strcmp(tag, "table") == 0 && strcmp(attr, "cellpadding") == 0);
     }
     if (strcmp(tag, "font") == 0) {
         return strcmp(attr, "color") == 0 || strcmp(attr, "size") == 0;
@@ -565,20 +571,35 @@ static int href_scheme_ok(const char *href)
    neighbor's exact background color (bookrack.html's book-review
    cards: `style="border-bottom: 4px solid #B6D4D6;"` on each card's
    wrapping <td>) -- silently stripped here before htmlatk.c ever saw
-   it, same failure shape as font-size/font-family/text-align above. */
-static const char * const hp_style_props[11] = {
+   it, same failure shape as font-size/font-family/text-align above.
+
+   `line-height` was added 2026-09-27: htmlatk.c drops a spacer
+   <div style="line-height: 5px"><br /></div> (bookrack.html's review
+   cards) instead of rendering it as a full blank line.
+
+   `clear` was added 2026-09-28: a floated table with clear set starts
+   a new run of side-by-side floats (htmlatk.c's TryPairFloatedTables)
+   instead of joining the one before it.
+
+   `float` and `margin` were added 2026-09-28 for a paragraph that
+   opens with <img style="float: right; margin: 7px"> (bookrack.html's
+   The Writer's Life): htmlatk.c's TryRenderFloatImageBlock puts the
+   text beside the image instead of below it. */
+#define HP_NSTYLEPROPS 15
+static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "color", "background-color", "font-weight", "font-style", "text-decoration",
-    "display", "visibility", "font-size", "font-family", "text-align", "border-bottom"
+    "display", "visibility", "font-size", "font-family", "text-align", "border-bottom",
+    "line-height", "clear", "float", "margin"
 };
 
 static char *filter_style(const char *raw)
 {
-    char *vals[11];
+    char *vals[HP_NSTYLEPROPS];
     int i;
     const char *p = raw;
     struct hpbuf_s out;
 
-    for (i = 0; i < 11; ++i) vals[i] = NULL;
+    for (i = 0; i < HP_NSTYLEPROPS; ++i) vals[i] = NULL;
 
     while (*p) {
         const char *propstart, *propend, *valstart, *valend;
@@ -600,7 +621,7 @@ static char *filter_style(const char *raw)
             valend = p;
             while (valend > valstart && isspace((unsigned char) valend[-1])) --valend;
 
-            for (i = 0; i < 11; ++i) {
+            for (i = 0; i < HP_NSTYLEPROPS; ++i) {
                 if ((long) strlen(hp_style_props[i]) == proplen
                     && strncasecmp(hp_style_props[i], propstart, (size_t) proplen) == 0) {
                     free(vals[i]);
@@ -617,7 +638,7 @@ static char *filter_style(const char *raw)
     }
 
     hpbuf_init(&out);
-    for (i = 0; i < 11; ++i) {
+    for (i = 0; i < HP_NSTYLEPROPS; ++i) {
         if (vals[i]) {
             if (out.len > 0) hpbuf_putc(&out, ';');
             hpbuf_puts(&out, hp_style_props[i]);
