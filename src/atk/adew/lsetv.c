@@ -188,7 +188,9 @@ static int initkids(struct lsetview *self, struct lset *ls)
 	    /* ls->pct is a pixel bsize here, not a percentage -- see
 	       lsetview_MakeHorzFixed's own comment in lsetv.ch. */
 	    lsetview_HTFixed(self,v1,v2,ls->pct,mv);
-	} else if(ls->type == lsetview_MakeVertFixed)
+	} else if(ls->type == lsetview_MakeHorzFixedRight)
+	    lsetview_HFixed(self,v1,v2,ls->pct,mv);
+	else if(ls->type == lsetview_MakeVertFixed)
 	    lsetview_VTFixed(self,v1,v2,ls->pct,mv);
 	else
 	    lsetview_VSplit(self,v1,v2,ls->pct,mv);
