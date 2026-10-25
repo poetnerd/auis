@@ -579,6 +579,11 @@ struct hax_mark { struct style *style; long start; long len; };
 
 struct hax_listframe { int ordered; int counter; };
 
+/* One flattened block (hax_state's ambient): its background color
+   (bg[0] == '\0' for none) and, for a <div>, its max-width (0 for
+   none) and where that narrower column sits (lset_HALIGN_*). */
+#define HAX_AMBIENT_MAX 8
+struct hax_ambient { char bg[32]; long maxwidth; int halign; };
 struct hax_state {
     struct text *dest;
     long pos;
@@ -608,7 +613,41 @@ struct hax_state {
        (TextMaxEmbeddedLsetMinwidth), so wrapping it too just nests a
        second, redundant scrollbar inside the first one. */
     int nested;
+    /* The flattened blocks this walk is inside, innermost last: 1x1
+       wrapper tables and <div>s. This renderer can't paint a block's
+       background or narrow its width behind flowing text, so the
+       tables built inside one carry both instead (ApplyAmbient). */
+    struct hax_ambient ambient[HAX_AMBIENT_MAX];
+    int ambientDepth;
+    /* The color actually painted behind this walk's text: its cell's
+       background (own, cascaded, or inherited from where the cell's
+       table sits), or white for the message body. See ColorReadableOn. */
+    char paintedBg[32];
+    /* How many open elements have a background this renderer can't
+       paint (HasUnpaintedBg); inside any of them, text colors are
+       checked against paintedBg (PushFormattingMarks). */
+    int unpaintedDepth;
 };
+
+/* Handoff from BuildLsetCell/TryRenderFloatImageBlock to the nested
+   htmlatk_RenderAmbient walk they start: the background painted
+   behind it. Consumed (cleared) by that walk's setup. */
+static char NextRenderPaintedBg[32];
+
+/* Sets NextRenderPaintedBg for a cell rendered from st: the cell's own
+   (cascaded) background if it has one, else whatever is painted where
+   its table sits -- the innermost flattened block's color the table
+   will take (ApplyAmbient), else st's own. */
+static void SetNextRenderPaintedBg(struct hax_state *st, const char *own)
+{
+    int i;
+    const char *bg = own;
+    for (i = st->ambientDepth - 1; !bg && i >= 0; --i)
+        if (st->ambient[i].bg[0]) bg = st->ambient[i].bg;
+    if (!bg) bg = st->paintedBg;
+    strncpy(NextRenderPaintedBg, bg, sizeof(NextRenderPaintedBg) - 1);
+    NextRenderPaintedBg[sizeof(NextRenderPaintedBg) - 1] = '\0';
+}
 
 /* Returns 1 if a mark was actually pushed, 0 if not (NULL style, or a
    realloc failure) -- callers must use this to decide whether they
@@ -685,15 +724,66 @@ static void marks_finalize(struct hax_state *st, int n)
    character and view. Order among independent (or nested) spans does
    not matter here (see htmlatk.h's style-composition note) because
    nothing inserted after this point disturbs anything created here. */
+static const struct hax_mark *PendingSortBase;
+static long *PendingLeader;
+
+/* By range, then recorded order: groups spans over identical text. */
+static int PendingByRange(const void *a, const void *b)
+{
+    long ia = *(const long *) a, ib = *(const long *) b;
+    const struct hax_mark *ma = &PendingSortBase[ia], *mb = &PendingSortBase[ib];
+    if (ma->start != mb->start) return (ma->start < mb->start) ? -1 : 1;
+    if (ma->len != mb->len) return (ma->len < mb->len) ? -1 : 1;
+    return (ia < ib) ? -1 : (ia > ib) ? 1 : 0;
+}
+
+/* Recorded order, except that spans over identical text go together,
+   at the first one's place, latest-recorded first. */
+static int PendingApplyOrder(const void *a, const void *b)
+{
+    long ia = *(const long *) a, ib = *(const long *) b;
+    long la = PendingLeader[ia], lb = PendingLeader[ib];
+    if (la != lb) return (la < lb) ? -1 : 1;
+    return (ia > ib) ? -1 : (ia < ib) ? 1 : 0;
+}
+
+/* Applies the recorded spans innermost first, the order marks_finalize
+   records them in (an element's span is recorded when it closes, after
+   the elements inside it) -- environment_WrapStyle nests a span around
+   the ones already applied inside its range, and applying outer spans
+   first lost inner colors (tried 2026-09-28). The exception is two
+   spans over exactly the same text: WrapStyle puts the later one
+   inside, so there the outer one has to go first. Without that, <a
+   href><span style="color:#ffffff">iOS</span></a> came out in the
+   link's blue, invisible on The Economist's black footer. */
 static void ApplyPendingStyles(struct hax_state *st)
 {
-    long i;
-    for (i = 0; i < st->pendingcount; ++i) {
+    long i, n = st->pendingcount, *order, *leader;
+    if (n <= 0) return;
+    order = (long *) malloc(n * sizeof(long));
+    leader = (long *) malloc(n * sizeof(long));
+    if (!order || !leader) { free(order); free(leader); st->hardfail = 1; return; }
+    for (i = 0; i < n; ++i) order[i] = i;
+    PendingSortBase = st->pending;
+    qsort(order, (size_t) n, sizeof(long), PendingByRange);
+    for (i = 0; i < n; ++i) {
+        const struct hax_mark *m = &st->pending[order[i]];
+        const struct hax_mark *prev = (i > 0) ? &st->pending[order[i - 1]] : NULL;
+        leader[order[i]] = (prev && prev->start == m->start && prev->len == m->len)
+            ? leader[order[i - 1]] : order[i];
+    }
+    for (i = 0; i < n; ++i) order[i] = i;
+    PendingLeader = leader;
+    qsort(order, (size_t) n, sizeof(long), PendingApplyOrder);
+    for (i = 0; i < n; ++i) {
+        const struct hax_mark *m = &st->pending[order[i]];
         struct environment *et = environment_WrapStyle(
             ((struct text *) st->dest)->rootEnvironment,
-            st->pending[i].start, st->pending[i].len, st->pending[i].style);
+            m->start, m->len, m->style);
         if (!et) st->hardfail = 1;
     }
+    free(order);
+    free(leader);
 }
 
 static int EndsInWhitespace(struct hax_state *st)
@@ -1664,6 +1754,10 @@ struct tablegrid {
     const struct htmlnode *side[8];
     int nleft, nside;
     long sidecols;
+    /* colfixed[c]: the widest fixed pixel width (CellFixedPixelWidth)
+       of any single-column cell in column c, 0 for none. See
+       ComputeColumnFixed. NULL if not computed. */
+    long *colfixed;
 };
 
 static int NodeIsCell(const struct htmlnode *td)
@@ -1752,8 +1846,44 @@ static void ComputeTableGrid(const struct nodevec *rows, struct tablegrid *g)
     g->collapsible = colstate;
 }
 
+static long CellFixedPixelWidth(const struct htmlnode *td);
+
+/* A browser sizes a column once, for every row: an empty cell in a
+   column whose other rows hold a fixed-width cell is that wide too.
+   The Economist's quote block has an icon column of width="32" with
+   width="0" spacers above and below it; sized row by row, those rows
+   split 50/50 and their text sat far right of the quote's (2026-09-28).
+   Fills g->colfixed (see struct tablegrid). */
+static void ComputeColumnFixed(struct tablegrid *g, const struct nodevec *rows)
+{
+    long r, c;
+    const struct htmlnode *td;
+    g->colfixed = NULL;
+    if (!g->occ || g->ncols <= 0) return;
+    g->colfixed = (long *) calloc(g->stride, sizeof(long));
+    if (!g->colfixed) return;
+    /* Columns are placed as in ComputeTableGrid: occ holds only the
+       slots rowspan cells reach into from earlier rows. */
+    for (r = 0; r < rows->count; ++r) {
+        c = 0;
+        for (td = rows->items[r]->children; td; td = td->next) {
+            long cs;
+            if (!NodeIsCell(td)) continue;
+            while (c < g->stride && g->occ[r * g->stride + c].td) ++c;
+            if (c >= g->stride) break;
+            cs = CellColspan(td);
+            if (cs == 1) {
+                long w = CellFixedPixelWidth(td);
+                if (w > g->colfixed[c]) g->colfixed[c] = w;
+            }
+            c += cs;
+        }
+    }
+}
+
 static void FreeTableGrid(struct tablegrid *g)
 {
+    free(g->colfixed); g->colfixed = NULL;
     free(g->occ); g->occ = NULL;
     free(g->collapsible); g->collapsible = NULL;
     free(g->overlap); g->overlap = NULL;
@@ -2433,6 +2563,25 @@ static int NodeOwnBgColorX11(const struct htmlnode *td, char *outbuf, size_t out
     return 0;
 }
 
+/* Whether any of these nodes, or their descendants, is a <table>.
+   Recursion is bounded by markup depth. */
+static int NodesContainTable(const struct htmlnode *n)
+{
+    for (; n; n = n->next) {
+        if (!htmlpart_IsElement(n)) continue;
+        if (strcmp(n->tag, "table") == 0) return 1;
+        if (NodesContainTable(n->children)) return 1;
+    }
+    return 0;
+}
+
+/* The background a 1x1 wrapper table paints: its cell's own color,
+   else the table's. See hax_state's ambient. */
+static int WrapperBgColor(const struct htmlnode *table, const struct htmlnode *cell, char *outbuf, size_t outbufsz)
+{
+    return NodeOwnBgColorX11(cell, outbuf, outbufsz) || NodeOwnBgColorX11(table, outbuf, outbufsz);
+}
+
 /* A <td>/<th> with no background of its own inherits one from its row
    or table, the same cascade a real browser applies when a template
    paints its background once at the <table>/<tr> level instead of
@@ -2585,6 +2734,108 @@ static void ApplyBgColorToTextEmbeds(struct text *t, const char *color)
                 ApplyBgColorRecursive((struct lset *) dob, color);
         }
     }
+}
+
+static struct lset *CenteredRowLeaf(struct lset *row, long width, struct hax_state *st);
+
+/* A CSS pixel length ("600px", "600", "600px !important"), or 0. */
+static long CssPixelLength(const char *v)
+{
+    long n;
+    char *end;
+    if (!v) return 0;
+    n = strtol(v, &end, 10);
+    if (end == v || n <= 0) return 0;
+    if (strncasecmp(end, "px", 2) == 0) end += 2;
+    while (*end == ' ' || *end == '\t') ++end;
+    if (*end != '\0' && *end != '!') return 0;
+    return n;
+}
+
+/* Whether a <div> is a block worth carrying into the tables inside it
+   (hax_state's ambient): a background color, or a pixel max-width.
+   The Economist wraps its whole message in <div style="max-width:
+   600px; margin: 0 auto; background-color: #0D0D0D"> (2026-09-28): a
+   dark 600px column, centered by the auto margins. Without auto
+   margins the column sits at the left. */
+static int DivAmbient(const struct htmlnode *div, struct hax_ambient *a)
+{
+    char *sv;
+    a->bg[0] = '\0';
+    a->maxwidth = 0;
+    a->halign = lset_HALIGN_LEFT;
+    if (!NodeOwnBgColorX11(div, a->bg, sizeof(a->bg))) a->bg[0] = '\0';
+    sv = htmlpart_GetStyleProp(div, "max-width");
+    if (sv) { a->maxwidth = CssPixelLength(sv); free(sv); }
+    sv = htmlpart_GetStyleProp(div, "margin");
+    if (sv) { if (value_contains_ci(sv, "auto")) a->halign = lset_HALIGN_CENTER; free(sv); }
+    return a->bg[0] != '\0' || a->maxwidth > 0;
+}
+
+/* Gives a table row about to be embedded the blocks it sits in
+   (hax_state's ambient): the innermost background fills its uncolored
+   cells, and the innermost max-width narrows it to that column,
+   wrapped in a leaf (CenteredRowLeaf) that places it. The wrapper's
+   own margins outside the column take the background of the blocks
+   outside that one, if any. Returns the row to embed. */
+static struct lset *ApplyAmbient(struct hax_state *st, struct lset *row)
+{
+    int i, k = -1;
+    for (i = st->ambientDepth - 1; i >= 0; --i) {
+        if (st->ambient[i].bg[0]) { ApplyBgColorRecursive(row, st->ambient[i].bg); break; }
+    }
+    for (i = st->ambientDepth - 1; i >= 0; --i) {
+        if (st->ambient[i].maxwidth > 0) { k = i; break; }
+    }
+    if (k >= 0) {
+        struct lset *leaf = CenteredRowLeaf(row, st->ambient[k].maxwidth, st);
+        if (leaf != row) {
+            leaf->halign = st->ambient[k].halign;
+            for (i = k - 1; i >= 0; --i) {
+                if (st->ambient[i].bg[0]) {
+                    strncpy(leaf->bgcolor, st->ambient[i].bg, sizeof(leaf->bgcolor) - 1);
+                    leaf->bgcolor[sizeof(leaf->bgcolor) - 1] = '\0';
+                    break;
+                }
+            }
+            row = leaf;
+        }
+    }
+    return row;
+}
+
+/* A tiny font for the line holding a table row. A view inserted in
+   text hangs below the baseline (view__GetOrigin's default originY of
+   0), so its line still reserves the font's whole ascent above it: a
+   band of the message's white background above every row, ~13px at
+   the body font. Invisible on a white page, but on The Economist's
+   dark one every row was striped off from the next (2026-09-28).
+   Having the row sit on the baseline instead (a GetOrigin at its
+   bottom edge) removed the band entirely but broke paging: textview
+   tells a line holding a tall view by its height exceeding its text
+   height (textv.c's DoUpdate), and National Grid's footer became
+   unreachable with <space>. */
+#define ROWLINE_POINTSIZE 1
+
+/* Embeds one table row (or a floated pair, or a floated-image block)
+   at st->pos on a line of its own, ending that line. */
+static void InsertRowView(struct hax_state *st, struct lset *row)
+{
+    long start;
+    const char *viewname;
+    row = ApplyAmbient(st, row);
+    /* Only the outermost embedding gets the scrollable wrapper -- see
+       RenderTableAsLset's row loop and hax_state's `nested`. */
+    viewname = (row->minwidth > 0 && !st->nested) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) row);
+    start = st->pos;
+    text_AlwaysAddView(st->dest, st->pos, (char *) viewname, (struct dataobject *) row);
+    ++st->pos;
+    text_AlwaysInsertCharacters(st->dest, st->pos, "\n", 1);
+    ++st->pos;
+    pending_push(st, PointSizeStyleFor(ROWLINE_POINTSIZE), start, 2);
+    st->trailingNL = 1;
+    st->anyContent = 1;
+    st->spacePending = 0;
 }
 
 /* A cell's valign (lset.ch's lset_VALIGN_*): the cell's own
@@ -2835,6 +3086,7 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
         if (leftSt) text_SetGlobalStyle(ct, leftSt);
         if (!CellIsEmpty(td)) {
             long celllen = 0;
+            SetNextRenderPaintedBg(st, hasBg ? bgbuf : NULL);
             if (!htmlatk_RenderAmbient(ct, 0, td->children, tableNode, td, st->resolver, st->resolverRock, &celllen, TRUE))
                 st->hardfail = 1;
         }
@@ -2994,6 +3246,7 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
     lsetvec_init(outRows);
     CollectRows(tablenode, &rows);
     ComputeTableGrid(&rows, &grid);
+    ComputeColumnFixed(&grid, &rows);
     FindSideColumns(&grid, &rows);
     ncols = grid.ncols - grid.sidecols;
     /* outRows index where each source row's output begins, for the
@@ -3143,6 +3396,10 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                 if (grid.occ) col = PushRowspanPlaceholders(&grid, r, col, 0, tablenode, st, &cells, &rowWeight);
                 if (GridIsSide(&grid, td)) { col += CellColspan(td); continue; }
                 leaf = BuildLsetCell(td, tr, tablenode, st, &weight, &fixedpx);
+                /* An empty cell takes its column's width (ComputeColumnFixed). */
+                if (grid.colfixed && weight == 1 && fixedpx == 0 && col < grid.ncols
+                    && grid.colfixed[col] > 0 && NodeIsVisuallyEmpty(td))
+                    fixedpx = grid.colfixed[col];
                 if (grid.occ && weight == 1 && fixedpx == 0 && col < grid.ncols && grid.collapsible[col])
                     fixedpx = 1;
                 if (leaf) { wlvec_push(&cells, leaf, weight, fixedpx); rowWeight += weight; ++realCells; }
@@ -3579,25 +3836,11 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
            second, nested lsetscrollview inside the outer one, i.e. a
            table rendered with two independent horizontal scrollbars
            (Book Rack, 2026-09-25). */
-        const char *rowViewName = (rowRoot->minwidth > 0 && !st->nested) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) rowRoot);
-        if (i > 0) EnsureLineBreak(st);
-        text_AlwaysAddView(st->dest, st->pos, rowViewName, (struct dataobject *) rowRoot);
-        ++st->pos;
-        /* EnsureLineBreak's own guard (trailingNL==0) has to see this
-           reset on every iteration, not just once after the loop --
-           the view character just inserted isn't a text newline, so
-           whatever trailingNL was before this row (e.g. 2, carried
-           over from a paragraph break before the table) is stale and
-           must not survive into the next iteration's EnsureLineBreak
-           call. Missing this the first time (only setting it once,
-           after the whole loop) caused a real, confirmed bug: two
-           row-views landed on back-to-back text positions with
-           *nothing* between them (RUN[65,66)/RUN[66,67) directly
-           adjacent, no newline run at all -- found by reading the raw
-           dump output after wdc reported the fixed version showed no
-           table content at all past the first line of body text). */
-        st->trailingNL = 0;
-        st->anyContent = 1;
+        /* Every row, the first included: a table is a block, never on
+           a line with the text before it (The Economist, 2026-09-28:
+           a table after a link sat beside it, narrowed by it). */
+        EnsureLineBreak(st);
+        InsertRowView(st, rowRoot);
     }
     lsetvec_free(&rows);
     st->spacePending = 0;
@@ -3810,16 +4053,7 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
        consulted here, so ordinary lpair/DesiredSize reflow crushed the
        text column next to each cover image down to a handful of
        pixels. Same routing rule as RenderTableAsLset's row loop. */
-    {
-        /* Same !st->nested gate as RenderTableAsLset's own row loop --
-           see its comment and struct hax_state's `nested` field. */
-        const char *rowViewName = (row->minwidth > 0 && !st->nested) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) row);
-        text_AlwaysAddView(st->dest, st->pos, rowViewName, (struct dataobject *) row);
-    }
-    ++st->pos;
-    st->trailingNL = 0;
-    st->anyContent = 1;
-    st->spacePending = 0;
+    InsertRowView(st, row);
 
     ws->count = peek; /* discard the other members' still-queued entries, and any whitespace skipped past above -- all fully accounted for by the combined row just inserted */
     return TRUE;
@@ -3836,6 +4070,43 @@ static int tag_is_para(const char *t)
         || strcmp(t, "h1") == 0 || strcmp(t, "h2") == 0 || strcmp(t, "h3") == 0
         || strcmp(t, "h4") == 0 || strcmp(t, "h5") == 0 || strcmp(t, "h6") == 0
         || strcmp(t, "dl") == 0;
+}
+
+static int CssLengthIsZero(const char *v);
+
+/* Whether a paragraph-like tag's top and bottom margins are zero.
+   A browser gives <p> and <h1>-<h6> a blank line above and below;
+   templates cancel it with style="margin:0" (The Economist puts it on
+   every <p> and <h1>, 2026-09-28), and a blank line there made every
+   heading cell a line or two too tall. The shorthand is read as CSS
+   does: "a" is all sides, "a b" is top/bottom a, "a b c" and
+   "a b c d" have top a and bottom c. margin-top and margin-bottom
+   override it. */
+static void ParaMarginsZero(const struct htmlnode *n, int *topZero, int *botZero)
+{
+    char *sv;
+
+    *topZero = *botZero = 0;
+    sv = htmlpart_GetStyleProp(n, "margin");
+    if (sv) {
+        char *tok[4], *p = sv;
+        int ntok = 0;
+        while (ntok < 4) {
+            while (*p == ' ' || *p == '\t') ++p;
+            if (!*p || *p == '!') break;
+            tok[ntok++] = p;
+            while (*p && *p != ' ' && *p != '\t') ++p;
+        }
+        if (ntok > 0) {
+            *topZero = CssLengthIsZero(tok[0]);
+            *botZero = CssLengthIsZero(tok[ntok >= 3 ? 2 : 0]);
+        }
+        free(sv);
+    }
+    sv = htmlpart_GetStyleProp(n, "margin-top");
+    if (sv) { *topZero = CssLengthIsZero(sv); free(sv); }
+    sv = htmlpart_GetStyleProp(n, "margin-bottom");
+    if (sv) { *botZero = CssLengthIsZero(sv); free(sv); }
 }
 
 /* A <div> whose only content is one <br> and whose line-height is
@@ -3877,6 +4148,16 @@ static int tag_is_suppressed(const char *t)
     return strcmp(t, "head") == 0 || strcmp(t, "title") == 0;
 }
 
+/* True for a CSS length that is zero: "0", "0px", "0 !important". */
+static int CssLengthIsZero(const char *v)
+{
+    char *end;
+    double d;
+    while (*v == ' ' || *v == '\t') ++v;
+    d = strtod(v, &end);
+    return end != v && d == 0.0;
+}
+
 /* `display:none`/`visibility:hidden` (added to htmlpart.c's style
    property allowlist alongside this check, 2026-08-16): an
    industry-standard trick in commercial marketing email is a `<div
@@ -3904,7 +4185,99 @@ static int NodeIsStyleHidden(const struct htmlnode *n)
         sv = htmlpart_GetStyleProp(n, "visibility");
         if (sv) { if (value_contains_ci(sv, "hidden")) hidden = 1; free(sv); }
     }
+    if (!hidden) {
+        /* max-height:0 plus overflow:hidden is the other common way
+           to hide a preheader (The Economist, 2026-09-28). */
+        sv = htmlpart_GetStyleProp(n, "overflow");
+        if (sv) {
+            if (value_contains_ci(sv, "hidden")) {
+                char *mh = htmlpart_GetStyleProp(n, "max-height");
+                if (mh) { hidden = CssLengthIsZero(mh); free(mh); }
+            }
+            free(sv);
+        }
+    }
     return hidden;
+}
+
+/* An X11 color spec as CssColorToX11 produces it ("#rgb", "#rrggbb",
+   or a common name) as 0-255 components. Returns 0 if unknown. */
+static int ColorRGB(const char *c, int *r, int *g, int *b)
+{
+    static const struct { const char *name; int r, g, b; } names[] = {
+        {"white", 255, 255, 255}, {"black", 0, 0, 0}, {"blue", 0, 0, 255},
+        {"red", 255, 0, 0}, {"green", 0, 128, 0}, {"gray", 128, 128, 128},
+        {"grey", 128, 128, 128}, {"silver", 192, 192, 192}, {"navy", 0, 0, 128},
+        {"yellow", 255, 255, 0}, {"orange", 255, 165, 0}, {NULL, 0, 0, 0}
+    };
+    int i;
+    unsigned int v;
+    if (!c) return 0;
+    if (c[0] == '#') {
+        size_t n = strlen(c + 1);
+        if ((n != 6 && n != 3) || strspn(c + 1, "0123456789abcdefABCDEF") != n) return 0;
+        v = (unsigned int) strtoul(c + 1, NULL, 16);
+        if (n == 6) { *r = (v >> 16) & 255; *g = (v >> 8) & 255; *b = v & 255; }
+        else { *r = ((v >> 8) & 15) * 17; *g = ((v >> 4) & 15) * 17; *b = (v & 15) * 17; }
+        return 1;
+    }
+    for (i = 0; names[i].name; ++i)
+        if (strcasecmp(c, names[i].name) == 0) { *r = names[i].r; *g = names[i].g; *b = names[i].b; return 1; }
+    return 0;
+}
+
+/* Relative luminance, 0..1 (WCAG's, with a plain gamma of 2). */
+static double ColorLuminance(int r, int g, int b)
+{
+    double c[3];
+    int i, v[3];
+    v[0] = r; v[1] = g; v[2] = b;
+    for (i = 0; i < 3; ++i) {
+        double x = v[i] / 255.0;
+        c[i] = x * x;	/* gamma 2 is close enough to sRGB's here */
+    }
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+/* Whether text in color fg can be read on background bg: a WCAG
+   contrast ratio of at least 2 (their minimum for body text is 4.5;
+   this only needs to catch text that's effectively invisible). An
+   unknown color counts as readable. */
+#define READABLE_CONTRAST 2.0
+static int ColorContrastAtLeast(const char *fg, const char *bg, double ratio)
+{
+    int r1, g1, b1, r2, g2, b2;
+    double l1, l2;
+    if (!ColorRGB(fg, &r1, &g1, &b1) || !ColorRGB(bg, &r2, &g2, &b2)) return 1;
+    l1 = ColorLuminance(r1, g1, b1);
+    l2 = ColorLuminance(r2, g2, b2);
+    if (l1 < l2) { double t = l1; l1 = l2; l2 = t; }
+    return (l1 + 0.05) / (l2 + 0.05) >= ratio;
+}
+
+static int ColorReadableOn(const char *fg, const char *bg)
+{
+    return ColorContrastAtLeast(fg, bg, READABLE_CONTRAST);
+}
+
+/* The default link color is held to a higher bar: pure blue on
+   The Economist's #1A1A1A scores just over 2, and is hard to read
+   there. Below it, links use LINK_COLOR_ON_DARK. */
+#define LINK_CONTRAST 3.0
+#define LINK_COLOR_ON_DARK "#8AB4F8"
+
+/* Elements whose background-color this renderer does paint. */
+static int IsTableCellTag(const char *t)
+{
+    return strcmp(t, "td") == 0 || strcmp(t, "th") == 0
+        || strcmp(t, "tr") == 0 || strcmp(t, "table") == 0;
+}
+
+/* An element with a background color this renderer can't paint. */
+static int HasUnpaintedBg(const struct htmlnode *n)
+{
+    char bgbuf[32];
+    return !IsTableCellTag(n->tag) && NodeOwnBgColorX11(n, bgbuf, sizeof(bgbuf));
 }
 
 /* Pushes style marks for a node's tag-implied and style=-implied
@@ -3938,7 +4311,22 @@ static int PushFormattingMarks(struct hax_state *st, const struct htmlnode *n)
         if (size && *size) { count += marks_push(st, FontSizeStyleFor(ParsePositiveInt(size, 3, 7))); }
     }
 
+    /* A text color picked for a background this renderer can't paint
+       is skipped when it's unreadable on what is painted, and the text
+       keeps its surroundings' color: The Economist's "Watch now" is
+       dark text on a white button (the link's own background-color,
+       the color on a span inside it) in a dark cell, and drawn without
+       the button it was invisible (2026-09-28). A readable one is kept -- the same message's
+       "Visit Insider hub" is light text on a dark button in a dark
+       cell. Table cells are the exception: their backgrounds are
+       painted (lset bgcolor). */
+    if (HasUnpaintedBg(n)) ++st->unpaintedDepth;	/* see the walk's POST */
     sv = htmlpart_GetStyleProp(n, "color");
+    if (sv && st->unpaintedDepth > 0) {
+        char cbuf[32];
+        const char *c = CssColorToX11(sv, cbuf, sizeof(cbuf));
+        if (c && !ColorReadableOn(c, st->paintedBg)) { free(sv); sv = NULL; }
+    }
     if (sv) { count += marks_push(st, AttrColorStyleFor("color", sv)); free(sv); }
     sv = htmlpart_GetStyleProp(n, "background-color");
     if (sv) { count += marks_push(st, AttrColorStyleFor("background-color", sv)); free(sv); }
@@ -4100,6 +4488,7 @@ static int TryRenderFloatImageBlock(struct hax_state *st, const struct htmlnode 
         struct style *leftSt = JustificationStyleFor(style_LeftJustified);
         if (leftSt) text_SetGlobalStyle(ct, leftSt);
     }
+    SetNextRenderPaintedBg(st, NULL);
     if (!htmlatk_RenderAmbient(ct, 0, img->next, NULL, blk, st->resolver, st->resolverRock, &len, TRUE))
         st->hardfail = 1;
     /* The styles open around this block (e.g. the enclosing table's
@@ -4127,15 +4516,7 @@ static int TryRenderFloatImageBlock(struct hax_state *st, const struct htmlnode 
     if (!row) return FALSE;
 
     FlushPendingSpace(st);
-    {
-        /* Same routing rule as RenderTableAsLset's row loop. */
-        const char *rowViewName = (row->minwidth > 0 && !st->nested) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) row);
-        text_AlwaysAddView(st->dest, st->pos, rowViewName, (struct dataobject *) row);
-    }
-    ++st->pos;
-    st->trailingNL = 0;
-    st->anyContent = 1;
-    st->spacePending = 0;
+    InsertRowView(st, row);
     return TRUE;
 }
 
@@ -4192,6 +4573,11 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
     st.resolverRock = resolverRock;
     st.hardfail = 0;
     st.nested = nested;
+    st.ambientDepth = 0;
+    st.unpaintedDepth = 0;
+    strcpy(st.paintedBg, "#ffffff");
+    if (nested && NextRenderPaintedBg[0]) strcpy(st.paintedBg, NextRenderPaintedBg);
+    NextRenderPaintedBg[0] = '\0';
 
     if (ambientNode1) ambientOpened += PushFormattingMarks(&st, ambientNode1);
     if (ambientNode2) ambientOpened += PushFormattingMarks(&st, ambientNode2);
@@ -4241,7 +4627,25 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                    this file's floated-adjacent-tables section header
                    comment (above BuildLsetLeafFromFloatTable) for the
                    full root-cause writeup. */
-                if (!floatAlign && !tableHasPixelWidth && TableIsTrivialWrapper(n, &cellChildren, &cellNode)) {
+                /* A colored wrapper around inline content alone (no
+                   table inside) is built as a real table instead, so
+                   its content sits on its color: The Economist's
+                   "desktop" ad link, a centered link in a #1A1A1A
+                   cell, landed on the white page (2026-09-28). The
+                   content is small, so this can't bring back the one-
+                   huge-view problem flattening avoids. Only with a
+                   percentage width, though: without one the wrapper is
+                   a button a browser shrinks to its label (LinkedIn's
+                   width="auto" "See more"), and as a table here it
+                   would stretch into a full-width colored bar. */
+                char wrapbg[32];
+                const char *tw = htmlpart_GetAttr(n, "width");
+                if (!floatAlign && !tableHasPixelWidth && TableIsTrivialWrapper(n, &cellChildren, &cellNode)
+                    && !(tw && strchr(tw, '%') && WrapperBgColor(n, cellNode, wrapbg, sizeof(wrapbg))
+                         && !NodesContainTable(cellChildren))) {
+                    /* A table is a block: its content starts and ends
+                       a line even when the table itself is flattened. */
+                    EnsureLineBreak(&st);
                     /* 1x1 no-op wrapper table -- see TableIsTrivialWrapper's
                        own comment. Inline its cell's children directly
                        instead of building an lset for it at all. n's and
@@ -4268,6 +4672,21 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                        matters, not which node it's nominally attached
                        to. */
                     int opened = PushFormattingMarks(&st, n) + PushFormattingMarks(&st, cellNode);
+                    /* A colored wrapper's background still has to reach
+                       the tables inside it (The Economist's header,
+                       2026-09-28: <table bgcolor="#0D0D0D"> around a
+                       two-cell table left white date text on a white
+                       page). Keeping the wrapper as a table instead
+                       brought back the one-huge-view problem above for
+                       five fixtures. Popped at n's POST event. */
+                    if (st.ambientDepth < HAX_AMBIENT_MAX) {
+                        struct hax_ambient *a = &st.ambient[st.ambientDepth];
+                        if (WrapperBgColor(n, cellNode, a->bg, sizeof(a->bg))) {
+                            a->maxwidth = 0;
+                            a->halign = lset_HALIGN_NONE;
+                            ++st.ambientDepth;
+                        }
+                    }
                     ws_push(&ws, n, 1, opened);
                     ws_push_siblings(&ws, cellChildren);
                     continue;
@@ -4325,10 +4744,18 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
             else if (strcmp(n->tag, "dd") == 0) { EnsureLineBreak(&st); InsertLiteral(&st, "    "); }
             else if (strcmp(n->tag, "pre") == 0) { EnsureParaBreak(&st); ++st.predepth; }
             else if (strcmp(n->tag, "div") == 0) {
+                struct hax_ambient a;
                 EnsureLineBreak(&st);
                 if (IsTinySpacerDiv(n)) continue;	/* no children, no close */
+                /* Popped at the div's POST event. */
+                if (DivAmbient(n, &a) && st.ambientDepth < HAX_AMBIENT_MAX)
+                    st.ambient[st.ambientDepth++] = a;
             }
-            else if (tag_is_para(n->tag)) { EnsureParaBreak(&st); }
+            else if (tag_is_para(n->tag)) {
+                int topZero, botZero;
+                ParaMarginsZero(n, &topZero, &botZero);
+                if (topZero) EnsureLineBreak(&st); else EnsureParaBreak(&st);
+            }
 
             {
                 int opened = 0;
@@ -4339,10 +4766,23 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                         FlushPendingSpace(&st); /* see PushFormattingMarks's own note */
                         if (LinkTemplateSt) {
                             ls = style_New();
-                            if (ls) { style_Copy(LinkTemplateSt, ls); style_AddAttribute(ls, "href", (char *) href); }
+                            if (ls) {
+                                style_Copy(LinkTemplateSt, ls);
+                                style_AddAttribute(ls, "href", (char *) href);
+                                /* Link blue is unreadable on a dark
+                                   cell (The Economist's black footer,
+                                   2026-09-28); a browser's default
+                                   stays readable there, so use a
+                                   light blue. */
+                                if (!ColorContrastAtLeast("blue", st.paintedBg, LINK_CONTRAST))
+                                    style_AddAttribute(ls, "color", LINK_COLOR_ON_DARK);
+                            }
                         }
                         opened += marks_push(&st, ls);
                     }
+                    /* The link's own style="color:..." etc., inside
+                       the link style so it overrides the link blue. */
+                    opened += PushFormattingMarks(&st, n);
                 } else {
                     opened = PushFormattingMarks(&st, n);
                 }
@@ -4351,6 +4791,10 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
             if (n->children) ws_push_siblings(&ws, n->children);
         } else {
             /* POST */
+            /* Every element that reaches POST went through
+               PushFormattingMarks at PRE (the ambient table/td nodes
+               never do, and are table tags anyway). */
+            if (HasUnpaintedBg(n) && st.unpaintedDepth > 0) --st.unpaintedDepth;
             if (strcmp(n->tag, "a") == 0) {
                 if (item.marksOpened > 0 && st.markcount >= (long) item.marksOpened) {
                     struct hax_mark *m = &st.marks[st.markcount - item.marksOpened];
@@ -4366,9 +4810,22 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
             } else if (strcmp(n->tag, "pre") == 0) {
                 --st.predepth; EnsureParaBreak(&st);
             } else if (strcmp(n->tag, "div") == 0) {
+                struct hax_ambient a;
                 EnsureLineBreak(&st);
+                if (st.ambientDepth > 0 && DivAmbient(n, &a)) --st.ambientDepth;
+            } else if (strcmp(n->tag, "table") == 0) {
+                /* Only a flattened wrapper table gets a POST event;
+                   undo its ambient push, if it made one. */
+                const struct htmlnode *cc, *cn;
+                char buf[32];
+                EnsureLineBreak(&st);
+                if (st.ambientDepth > 0 && TableIsTrivialWrapper(n, &cc, &cn)
+                    && WrapperBgColor(n, cn, buf, sizeof(buf)))
+                    --st.ambientDepth;
             } else if (tag_is_para(n->tag)) {
-                EnsureParaBreak(&st);
+                int topZero, botZero;
+                ParaMarginsZero(n, &topZero, &botZero);
+                if (botZero) EnsureLineBreak(&st); else EnsureParaBreak(&st);
             }
             marks_finalize(&st, item.marksOpened);
         }
