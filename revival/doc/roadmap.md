@@ -557,9 +557,35 @@ being front-loaded here.
       - `<blockquote>` gets a paragraph break but no indent, so
         quoted replies are flush left; Thunderbird indents each level
         and draws a bar.
-      - Gmail's narrow no-break space (U+202F, as in "12:25 PM")
-        renders as "?". Mapping the Unicode space characters to a plain
-        space would catch this common case of the non-Latin gap below.
+      - **RESOLVED 2026-10-25** (item 14): Gmail's narrow no-break
+        space (U+202F, as in "12:25 PM") rendered as "?". The Unicode
+        space characters now map to a plain space.
+  14. **RESOLVED 2026-10-25**, wdc-confirmed against The Economist
+      "Insider" in `htmlprv`, plus National Grid paging in `messages`.
+      Fixed: preheader `?` rows (zero-width and narrow-space
+      characters, `max-height:0` hiding); flattened wrapper tables and
+      `<div>`s now pass their background and `max-width` down, so the
+      bands are colored and the 600px column is centered; text and
+      link colors are checked for contrast against the background
+      actually painted; zero-margin paragraphs get no blank line;
+      empty spacer cells take their column's width; `!important` is
+      stripped. A first try at the stripe between row views made each
+      view sit on its baseline, which broke `<space>` paging. That was
+      reverted, and a 1pt row line now shrinks the stripe instead.
+  15. Economist gaps left after item 14:
+      - Links styled as buttons render as plain text; ATK can't paint
+        a background behind inline text.
+      - A 1–2px white seam is still visible between row views.
+      - Text sitting directly in a colored `<div>` (not in a table
+        cell) stays on white, for the same reason as button links.
+      - The circular editor's photo is missing: the bundled IJG v4
+        libjpeg (1992, `src/overhead/image/jpeg`) can't decode
+        progressive JPEGs. Switching to the system libjpeg is the fix.
+      - Encoded Subject lines (RFC 2047) aren't decoded; no decoder
+        exists anywhere in the tree.
+      - Serif `font-family` requests fall back to the default font.
+      - The column holds 600px only because the HTML says so inline;
+        the stylesheet isn't parsed. wdc chose to leave this as is.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
@@ -608,7 +634,7 @@ Smaller items that don't fit the tables above.
 - **RESOLVED 2026-08-19:** clicking a scrollbar endzone to jump to the end of a document blanked the whole window on a held click, past the endzone button's ~100ms auto-repeat — `BackSpace`'s `MoveByPixels` "stay within the current line" fast-path was applied regardless of whether `pos` was actually the current top position, and the endzone's repeat re-issued an identical jump request while stale state from the first click was still around, tripping the shortcut against an unrelated value and landing on a position with no line of its own. Fixed by gating the shortcut on `pos == textview_GetTopPosition(self)` (`492e9b6e24`). Found chasing an HTML-mail-rendering report but was a general ATK scrollbar bug, not HTML-specific. See `revival.md` → "Old bugs never found till now" for the full writeup.
 
 **Heisenbugs** (intermittent, low reproducibility)
-- Xlib display-lock self-deadlock: reproduced once, root cause identified (`_XLockDisplay` re-entered from inside `XRefreshKeyboardMapping`, triggered by a keyboard-mapping-change event) but not yet fixed. Current best explanation for the older, harder-to-pin-down "`^V` scroll hang."
+- Xlib display-lock self-deadlock: root cause identified (`_XLockDisplay` re-entered from inside `XRefreshKeyboardMapping`, triggered by a keyboard-mapping-change event) but not yet fixed. Recurred 2026-10-25 in `messages` and `htmlprv` at the same moment. `xim.c` has already released the lock when it makes the call, so the double lock is inside libX11 1.8 itself. Next: skip the call when XKB is active, since Xlib then tracks keymap changes on its own. Current best explanation for the older, harder-to-pin-down "`^V` scroll hang."
 - A rare report of text drawing into the menu area — not reproduced since first observed
 - Menu-bar posting sometimes takes a fixed ~510ms quantum to draw (perceived multi-second delays are two or more of these back-to-back, not one longer stall): **root cause confirmed 2026-08-11, not an AUIS defect, no fix available or needed.** Live process sampling of XQuartz's own `X11.bin`, correlated directly against `mdbg`-logged stall timestamps, showed real dispatch time (~1278ms) closely matching independently measured stall time (1533ms across 3 stalls in the same window) inside one specific chain: `ProcClearToBackground` (servicing `DrawMenuItems`'s `XClearWindow`) → `RootlessStartDrawing` → `xp_lock_window` → `SLSConnectionSynchronizeSLSCATransaction` → `_SLSTransactionWaitSource` — XQuartz blocked waiting for macOS's own SkyLight/Core Animation window compositor to synchronize a transaction before it's allowed to lock the popup window's backing store and paint. This is genuine, external, server-side latency in XQuartz's rootless-drawing pipeline, confirmed unrelated to AUIS's `XGrabPointer` usage (already ruled out) and to App Nap or frontmost/background app status (both tested and ruled out as the *why* behind the ~510ms specifically). The *why* the wait is sometimes instant and sometimes ~510ms remains unresolved (some undocumented SkyLight/WindowServer-internal cadence, not app-focus-dependent) but the *where* is proven and outside AUIS's or XQuartz's control — treated as an accepted characteristic of XQuartz on modern macOS, not pursued further absent a second X server or SkyLight documentation. See `porting-assessment.md` → "Intermittent ~500ms menu-bar posting delay" for the full inventory. Diagnostic tracing left in the tree, off by default (`MenuDebugTrace` profile switch; `MENUDBGTRACE` env var for the popup-menu path), now timestamped for future correlation work.
 

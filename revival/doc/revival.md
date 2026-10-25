@@ -968,6 +968,26 @@ browser lays out a table, each visible in the same newsletter:
   floated author photo put one line beside the photo and the rest
   below it. The paragraph now becomes two columns, image and text.
 
+The Economist's "Insider" newsletter exercised a different corner: a
+600px column of black and white bands, built from layers of 1x1 wrapper
+tables and `<div>`s that carry the colors and the width.
+
+- The hidden preheader is a run of zero-width and narrow-space
+  characters behind `max-height:0; overflow:hidden`. Each character
+  showed as a `?`, and the styles that hide the block weren't kept.
+  Both are handled now.
+- Wrapper tables are flattened so one huge view doesn't break
+  scrolling, but flattening threw away their colors and widths. They
+  now pass background and `max-width` down to the tables inside them,
+  which are drawn as a centered column.
+- ATK paints no background behind text, only behind table cells. Light
+  text sitting over a background that only CSS painted came out
+  invisible, and links on black kept the default dark blue. Text colors
+  are now checked for contrast against the background actually painted
+  under them, and a link on a dark cell gets a light blue.
+- Paragraphs whose CSS sets zero margins no longer get a blank line,
+  and empty spacer cells take their column's width from the other rows.
+
 ## Word size issues
 
 The largest, most systemic category of defect came from a single
