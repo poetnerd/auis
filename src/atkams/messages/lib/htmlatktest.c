@@ -242,6 +242,18 @@ static void PrintEscaped(const char *s, long len)
     }
 }
 
+/* The color a run actually draws in: the nearest enclosing style
+   that sets one (the run's own style is only the innermost). */
+static void PrintEffectiveColor(struct environment *e)
+{
+    for (; e; e = environment_GetParent(e)) {
+        char *c;
+        if (e->type != environment_Style || !e->data.style) continue;
+        c = style_GetAttribute(e->data.style, "color");
+        if (c) { printf(" ecolor=%s", c); return; }
+    }
+}
+
 /* Dumps every environment_Style span (name + [start,start+length)) in
    the order they were created (nestedmark's own child list, walked
    via GetInnerMost at each successive position would be the "correct"
@@ -277,6 +289,7 @@ static void DumpStyledText(struct text *t)
                         char *color = style_GetAttribute(lastEnv->data.style, "color");
                         if (color) printf(" color=%s", color);
                     }
+                    PrintEffectiveColor(lastEnv);
                 }
             } else if (lastEnv && lastEnv->type == environment_View) {
                 printf("VIEW");
@@ -429,6 +442,7 @@ static void DumpCellTextContent(struct text *t, int indent)
             printf("%*sRUN[%ld,%ld) style=", indent, "", runStart, i);
             if (lastEnv && lastEnv->type == environment_Style && lastEnv->data.style && lastEnv->data.style->name) {
                 printf("%s", lastEnv->data.style->name);
+                PrintEffectiveColor(lastEnv);
             } else if (lastEnv && lastEnv->type == environment_View) {
                 printf("VIEW");
             } else {
