@@ -858,6 +858,22 @@ static int emit_smart_punct(unsigned char *out, long o, long cp)
         out[o++] = '.';
         out[o++] = '.';
         break;
+    case 0x2192: /* RIGHTWARDS ARROW */
+        out[o++] = '-';
+        out[o++] = '>';
+        break;
+    case 0x2007: /* FIGURE SPACE */
+    case 0x2009: /* THIN SPACE */
+    case 0x200A: /* HAIR SPACE */
+    case 0x202F: /* NARROW NO-BREAK SPACE */
+        out[o++] = ' ';
+        break;
+    /* Zero-width characters render as nothing, not '?'. Marketing
+       mail fills its hidden preheader with raw U+200C (The Economist,
+       2026-09-28: two lines of "? ? ?" at the top of the body). */
+    case 0x200B: case 0x200C: case 0x200D: case 0x200E: case 0x200F:
+    case 0x2060: case 0xFEFF:
+        break;
     default:
         out[o++] = '?';
         break;
@@ -877,7 +893,8 @@ unsigned char *mimepart_Utf8ToLatin1(const unsigned char *in, long inlen, long *
             out[o++] = c; ++i;
         } else if ((c & 0xE0) == 0xC0 && i + 1 < inlen && (in[i+1] & 0xC0) == 0x80) {
             long cp = ((c & 0x1F) << 6) | (in[i+1] & 0x3F);
-            out[o++] = (cp <= 0xFF) ? (unsigned char) cp : '?';
+            if (cp != 0x034F) /* COMBINING GRAPHEME JOINER: zero-width */
+                out[o++] = (cp <= 0xFF) ? (unsigned char) cp : '?';
             i += 2;
         } else if ((c & 0xF0) == 0xE0 && i + 2 < inlen
                    && (in[i+1] & 0xC0) == 0x80 && (in[i+2] & 0xC0) == 0x80) {
