@@ -553,6 +553,13 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
 	if (pad2 > 0 && w > pad2) w -= pad2;
 	if (pad2 > 0 && h > pad2) h -= pad2;
 	result = view_DesiredSize(self->child, w, h, pass, dWidth, dHeight);
+	/* An aligned leaf fills the width it's offered and places its
+	   child within it, so that width is what it wants. Reporting the
+	   child's narrower width instead made text embedding the leaf
+	   give it only that much, with nothing to align within (The
+	   Economist's 166px icon block, 2026-09-28). */
+	if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && *dWidth < width)
+	    *dWidth = width;
 	*dHeight += pad2;
 	/* An HTML cell's height="N" (lset.ch's minheight) is a floor. */
 	if (ls->minheight > *dHeight) *dHeight = ls->minheight;
