@@ -10,6 +10,9 @@
 #undef  SY_B43
 #define SY_B43  1
 
+/* JPEG comes from Homebrew's libjpeg-turbo (system.mcr's JPEGLIB). */
+#undef MK_JPEG
+
 #define HAVE_SHARED_LIBRARIES 1
 #define HAS_GETTIMEOFDAY 1
 

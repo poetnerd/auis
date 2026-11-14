@@ -42,6 +42,16 @@ SSLINCDIR = $(SSLBASEDIR)/include
 SSLLIBDIR = $(SSLBASEDIR)/lib
 SSLLIB = -L$(SSLLIBDIR) -lssl -lcrypto
 
+/* libjpeg-turbo (Homebrew) in place of the vendored 1992 IJG v4
+   libjpeg (MK_JPEG is undefined in system.h), which can't decode
+   progressive JPEGs.  The keg's own include directory, not
+   /opt/homebrew/include, so atk/basics/common's other sources don't
+   pick up Homebrew's zlib or X11 headers.  The static archive keeps
+   jpeg.do self-contained, as the vendored libjpeg.a did. */
+JPEGBASEDIR = /opt/homebrew/opt/jpeg-turbo
+JPEGINCLUDES = $(JPEGBASEDIR)/include
+JPEGLIB = $(JPEGBASEDIR)/lib/libjpeg.a
+
 /* No native Andrew bitmap fonts on this system; map andy* to X11 scalable fonts */
 #define ISO80_FONTS_ENV 1
 

@@ -193,6 +193,10 @@ SSLINCDIR = $(SSLBASEDIR)/include
 SSLLIBDIR = $(SSLBASEDIR)/lib
 SSLLIB = -L$(SSLLIBDIR) -lssl -lcrypto
 
+JPEGBASEDIR = /opt/homebrew/opt/jpeg-turbo
+JPEGINCLUDES = $(JPEGBASEDIR)/include
+JPEGLIB = $(JPEGBASEDIR)/lib/libjpeg.a
+
 DYN_LINK_LIB = -ldl
 LEXLIB = -ll
 
