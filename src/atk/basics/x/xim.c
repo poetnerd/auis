@@ -58,6 +58,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <X11/Xatom.h>
 #include <X11/Xproto.h>	/* for X_SetFontPath */
 #include <X11/keysym.h>
+#include <X11/XKBlib.h>
 #if defined(PRE_X11R4_ENV)
 #ifndef M_UNIX
 typedef int (*XErrorHandler) ();
@@ -2985,6 +2986,20 @@ static void HandleExposeFromMenubar(XEvent *ee, struct xim *im)
 }
 
 
+/* libX11 1.8 deadlocks in XRefreshKeyboardMapping on a MappingModifier
+ * event when XKB is active: it holds the display lock while recomputing
+ * the XRebindKeysym bindings (ours, with caps_lock/num_lock modifiers),
+ * and XkbKeysymToModifiers takes the same lock again.  With XKB, Xlib
+ * picks up the new modifier map from its own XkbMapNotify, so the call
+ * isn't needed; our bindings never tracked modifier changes anyway.
+ */
+static boolean XkbInUse(Display *display)
+{
+    int opcode, event, error, major = XkbMajorVersion, minor = XkbMinorVersion;
+
+    return XkbQueryExtension(display, &opcode, &event, &error, &major, &minor);
+}
+
 static void HandleWindowEvent(Display *display)
 {
 #define KEYEXPANSIONSIZE 80
@@ -3015,8 +3030,9 @@ static void HandleWindowEvent(Display *display)
 		we still need to respond */
 	if (event.type == MappingNotify) {
 		mappingEvent = (XMappingEvent *) &event;
-		if ((mappingEvent->request == MappingModifier) 
-			|| (mappingEvent->request == MappingKeyboard) )
+		if ((mappingEvent->request == MappingKeyboard)
+			|| (mappingEvent->request == MappingModifier
+			    && !XkbInUse(display)) )
 		XRefreshKeyboardMapping(mappingEvent);
 	}
 
