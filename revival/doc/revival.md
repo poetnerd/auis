@@ -988,6 +988,22 @@ tables and `<div>`s that carry the colors and the width.
 - Paragraphs whose CSS sets zero margins no longer get a blank line,
   and empty spacer cells take their column's width from the other rows.
 
+One hang turned out to be a new library meeting old code. Every so
+often, every open ATK window froze at the same moment, idle, with the
+X server and its `xterm` still fine. The stuck processes were all
+waiting for the X display lock inside `XRefreshKeyboardMapping`, which
+`xim.c` calls when the server reports that the keyboard or modifier map
+has changed. On a modifier change, libX11 takes the lock and then
+recomputes any keys rebound with `XRebindKeysym`. That recomputation
+asks which modifier a keysym belongs to, which fetches the map, which
+takes the same lock again. AUIS has rebound its keys with Caps Lock and
+Num Lock variants since the early 1990s. The double lock did no harm
+until libX11 1.8 turned thread locking on by default, making the lock
+real. `xim.c` now skips the call for modifier changes when XKB is
+active, since Xlib then follows the new map on its own. A no-op
+`xmodmap` command that clears and restores the Lock modifier
+reproduces the hang every time on the old code.
+
 ## Word size issues
 
 The largest, most systemic category of defect came from a single
@@ -1251,14 +1267,6 @@ A few problems remain unresolved, either because the root cause itself
 isn't confirmed or because a workaround is in place without a real
 upstream fix.
 
-- **A live deadlock, cause unconfirmed.** While chasing an unrelated
-  defect, a `help` window occasionally froze permanently. A debugger
-  traced this to the process's single thread trying to reacquire a lock
-  on the X display connection it already held indirectly, triggered by a
-  keyboard-layout-change notification arriving mid-operation. Whether this
-  is a genuine defect in how the toolkit calls back into the X client
-  library, or a quirk specific to this environment's X server, hasn't been
-  determined.
 - **A completely empty build directory fails on the very first build.**
   The class-system directory everything else depends on builds its own
   pieces in a fixed order, and that order builds one piece needing
