@@ -59,6 +59,22 @@ brew install bison flex imake makedepend
 - `imake`: required to regenerate Makefiles on a fresh checkout
 - `makedepend`: required for the `make depend` phase
 
+**Libraries** — two that macOS doesn't provide:
+```
+brew install jpeg-turbo openssl@3
+```
+- `jpeg-turbo`: the JPEG codec behind the `image` inset and HTML mail
+  images. Its static `libjpeg.a` is linked into `jpeg.do`, so nothing
+  needs it at run time. It replaced the 1992 IJG libjpeg once vendored
+  in `src/overhead/image/jpeg`, which couldn't decode progressive
+  JPEGs (2026-11-14).
+- `openssl@3`: TLS for SMTP and IMAP (`overhead/mail/lib/tlscon.c`).
+
+Both are found through fixed Homebrew paths in
+`src/config/darwin/system.mcr` (`JPEGBASEDIR`, `SSLBASEDIR`); edit
+those if your Homebrew prefix isn't `/opt/homebrew`. zlib, used by the
+PNG reader, comes with macOS.
+
 ## Site configuration — required before your first build
 
 `src/config/site.h` hardcodes `DEFAULT_ANDREWDIR_ENV`, a path compiled

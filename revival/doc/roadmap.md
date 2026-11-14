@@ -585,9 +585,24 @@ being front-loaded here.
         so textview still sees a tall view when paging.
       - Text sitting directly in a colored `<div>` (not in a table
         cell) stays on white, for the same reason as button links.
-      - The circular editor's photo is missing: the bundled IJG v4
-        libjpeg (1992, `src/overhead/image/jpeg`) can't decode
-        progressive JPEGs. Switching to the system libjpeg is the fix.
+      - **RESOLVED 2026-11-14**, wdc-confirmed: the circular editor's
+        photo was missing because the vendored IJG v4 libjpeg (1992)
+        can't decode progressive JPEGs. `jpeg.c` now uses Homebrew's
+        libjpeg-turbo, linked statically, a new build prerequisite;
+        see `porting-changelog.md`. It's still drawn square, since
+        `border-radius` isn't supported.
+  16. Found during the JPEG work (item 15), not yet fixed:
+      - `gif.c`'s loader closes the `FILE*` its caller passed in, and
+        the callers (`image.c`, `image__ReadOtherFormat`,
+        `htmlatk.c`) close it again. If another `fopen` reuses the
+        slot in between, the second close shuts the wrong file.
+        `jpeg.c` had the same bug and is fixed.
+      - Exif orientation is ignored, so a phone photo stored sideways
+        displays sideways.
+      - `imgtest`'s header suggests the class `imagev` for format
+        auto-detection, but `imagev` is a view, not an image class,
+        and it crashes (bus error). Nothing auto-detects image formats;
+        Import makes the user pick the type.
       - Encoded Subject lines (RFC 2047) aren't decoded; no decoder
         exists anywhere in the tree.
       - Serif `font-family` requests fall back to the default font.

@@ -988,6 +988,17 @@ tables and `<div>`s that carry the colors and the width.
 - Paragraphs whose CSS sets zero margins no longer get a blank line,
   and empty spacer cells take their column's width from the other rows.
 
+The same newsletter's editor photo never appeared, and the cause was
+older than the mail code. AUIS shipped its own copy of the IJG JPEG
+library, version 4 from December 1992. Progressive JPEGs, which
+modern image servers favor, arrived in version 6 three years later,
+so the old decoder rejected them outright. The codec now comes from
+the system's libjpeg-turbo, linked statically into `jpeg.do` just as
+the vendored copy was. That makes it the first library the build
+takes from Homebrew in place of one it once carried itself. The
+rewrite also picked up CMYK JPEGs, which the 1992 code couldn't read
+either.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all

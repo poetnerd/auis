@@ -11,6 +11,7 @@ See `porting-assessment.md` for bug-class analysis and strategy; `roadmap.md` fo
 - **dlopen() dynamic loader** — replaced platform-specific a.out loaders with POSIX `dlopen`/`dlsym` (~70 lines vs ~500). `.do` files are Mach-O dylibs built with `-dynamiclib -undefined dynamic_lookup`.
 - **System bison** — the vendored Andrew bison fork hangs on arm64. `overhead/bison/Imakefile` still builds it but does not install it. System `/usr/bin/bison` used instead, with `mkparser` patched to match modern bison's output format.
 - **Typed dispatch for 9+ arg methods** — the class preprocessor (`overhead/class/pp/class.c`) was patched to emit fully-typed function pointer casts for methods whose argument count exceeds the 8 arm64 integer registers, fixing the LP64 variant-2 stack-spill ABI bug.
+- **System libraries over vendored copies, where the vendored one falls short** — zlib (macOS), OpenSSL and libjpeg-turbo (Homebrew) are external build prerequisites, listed in `quickstart.md` and located through `config/darwin/system.mcr`. libjpeg replaced the vendored 1992 IJG v4 copy on 2026-11-14, because it couldn't decode progressive JPEGs. It's linked statically into `jpeg.do`, as the vendored archive was.
 - **Run AUIS binaries from native Terminal.app** — VS Code's integrated terminal intercepts SIGSEGV exception delivery and leaves crashing processes suspended/unkillable. Use Terminal.app or iTerm2 for all `ez`/`runapp` testing.
 
 ---
@@ -2562,3 +2563,52 @@ Docs updated: `roadmap.md` (item 1 removed, folded into the project's
 status narrative; remaining items renumbered), design doc (`cid:`
 mentions in the Images section and "Known issues and planned work"
 #3), `porting-assessment.md` (new item u.).
+
+### 2026-11-14 — JPEG codec moved to the system libjpeg-turbo; new build prerequisite
+
+**Integration change: building now requires Homebrew's `jpeg-turbo`**
+(`brew install jpeg-turbo`, added to `quickstart.md`'s Prerequisites).
+
+The vendored libjpeg in `src/overhead/image/jpeg` was IJG version 4
+(`JVERSION "4 10-Dec-92"`). Its `read_file_header` accepts only SOF0,
+SOF1 and SOF9 frames, so it can't decode progressive JPEGs (SOF2), which
+arrived in IJG v6 (1995). Image CDNs serve progressive JPEGs routinely.
+The Economist newsletter's circular editor photo was one: a 1080×1080
+progressive file showed nothing, while the baseline photo beside it
+rendered.
+
+- `config/darwin/system.mcr`: `JPEGBASEDIR = /opt/homebrew/opt/jpeg-turbo`,
+  with `JPEGINCLUDES` and `JPEGLIB` (the static `libjpeg.a`) under it.
+  The include path is the keg's own directory, not `/opt/homebrew/include`,
+  so `atk/basics/common`'s other sources don't pick up Homebrew's zlib or
+  X11 headers.
+- `config/darwin/system.h`: `#undef MK_JPEG`, using the switch
+  `allsys.mcr` always offered for a site-installed JPEG library. The
+  vendored directory is no longer built; its source stays in the tree.
+- `atk/basics/common/jpeg.c`: the 1992 callback interface (method
+  tables, `jpeg_decompress`/`jpeg_compress`) is replaced by the libjpeg
+  6+ API, 565 lines down to 309. The class interface and image types are
+  unchanged. Also:
+  - a custom `error_exit` longjmps back to the caller, since libjpeg's
+    default calls `exit()`;
+  - CMYK and YCCK JPEGs, which v4 also couldn't read, are converted
+    to RGB, honoring Adobe's inverted storage;
+  - `LoadJFIF` closes only a file it opened itself. Before, it also
+    closed the caller's file, and every caller then closed it again;
+  - `jpeg__Ident` accepts any `FF D8 FF` start rather than only JFIF.
+    It has no callers, since Import makes the user pick the type.
+- `atk/image/imgtest.c`: an optional output file, written through the
+  class's own `WriteNative`, so decode and encode can be checked
+  against another decoder.
+
+Verified with `imgtest`, comparing our decode and re-encode against
+ImageMagick's decode: progressive 34 dB PSNR, baseline 45, greyscale
+40, CMYK 38 (an inverted control scores 3.6). wdc confirmed it live:
+the Economist photo renders and other mail images are unchanged; a
+JPEG imported into an `image` inset survives an `.ez` save and reopen;
+and a TIFF exported as JPEG opens correctly in Preview.
+
+On Linux the same library is the distribution's `libjpeg-turbo`
+package (`libjpeg-dev` on Debian/Ubuntu, which installs libjpeg-turbo;
+`libjpeg-turbo-devel` on Fedora). Its headers and API are identical, so only a platform
+`system.mcr` needs `JPEGINCLUDES`/`JPEGLIB`.
