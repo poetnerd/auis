@@ -88,6 +88,7 @@
 #include <text.ih>
 #include <envrment.ih>
 #include <style.ih>
+#include <fontdesc.ih>
 #include <table.ih>
 #include <lset.ih>
 #include <dataobj.ih>
@@ -256,7 +257,8 @@ static void PrintEffectiveFamily(struct environment *e)
 
 /* The color a run actually draws in: the nearest enclosing style
    that sets one (the run's own style is only the innermost). Also
-   prints the run's effective family. */
+   prints the run's effective family, and "bold" when any enclosing
+   style adds the bold face. */
 static void PrintEffectiveColor(struct environment *e)
 {
     struct environment *e0 = e;
@@ -268,6 +270,12 @@ static void PrintEffectiveColor(struct environment *e)
         if (c) { printf(" ecolor=%s", c); break; }
     }
     PrintEffectiveFamily(e0);
+    for (e = e0; e; e = environment_GetParent(e))
+        if (e->type == environment_Style && e->data.style
+            && style_IsAnyAddedFontFace(e->data.style, fontdesc_Bold)) {
+            printf(" bold");
+            break;
+        }
 }
 
 /* Dumps every environment_Style span (name + [start,start+length)) in

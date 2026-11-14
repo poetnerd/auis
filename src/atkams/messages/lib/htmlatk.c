@@ -4343,8 +4343,11 @@ static int PushFormattingMarks(struct hax_state *st, const struct htmlnode *n)
     if (sv) { count += marks_push(st, AttrColorStyleFor("color", sv)); free(sv); }
     sv = htmlpart_GetStyleProp(n, "background-color");
     if (sv) { count += marks_push(st, AttrColorStyleFor("background-color", sv)); free(sv); }
+    /* "bold"/"bolder", or a numeric weight of 600 or more, the point
+       where browsers switch to the bold face. Only the keyword used to
+       count, so The Economist's font-weight:700 headings were regular. */
     sv = htmlpart_GetStyleProp(n, "font-weight");
-    if (sv) { if (value_contains_ci(sv, "bold")) { count += marks_push(st, BoldSt); } free(sv); }
+    if (sv) { if (value_contains_ci(sv, "bold") || atoi(sv) >= 600) { count += marks_push(st, BoldSt); } free(sv); }
     sv = htmlpart_GetStyleProp(n, "font-style");
     if (sv) { if (value_contains_ci(sv, "italic") || value_contains_ci(sv, "oblique")) { count += marks_push(st, ItalicSt); } free(sv); }
     sv = htmlpart_GetStyleProp(n, "text-decoration");
