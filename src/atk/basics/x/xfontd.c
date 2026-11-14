@@ -583,9 +583,23 @@ static XFontStruct * xfontdesc_LoadXFont(struct xfontdesc *self, struct xgraphic
        opinion. */
     if (font == NULL && strcmp(xfamily, "symbol") != 0) {
         char fcName[MAXPATHLEN];
+        char fcFamily[MAXPATHLEN / 2];
+        char *s, *d;
         long fcDpi = xgraphic_GetVerticalResolution(graphic);
+        /* xfamily may be a comma-separated list (htmlatk.c's CSS
+           font-family), which fontconfig matches in order.  In its name
+           syntax '-' starts a point size and ':' a property, so a
+           family like "sans-serif" or "ui-serif" must have them escaped
+           or the list is cut off there and fontconfig falls back to its
+           default face. */
+        for (s = xfamily, d = fcFamily; *s && d < fcFamily + sizeof(fcFamily) - 2; s++) {
+            if (*s == '-' || *s == ':' || *s == '\\')
+                *d++ = '\\';
+            *d++ = *s;
+        }
+        *d = '\0';
         sprintf(fcName, "%s:weight=%s:slant=%s:dpi=%ld:size=%d",
-            xfamily,
+            fcFamily,
             (desiredStyle & fontdesc_Bold) ? "bold" : "medium",
             (desiredStyle & fontdesc_Italic) ? "italic" : "roman",
             (fcDpi > 0) ? fcDpi : 75,
