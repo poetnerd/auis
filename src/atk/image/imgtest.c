@@ -9,9 +9,12 @@
    correctly on screen, only that the importer produced sane pixel
    data.
 
-   Usage: imgtest classname filename
+   Usage: imgtest classname filename [outfile]
      classname is the image subclass to instantiate directly, e.g.
      "imagev" (auto-detects format from file header) or "tif".
+     With outfile, the loaded image is also written there through the
+     class's own WriteNative (a "jpeg" writes a JPEG), so its pixels
+     can be compared with another decoder's.
 */
 
 #include <stdio.h>
@@ -63,8 +66,8 @@ int main(int argc, char **argv)
 	unsigned char *data;
 	long n;
 
-	if (argc != 3) {
-		fprintf(stderr, "usage: imgtest classname filename\n");
+	if (argc != 3 && argc != 4) {
+		fprintf(stderr, "usage: imgtest classname filename [outfile]\n");
 		return 2;
 	}
 
@@ -98,6 +101,8 @@ int main(int argc, char **argv)
 		printf("DATA-NULL: 1\n");
 		return 1;
 	}
+	if (argc == 4)
+		printf("WRITE-RC: %ld\n", image_WriteNative(img, NULL, argv[3]));
 	n = (long) image_Width(img) * image_Height(img) * (image_Pixlen(img) ? image_Pixlen(img) : 1);
 	ReportBuffer("LOAD", data, n);
 
