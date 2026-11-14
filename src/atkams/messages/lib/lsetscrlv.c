@@ -78,6 +78,18 @@ void lsetscrollview__SetDataObject(struct lsetscrollview *self, struct dataobjec
    the bar-height constant below -- see its own comment. */
 #define LSETSCROLLVIEW_BORDER_PAD 8
 
+/* Same as lsetview__GetOrigin: an HTML row's top meets the top of its
+   text line (lset.ch's toporigin). */
+void lsetscrollview__GetOrigin(struct lsetscrollview *self, long width, long height, long *originX, long *originY)
+{
+    struct lset *ls = (struct lset *) lsetscrollview_GetDataObject(self);
+
+    *originX = 0;
+    *originY = 0;
+    if (ls && ls->toporigin)
+        *originY = (height < lset_TOPORIGIN) ? height : lset_TOPORIGIN;
+}
+
 /* Forwards lsetscrollcontent's genuine content height (lsetscrlc.c's
    own DesiredSize override), plus bar height and border padding,
    UNCONDITIONALLY -- see this function's own 2026-09-23 correction

@@ -501,6 +501,16 @@ int lsetview_Paste(struct lsetview *self)
 
 }
 
+/* An HTML row's top meets the top of its text line (lset.ch's
+   toporigin); every other lset hangs below the baseline as before. */
+void lsetview__GetOrigin(struct lsetview *self, long width, long height, long *originX, long *originY)
+{
+    *originX = 0;
+    *originY = 0;
+    if (Data(self) && Data(self)->toporigin)
+        *originY = (height < lset_TOPORIGIN) ? height : lset_TOPORIGIN;
+}
+
 /* Added 2026-08-16 (html branch, lset-table-reflow task): lsetview had
    no DesiredSize override at all, so it inherited lpair's unmodified --
    lpair__DesiredSize only ever looks at self->obj[0]/self->obj[1] (the

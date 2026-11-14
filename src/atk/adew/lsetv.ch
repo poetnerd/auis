@@ -70,6 +70,7 @@
 class lsetview[lsetv]:lpair {
 overrides:
     DesiredSize(long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight) returns enum view_DSattributes;
+    GetOrigin(long width, long height, long *originX, long *originY);
     FullUpdate(enum view_UpdateType type, long left, long top, long width, long right);
     Update();
     Hit (enum view_MouseAction action, long x, long y, long numberOfClicks) returns struct view *;

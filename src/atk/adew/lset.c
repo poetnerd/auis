@@ -398,6 +398,7 @@ self->minheight = 0;
 self->halign = lset_HALIGN_NONE;
 self->contentwidth = 0;
 self->padding = 0;
+self->toporigin = 0;
 self->revision = 0;
 self->dobj = NULL;
 self->left = NULL;

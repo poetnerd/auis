@@ -45,6 +45,11 @@
 #define lset_HALIGN_CENTER 2
 #define lset_HALIGN_RIGHT 3
 
+/* GetOrigin's y offset for an lset with toporigin set (lsetv.c,
+   lsetscrlv.c): enough to cover the ascent of the small font on an
+   HTML row's line, small next to any real row. */
+#define lset_TOPORIGIN 8
+
 class lset : dataobject[dataobj] {
 overrides:
     Read (FILE *file, long id) returns long;
@@ -169,6 +174,18 @@ data:
 	   edges and its child on all four sides -- an HTML table's
 	   cellpadding. Added 2026-09-28 with halign; persisted as of \V 8. */
 	int padding;
+	/* When set, a view of this lset embedded in text reports a y
+	   origin of lset_TOPORIGIN (or its height, if smaller) instead of
+	   0, so its top meets the top of its line. A view hangs below the
+	   baseline (view__GetOrigin's 0), leaving the line's font ascent
+	   as a strip of the text's white background above it; between
+	   htmlatk.c's stacked rows on a dark newsletter that strip showed
+	   as a white line. The offset stays small on purpose: textview
+	   pages past a tall view by its line height exceeding its text
+	   height (lineAbove, which this offset sets, plus descent), and
+	   an origin of the full height broke that (2026-09-28). Set by
+	   htmlatk.c's InsertRowView; in memory only, not persisted. */
+	int toporigin;
 	char dataname[32];
 	char viewname[32];
 	char refname[64];

@@ -45,5 +45,6 @@ class lsetscrollview[lsetscrlv] : scroll {
 overrides:
     SetDataObject(struct dataobject *newDataObject);
     DesiredSize(long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight) returns enum view_DSattributes;
+    GetOrigin(long width, long height, long *originX, long *originY);
     FullUpdate(enum view_UpdateType type, long left, long top, long width, long height);
 };
