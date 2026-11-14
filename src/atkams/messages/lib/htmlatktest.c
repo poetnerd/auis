@@ -242,16 +242,32 @@ static void PrintEscaped(const char *s, long len)
     }
 }
 
+/* Likewise the font family: the nearest enclosing style that sets
+   one, printed as efamily= by PrintEffectiveColor. */
+static void PrintEffectiveFamily(struct environment *e)
+{
+    for (; e; e = environment_GetParent(e)) {
+        char family[256];
+        if (e->type != environment_Style || !e->data.style) continue;
+        style_GetFontFamily(e->data.style, family, sizeof(family));
+        if (family[0]) { printf(" efamily=%s", family); return; }
+    }
+}
+
 /* The color a run actually draws in: the nearest enclosing style
-   that sets one (the run's own style is only the innermost). */
+   that sets one (the run's own style is only the innermost). Also
+   prints the run's effective family. */
 static void PrintEffectiveColor(struct environment *e)
 {
+    struct environment *e0 = e;
+
     for (; e; e = environment_GetParent(e)) {
         char *c;
         if (e->type != environment_Style || !e->data.style) continue;
         c = style_GetAttribute(e->data.style, "color");
-        if (c) { printf(" ecolor=%s", c); return; }
+        if (c) { printf(" ecolor=%s", c); break; }
     }
+    PrintEffectiveFamily(e0);
 }
 
 /* Dumps every environment_Style span (name + [start,start+length)) in

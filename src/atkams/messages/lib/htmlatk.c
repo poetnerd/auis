@@ -459,41 +459,51 @@ static struct style *RelativeFontSizeStyleFor(int larger)
     return *cache;
 }
 
-/* Extracts the first name out of a CSS font-family list ("Georgia,
-   Times, serif" -> "Georgia") into outbuf, stripped of surrounding
-   whitespace and a matched pair of quotes ('"Times New Roman", serif'
-   -> "Times New Roman"). style_SetFontFamily (style.ch) takes exactly
-   one name, not a fallback list, so there's no way to honor the rest
-   of a multi-name declaration -- this renderer has no font-
-   availability probing to pick a later name if the first isn't
-   installed, so it just hands the first name to Xft/fontconfig
-   (HAVE_XFT is on for this build) and trusts its own substitution
-   logic to find something reasonable, the same way a real browser
-   would fall back for a missing family, just one layer earlier.
-   Generic CSS family keywords (serif, sans-serif, monospace, ...)
-   pass through unchanged for the same reason -- fontconfig already
-   treats them as valid generic family names on its own, nothing
-   htmlatk-specific to translate. Returns 0 (outbuf untouched) if raw
-   is empty or the first name is empty after stripping (e.g. a stray
-   leading comma). */
-static int ParseCssFontFamilyFirst(const char *raw, char *outbuf, size_t bufsz)
+/* Turns a CSS font-family list into one comma-separated family name
+   for style_SetFontFamily ('EconomistSerif, ui-serif, Georgia, "Times
+   New Roman", serif' -> "EconomistSerif,ui-serif,Georgia,TimesNewRoman,
+   serif"). xfontd.c passes it to fontconfig, which uses the first
+   installed family in the list, as a browser does. Keeping only the
+   first name (the old behavior) lost every fallback whenever a
+   newsletter named its own web font first, and fontconfig's default
+   for an unknown family is a sans face. Quotes and all blanks are
+   dropped: fontconfig ignores blanks when comparing family names, and
+   the datastream's attr:[] reader (style.c) splits on whitespace, so a
+   saved message couldn't read a name with a space back. CSS-wide
+   keywords (inherit, initial, unset) name no family and are skipped,
+   so they leave the parent's font alone. A name that would overflow
+   outbuf is dropped whole. Returns 0 (outbuf untouched) if no family
+   name remains. */
+static int ParseCssFontFamilyList(const char *raw, char *outbuf, size_t bufsz)
 {
-    const char *start, *end;
-    size_t len;
-    if (!raw || !*raw || bufsz == 0) return 0;
-    start = raw;
-    while (*start == ' ' || *start == '\t') ++start;
-    end = strchr(start, ',');
-    if (!end) end = start + strlen(start);
-    while (end > start && (end[-1] == ' ' || end[-1] == '\t')) --end;
-    if (end - start >= 2 && (*start == '"' || *start == '\'') && end[-1] == *start) {
-        ++start; --end;
+    char out[256];
+    size_t olen = 0;
+    const char *p = raw;
+
+    if (!raw || bufsz == 0) return 0;
+    while (*p) {
+        char name[128];
+        size_t nlen = 0;
+        const char *end = strchr(p, ',');
+        if (!end) end = p + strlen(p);
+        for (; p < end; ++p) {
+            if (*p == ' ' || *p == '\t' || *p == '"' || *p == '\'') continue;
+            if (nlen < sizeof(name) - 1) name[nlen++] = *p;
+        }
+        name[nlen] = '\0';
+        if (*p == ',') ++p;
+        if (nlen == 0 || strcasecmp(name, "inherit") == 0
+            || strcasecmp(name, "initial") == 0 || strcasecmp(name, "unset") == 0)
+            continue;
+        if (olen + (olen > 0) + nlen >= sizeof(out) || olen + (olen > 0) + nlen >= bufsz)
+            continue;
+        if (olen > 0) out[olen++] = ',';
+        memcpy(out + olen, name, nlen);
+        olen += nlen;
     }
-    if (end <= start) return 0;
-    len = (size_t) (end - start);
-    if (len >= bufsz) len = bufsz - 1;
-    memcpy(outbuf, start, len);
-    outbuf[len] = '\0';
+    if (olen == 0) return 0;
+    out[olen] = '\0';
+    strcpy(outbuf, out);
     return 1;
 }
 
@@ -4351,8 +4361,8 @@ static int PushFormattingMarks(struct hax_state *st, const struct htmlnode *n)
     }
     sv = htmlpart_GetStyleProp(n, "font-family");
     if (sv) {
-        char family[128];
-        if (ParseCssFontFamilyFirst(sv, family, sizeof(family))) {
+        char family[200];
+        if (ParseCssFontFamilyList(sv, family, sizeof(family))) {
             count += marks_push(st, FontFamilyStyleFor(family));
         }
         free(sv);
