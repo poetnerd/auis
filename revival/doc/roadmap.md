@@ -575,7 +575,14 @@ being front-loaded here.
   15. Economist gaps left after item 14:
       - Links styled as buttons render as plain text; ATK can't paint
         a background behind inline text.
-      - A 1–2px white seam is still visible between row views.
+      - **RESOLVED 2026-11-14**, wdc-confirmed in `htmlprv` and
+        `messages` (Economist, National Grid paging, bookrack, the
+        "Mail for your ears" demo): the 1–2px white seam between row
+        views. Each embedded row now sets `lset`'s in-memory
+        `toporigin`, and `lsetview`/`lsetscrollview` report a y origin
+        of up to 8px. That covers the row line's font ascent, so the
+        row's top meets the top of its line. The offset stays small
+        so textview still sees a tall view when paging.
       - Text sitting directly in a colored `<div>` (not in a table
         cell) stays on white, for the same reason as button links.
       - The circular editor's photo is missing: the bundled IJG v4
