@@ -605,7 +605,15 @@ being front-loaded here.
         Import makes the user pick the type.
       - Encoded Subject lines (RFC 2047) aren't decoded; no decoder
         exists anywhere in the tree.
-      - Serif `font-family` requests fall back to the default font.
+      - **RESOLVED 2026-11-14**, wdc-confirmed: serif `font-family`
+        requests fell back to fontconfig's default face (Verdana).
+        `htmlatk.c` kept only the first CSS family, usually a web font
+        that isn't installed, and `xfontd.c` passed fontconfig an
+        unescaped name, where the `-` in `ui-serif` or `sans-serif`
+        starts a point size. The whole list now goes through,
+        blank-free and escaped, and fontconfig picks the first
+        installed family (Georgia, Helvetica), as Thunderbird does.
+        `font-family: inherit` no longer names a family.
       - The column holds 600px only because the HTML says so inline;
         the stylesheet isn't parsed. wdc chose to leave this as is.
 
