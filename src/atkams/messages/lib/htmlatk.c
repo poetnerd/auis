@@ -2814,7 +2814,9 @@ static struct lset *ApplyAmbient(struct hax_state *st, struct lset *row)
    bottom edge) removed the band entirely but broke paging: textview
    tells a line holding a tall view by its height exceeding its text
    height (textv.c's DoUpdate), and National Grid's footer became
-   unreachable with <space>. */
+   unreachable with <space>. The tiny font left a 1-2px band; the row
+   now also gets lset.ch's toporigin, a small origin that covers the
+   remaining ascent without hiding the line's tall view from paging. */
 #define ROWLINE_POINTSIZE 1
 
 /* Embeds one table row (or a floated pair, or a floated-image block)
@@ -2824,6 +2826,7 @@ static void InsertRowView(struct hax_state *st, struct lset *row)
     long start;
     const char *viewname;
     row = ApplyAmbient(st, row);
+    row->toporigin = 1;
     /* Only the outermost embedding gets the scrollable wrapper -- see
        RenderTableAsLset's row loop and hax_state's `nested`. */
     viewname = (row->minwidth > 0 && !st->nested) ? "lsetscrollview" : dataobject_ViewName((struct dataobject *) row);
