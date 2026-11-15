@@ -1814,8 +1814,11 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
    instead of a proportional share, and weight is simply ignored for
    that leaf (still set to its normal colspan-derived value regardless,
    for uniformity -- callers other than BuildLsetChain, if any were
-   ever added, shouldn't have to know about this special case). */
-struct wleaf { struct lset *leaf; long weight; long fixedpx; };
+   ever added, shouldn't have to know about this special case). px
+   (0 if unknown) is the cell's declared pixel width (CellDeclaredPixelWidth):
+   when every proportional cell of a chain has one, BuildLsetChain
+   divides by those instead of by colspan. */
+struct wleaf { struct lset *leaf; long weight; long fixedpx; long px; };
 struct wlvec { struct wleaf *items; long count, cap; };
 
 static void wlvec_init(struct wlvec *v) { v->items = NULL; v->count = 0; v->cap = 0; }
@@ -1832,6 +1835,7 @@ static void wlvec_push(struct wlvec *v, struct lset *leaf, long weight, long fix
     v->items[v->count].leaf = leaf;
     v->items[v->count].weight = weight;
     v->items[v->count].fixedpx = fixedpx;
+    v->items[v->count].px = 0;
     ++v->count;
 }
 
@@ -2217,6 +2221,7 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
     long i;
     long remainingWeight;
     long restMinwidth;
+    int usePx, nprop;
 
     if (count <= 0) return NULL;
     /* A trailing run of fixed cells (a right-hand gutter/border, or a
@@ -2245,8 +2250,18 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
             return node;
         }
     }
+    /* Proportional cells that all declare a pixel width split by those
+       widths, as a browser does, rather than equally: bookrack.html's
+       review cards are a width=150 cover cell beside a width=140 text
+       cell in a 290px table, and an even split gave the cover's 150px
+       of content only 145px, clipping its right edge. */
+    usePx = 1; nprop = 0;
+    for (i = 0; i < count; ++i)
+        if (cells[i].fixedpx <= 0) { ++nprop; if (cells[i].px <= 0) usePx = 0; }
+    if (nprop < 2) usePx = 0;
+#define CHAINWEIGHT(c) (usePx ? (c).px : (c).weight)
     rest = cells[count - 1].leaf;
-    remainingWeight = (cells[count - 1].fixedpx > 0) ? 0 : cells[count - 1].weight;
+    remainingWeight = (cells[count - 1].fixedpx > 0) ? 0 : CHAINWEIGHT(cells[count - 1]);
     restMinwidth = CellMinwidth(&cells[count - 1]);
     for (i = count - 2; i >= 0; --i) {
         struct lset *node = (struct lset *) class_NewObject("lset");
@@ -2284,7 +2299,7 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
             node->type = fixedsplittype;
             node->pct = (int) cells[i].fixedpx; /* a pixel bsize here, not a percentage -- see lsetview_MakeHorzFixed's comment in lsetv.ch */
         } else {
-            long thisWeight = cells[i].weight;
+            long thisWeight = CHAINWEIGHT(cells[i]);
             remainingWeight += thisWeight;
             node->type = splittype;
             node->pct = LsetChainPctWeighted(remainingWeight, thisWeight);
@@ -2313,6 +2328,7 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
        in a lone fixed-pixel cell's own commitment, see CellMinwidth). */
     if (count == 1) rest->minwidth = restMinwidth;
     return rest;
+#undef CHAINWEIGHT
 }
 
 /* CORRECTION (2026-09-22, found live-testing): BuildLsetGrid's row-
@@ -2608,6 +2624,22 @@ static long CellContentFixedWidth(const struct htmlnode *td)
     w = FloatTableSoleImageWidth(td);
     if (w > 0 && w <= ICONCELL_MAXFIXEDPX) return w + ICONCELL_WIDTH_PAD;
     return 0;
+}
+
+/* A cell's declared pixel width (width= or CSS width), plus its
+   horizontal CSS padding as for CellFixedPixelWidth; 0 if it has none.
+   Used only to proportion a row (struct wleaf's px), never as a fixed
+   column. */
+static long CellDeclaredPixelWidth(const struct htmlnode *td)
+{
+    long w = ParseFixedPixelWidth(htmlpart_GetAttr(td, "width")), pad[4];
+    if (w <= 0) {
+        char *cw = htmlpart_GetStyleProp(td, "width");
+        if (cw) { w = ParseFixedPixelWidth(cw); free(cw); }
+    }
+    if (w <= 0) return 0;
+    CellCssPadding(td, pad);
+    return w + pad[1] + pad[3];
 }
 
 /* A <td>'s content isn't always inlined directly as this cell's own
@@ -3773,6 +3805,8 @@ static long PushRowspanPlaceholders(const struct tablegrid *g, long r, long c, i
         if (slot->td && CellBgColorX11Cascaded(slot->td, slot->tr, tablenode, bgbuf, sizeof(bgbuf)))
             ApplyBgColorRecursive(leaf, bgbuf);
         wlvec_push(cells, leaf, c - start, fixedpx);
+        if (slot->td && cells->count > 0 && c - start == CellColspan(slot->td))
+            cells->items[cells->count - 1].px = CellDeclaredPixelWidth(slot->td);
         *rowWeight += c - start;
     }
     return c;
@@ -3935,7 +3969,11 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                     fixedpx = grid.colfixed[col];
                 if (grid.occ && weight == 1 && fixedpx == 0 && col < grid.ncols && grid.collapsible[col])
                     fixedpx = 1;
-                if (leaf) { wlvec_push(&cells, leaf, weight, fixedpx); rowWeight += weight; ++realCells; }
+                if (leaf) {
+                    wlvec_push(&cells, leaf, weight, fixedpx);
+                    if (cells.count > 0) cells.items[cells.count - 1].px = CellDeclaredPixelWidth(td);
+                    rowWeight += weight; ++realCells;
+                }
                 col += weight;
             }
             if (realCells == 0) {	/* only placeholders: drop the row, as before */
@@ -4501,7 +4539,7 @@ static int TryPairFloatedTables(struct hax_state *st, const struct htmlnode *n,
     const struct htmlnode *partner;
     const struct htmlnode *members[FLOATRUN_MAX];
     struct lset *leaves[FLOATRUN_MAX], *row;
-    struct wleaf cells[FLOATRUN_MAX + 1];
+    struct wleaf cells[FLOATRUN_MAX + 1] = {{0}};
     long weights[FLOATRUN_MAX], fixed[FLOATRUN_MAX];
     int sides[FLOATRUN_MAX];	/* 1 = floats right */
     long nm, nc, i, lastPeek, pctSum, nUnweighted;
@@ -5038,7 +5076,7 @@ static int TryRenderFloatImageBlock(struct hax_state *st, const struct htmlnode 
     struct dataobject *dob = ResolveImageDataObject(st, img, &beaconBlocked, &hint);
     struct text *ct, *it;
     struct lset *textLeaf, *imgLeaf, *row;
-    struct wleaf cells[2];
+    struct wleaf cells[2] = {{0}};
     long w, margin, len = 0, i;
     free(hint);
     if (!dob) return FALSE;
