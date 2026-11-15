@@ -55,10 +55,12 @@ void lsetscrollview__SetDataObject(struct lsetscrollview *self, struct dataobjec
    whole table to nothing -- exactly the bookrack blank-render bug).
    COLORBARWIDTH(20)+viewPadding(windowPadding+1)+windowPadding*2, at
    scroll.c's own COLORWINDOWPADDING(1)/COLORBARWIDTH(20) defaults, is
-   24; rounded up slightly for headroom since mono-mode/profile
-   overrides could differ slightly and a little extra blank space
-   under the table is harmless, unlike an under-report. */
-#define LSETSCROLLVIEW_BAR_HEIGHT 20
+   24. The constant was 20, below that, so every scrolled table got 4px
+   less height than it asked for: National Grid's bottom border was
+   clipped, and a bordered floated table lost its text entirely
+   (2026-11-15). Profile overrides could differ; a little extra blank
+   space under the table is harmless, unlike an under-report. */
+#define LSETSCROLLVIEW_BAR_HEIGHT 24
 
 /* CORRECTION (2026-09-22, found live-testing): compute_inner
    (scroll.c:789-834) shrinks the interior by border padding
