@@ -669,22 +669,57 @@ struct hax_state {
        paint (HasUnpaintedBg); inside any of them, text colors are
        checked against paintedBg (PushFormattingMarks). */
     int unpaintedDepth;
+    /* No <!DOCTYPE>: a table resets inherited font size, weight,
+       style and alignment (InheritsIntoCell). */
+    int quirks;
 };
 
 /* Handoff from BuildLsetCell/TryRenderFloatImageBlock to the nested
    htmlatk_RenderAmbient walk they start: the background painted
    behind it. Consumed (cleared) by that walk's setup. */
 static char NextRenderPaintedBg[32];
-/* Likewise the font family open where the cell sits (CSS inherits it:
-   LinkedIn sets its sans list on <body>, and every cell, rendered by
-   its own walk, fell back to the serif default; 2026-11-14). */
-static char NextRenderFamily[200];
+/* Likewise what CSS inherits from around the cell: the styles of the
+   marks open where it sits, outermost first, which the nested walk
+   reopens as its own outermost marks. Each cell is its own walk, so
+   without this a color, size or font set on a <div>, <body> or outer
+   cell never reached it (LinkedIn's sans <body> font left every cell
+   serif, 2026-11-14). Plus the document mode, for the next table. */
+#define NEXTRENDER_MAXSTYLES 64
+static struct style *NextRenderStyles[NEXTRENDER_MAXSTYLES];
+static int NextRenderStyleCount = 0;
+static int NextRenderQuirks = 0;
 
-/* Sets NextRenderPaintedBg for a cell rendered from st: the cell's own
-   (cascaded) background if it has one, else whatever is painted where
-   its table sits -- the innermost flattened block's color the table
-   will take (ApplyAmbient), else st's own. */
-static void SetNextRenderPaintedBg(struct hax_state *st, const char *own)
+/* Whether an open mark's style is inherited into a nested walk.
+   Links, underlines and backgrounds never are: a link's extent is its
+   own, and backgrounds travel as paintedBg and the lset colors. Into
+   a table in quirks mode, only color and family cross, as Firefox's
+   quirk.css has it (and so Thunderbird): "table { text-align: start;
+   ... font-size: initial; font-weight: initial; font-style: initial;
+   ... }". Each style here carries one property, so the test is
+   per style. */
+static int InheritsIntoCell(struct style *s, int quirksTable)
+{
+    enum style_FontSize basis;
+    long operand;
+    if (!s) return 0;
+    if (style_IsAttribute(s, "href") || style_IsAttribute(s, "background-color")
+        || style_IsUnderlineAdded(s))
+        return 0;
+    if (!quirksTable) return 1;
+    style_GetFontSize(s, &basis, &operand);
+    if (basis != style_PreviousFontSize || operand != 0) return 0;
+    if (style_IsAnyAddedFontFace(s, fontdesc_Bold | fontdesc_Italic)) return 0;
+    if (style_GetJustification(s) != style_PreviousJustification) return 0;
+    return 1;
+}
+
+/* Sets the handoff for a walk started from st: NextRenderPaintedBg is
+   the cell's own (cascaded) background if it has one, else whatever is
+   painted where its table sits -- the innermost flattened block's
+   color the table will take (ApplyAmbient), else st's own; the
+   inherited styles are filtered for a table (intoTable) per the
+   document mode. */
+static void SetNextRenderContext(struct hax_state *st, const char *own, int intoTable)
 {
     int i;
     const char *bg = own;
@@ -693,12 +728,11 @@ static void SetNextRenderPaintedBg(struct hax_state *st, const char *own)
     if (!bg) bg = st->paintedBg;
     strncpy(NextRenderPaintedBg, bg, sizeof(NextRenderPaintedBg) - 1);
     NextRenderPaintedBg[sizeof(NextRenderPaintedBg) - 1] = '\0';
-    NextRenderFamily[0] = '\0';
-    for (i = (int) st->markcount - 1; i >= 0; --i) {
-        if (!st->marks[i].style) continue;
-        style_GetFontFamily(st->marks[i].style, NextRenderFamily, sizeof(NextRenderFamily));
-        if (NextRenderFamily[0]) break;
-    }
+    NextRenderStyleCount = 0;
+    for (i = 0; i < (int) st->markcount && NextRenderStyleCount < NEXTRENDER_MAXSTYLES; ++i)
+        if (InheritsIntoCell(st->marks[i].style, intoTable && st->quirks))
+            NextRenderStyles[NextRenderStyleCount++] = st->marks[i].style;
+    NextRenderQuirks = st->quirks;
 }
 
 /* While a cell's sole nested table is spliced in its place, cells
@@ -1764,7 +1798,8 @@ static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnod
 static long FloatTableSoleImageWidth(const struct htmlnode *n);
 static long LsetFixedContentWidth(struct lset *ls);
 static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct htmlnode *root,
-    const struct htmlnode *ambientNode1, const struct htmlnode *ambientNode2,
+    const struct htmlnode *ambientTable, const struct htmlnode *ambientRow,
+    const struct htmlnode *ambientCell,
     htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut, int nested);
 
 /* Small paired vector of (leaf, weight) for one row's cells --
@@ -2882,6 +2917,15 @@ static int DivAmbient(const struct htmlnode *div, struct hax_ambient *a)
    wrapped in a leaf (CenteredRowLeaf) that places it. The wrapper's
    own margins outside the column take the background of the blocks
    outside that one, if any. Returns the row to embed. */
+/* Whether any enclosing block (hax_state's ambient) has a color. */
+static int AmbientHasBg(const struct hax_state *st)
+{
+    int i;
+    for (i = 0; i < st->ambientDepth; ++i)
+        if (st->ambient[i].bg[0]) return 1;
+    return 0;
+}
+
 static struct lset *ApplyAmbient(struct hax_state *st, struct lset *row)
 {
     int i, k = -1, rowbg = -1;
@@ -3211,9 +3255,9 @@ static int RenderLinkButton(struct hax_state *st, const struct htmlnode *a)
     one.next = NULL;	/* just this link, not its siblings */
     centerSt = JustificationStyleFor(style_Centered);
     if (centerSt) text_SetGlobalStyle(ct, centerSt);
-    SetNextRenderPaintedBg(st, hasBg ? bg : NULL);
+    SetNextRenderContext(st, hasBg ? bg : NULL, 0);
     ++LinkButtonDepth;
-    if (!htmlatk_RenderAmbient(ct, 0, &one, NULL, NULL, st->resolver, st->resolverRock, &len, TRUE))
+    if (!htmlatk_RenderAmbient(ct, 0, &one, NULL, NULL, NULL, st->resolver, st->resolverRock, &len, TRUE))
         st->hardfail = 1;
     --LinkButtonDepth;
     text_SetReadOnly(ct, TRUE);
@@ -3520,8 +3564,8 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
         if (leftSt) text_SetGlobalStyle(ct, leftSt);
         if (!CellIsEmpty(td)) {
             long celllen = 0;
-            SetNextRenderPaintedBg(st, hasBg ? bgbuf : NULL);
-            if (!htmlatk_RenderAmbient(ct, 0, td->children, tableNode, td, st->resolver, st->resolverRock, &celllen, TRUE))
+            SetNextRenderContext(st, hasBg ? bgbuf : NULL, 1);
+            if (!htmlatk_RenderAmbient(ct, 0, td->children, tableNode, tr, td, st->resolver, st->resolverRock, &celllen, TRUE))
                 st->hardfail = 1;
         }
         /* A fresh "text" object defaults to editable
@@ -4983,8 +5027,8 @@ static int TryRenderFloatImageBlock(struct hax_state *st, const struct htmlnode 
         struct style *leftSt = JustificationStyleFor(style_LeftJustified);
         if (leftSt) text_SetGlobalStyle(ct, leftSt);
     }
-    SetNextRenderPaintedBg(st, NULL);
-    if (!htmlatk_RenderAmbient(ct, 0, img->next, NULL, blk, st->resolver, st->resolverRock, &len, TRUE))
+    SetNextRenderContext(st, NULL, 0);
+    if (!htmlatk_RenderAmbient(ct, 0, img->next, NULL, NULL, blk, st->resolver, st->resolverRock, &len, TRUE))
         st->hardfail = 1;
     /* The styles open around this block (e.g. the enclosing table's
        font-family/font-size) belong to st->dest's flow, which this
@@ -5015,37 +5059,24 @@ static int TryRenderFloatImageBlock(struct hax_state *st, const struct htmlnode 
     return TRUE;
 }
 
-/* The public entry point wraps this with ambientNode1=ambientNode2=
-   NULL. The two ambient nodes exist for BuildLsetCell (htmlatk.c):
-   an HTML <table>'s or <td>'s own style="..." was never being applied
-   to its cell's rendered content at all -- every element that reaches
-   this walk's main dispatch gets its own style read via
-   PushFormattingMarks, but a <table>/<td> node itself is consumed
-   entirely by the table-building machinery (BuildLsetGrid/
-   BuildLsetCell) and never passed through this loop as a walked node
-   -- confirmed live 2026-08-20, wdc: "sizing looks like it's not
-   having an effect", against Book Rack's "FEATURED TITLES" banner
-   (font-size:20px on the wrapping <table>, not on the <a> text
-   itself) and its whole covers-grid section (font-size:13px on each
-   card's text-column <table>, not on the <td> or any inner span).
-   BuildLsetCell now passes its enclosing tableNode and td here as
-   ambientNode1/ambientNode2 -- applied exactly like any other
-   element's own style would be, just spanning this whole call's
-   content instead of one node's subtree, and opened outer-to-inner
-   (table, then td) so a td-level override still wins per the same
-   innermost-wins resolution every other nested style already gets
-   (environment_GetInnerMost). Deliberately NOT propagated any further
-   than this one level: a <table> nested inside another <table>'s cell
-   only ever sees ITS OWN style this way, not an unbounded ancestor
-   chain -- BuildLsetGrid's own recursive calls (nested-table row
-   splicing) naturally re-root this same one-level treatment at
-   whatever table they're currently processing, which correctly
-   covers every real case found in the corpus (font-size is always
-   declared on the table/td immediately wrapping the text it sizes,
-   never several levels up) without the unbounded parameter-threading
-   a full ancestor stack would need. */
+/* The public entry point wraps this with no ambient nodes. They exist
+   for BuildLsetCell: a <table>, <tr> or <td> node is consumed by the
+   table-building machinery and never walked here, so its own style
+   (Book Rack's font-size:20px on the <table> around "FEATURED TITLES",
+   2026-08-20) has to be opened for the cell's whole content: table,
+   then row, then cell, so the nearest wins. A <th> also gets a
+   browser's bold, centered defaults before its own style.
+
+   Outside those, a nested walk (nested) reopens the styles handed off
+   by SetNextRenderContext: everything inheritable that was open where
+   the cell or block sits, filtered at a table in quirks mode. That
+   once stopped at the cell's own table and cell (a 2026-08-20 judgment
+   that nothing several levels up mattered); LinkedIn's <body> font and
+   the 2026-11-14 audit (html-mail-rendering-design.md, "Context across
+   the build paths") showed otherwise. */
 static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct htmlnode *root,
-    const struct htmlnode *ambientNode1, const struct htmlnode *ambientNode2,
+    const struct htmlnode *ambientTable, const struct htmlnode *ambientRow,
+    const struct htmlnode *ambientCell,
     htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut, int nested)
 {
     struct hax_state st;
@@ -5073,13 +5104,24 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
     strcpy(st.paintedBg, "#ffffff");
     if (nested && NextRenderPaintedBg[0]) strcpy(st.paintedBg, NextRenderPaintedBg);
     NextRenderPaintedBg[0] = '\0';
-    /* Outermost, so the cell's own font-family still wins. */
-    if (nested && NextRenderFamily[0])
-        ambientOpened += marks_push(&st, FontFamilyStyleFor(NextRenderFamily));
-    NextRenderFamily[0] = '\0';
+    st.quirks = nested ? NextRenderQuirks : !htmlpart_LastParseHadDoctype();
+    /* Inherited styles outermost, then the table, row and cell, so
+       each nearer one wins. */
+    if (nested) {
+        int i;
+        for (i = 0; i < NextRenderStyleCount; ++i)
+            ambientOpened += marks_push(&st, NextRenderStyles[i]);
+    }
+    NextRenderStyleCount = 0;
 
-    if (ambientNode1) ambientOpened += PushFormattingMarks(&st, ambientNode1);
-    if (ambientNode2) ambientOpened += PushFormattingMarks(&st, ambientNode2);
+    if (ambientTable) ambientOpened += PushFormattingMarks(&st, ambientTable);
+    if (ambientRow) ambientOpened += PushFormattingMarks(&st, ambientRow);
+    if (ambientCell && strcmp(ambientCell->tag, "th") == 0) {
+        /* A browser's defaults for a header cell. */
+        ambientOpened += marks_push(&st, BoldSt);
+        ambientOpened += marks_push(&st, JustificationStyleFor(style_Centered));
+    }
+    if (ambientCell) ambientOpened += PushFormattingMarks(&st, ambientCell);
 
     ws.items = NULL; ws.count = 0; ws.cap = 0;
     ws_push_siblings(&ws, root);
@@ -5139,13 +5181,21 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                    percentage width, though: without one the wrapper is
                    a button a browser shrinks to its label (LinkedIn's
                    width="auto" "See more"), and as a table here it
-                   would stretch into a full-width colored bar. */
+                   would stretch into a full-width colored bar.
+                   Likewise an uncolored wrapper of inline content
+                   inside a colored block: flattened, its content is
+                   message text, which nothing paints, so it showed on
+                   white amid The Economist's gray and dark column (its
+                   second "desktop" ad, 2026-11-14). As a table it
+                   takes the surrounding color, so no bar can show. */
                 char wrapbg[32];
                 const char *tw = htmlpart_GetAttr(n, "width");
                 if (!floatAlign && !tableHasPixelWidth && TableIsTrivialWrapper(n, &cellChildren, &cellNode)
                     && !HasSideBorder(n) && !HasSideBorder(cellNode)
                     && !(tw && strchr(tw, '%') && WrapperBgColor(n, cellNode, wrapbg, sizeof(wrapbg))
-                         && !NodesContainTable(cellChildren))) {
+                         && !NodesContainTable(cellChildren))
+                    && !(AmbientHasBg(&st) && !NodesContainTable(cellChildren)
+                         && !WrapperBgColor(n, cellNode, wrapbg, sizeof(wrapbg)))) {
                     /* A table is a block: its content starts and ends
                        a line even when the table itself is flattened. */
                     EnsureLineBreak(&st);
@@ -5386,7 +5436,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
 
     /* Close the ambient table/td marks opened above, exactly the way
        marks_finalize closes any other node's marks at its own POST
-       event -- there is no POST event for ambientNode1/ambientNode2
+       event -- there is no POST event for the ambient nodes
        themselves (they were never pushed onto the walk stack, only
        used for their style), so this call stands in for that,
        spanning the entire root..final-pos range instead of one node's
@@ -5410,7 +5460,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
 boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
                         htmlatk_ImageResolver resolver, void *resolverRock, long *lengthOut)
 {
-    return htmlatk_RenderAmbient(dest, pos, root, NULL, NULL, resolver, resolverRock, lengthOut, FALSE);
+    return htmlatk_RenderAmbient(dest, pos, root, NULL, NULL, NULL, resolver, resolverRock, lengthOut, FALSE);
 }
 
 /* ==================================================================== *
