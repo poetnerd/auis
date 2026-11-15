@@ -22,6 +22,11 @@ boolean htmllinkview__InitializeObject(struct classheader *classID, struct htmll
 {
     self->cursor = cursor_Create(self);
     if (self->cursor) cursor_SetStandard(self->cursor, Cursor_Gunsight);
+    /* A table cell's content runs to its edges in a browser; textview's
+       2px embedded side margin cost every nesting level 4px, clipping
+       images that exactly fill their cell (bookrack's covers and
+       icons). htmlatk.c's EMBEDDED_TEXT_XMARGIN matches this. */
+    htmllinkview_SetEmbeddedBorder(self, 0, ((struct textview *) self)->eby);
     return TRUE;
 }
 

@@ -1970,7 +1970,7 @@ static void ComputeTableGrid(const struct nodevec *rows, struct tablegrid *g)
     g->collapsible = colstate;
 }
 
-static long CellFixedPixelWidth(const struct htmlnode *td);
+static long CellFixedPixelWidth(const struct htmlnode *td, const struct htmlnode *tablenode);
 
 /* A browser sizes a column once, for every row: an empty cell in a
    column whose other rows hold a fixed-width cell is that wide too.
@@ -1978,7 +1978,7 @@ static long CellFixedPixelWidth(const struct htmlnode *td);
    width="0" spacers above and below it; sized row by row, those rows
    split 50/50 and their text sat far right of the quote's (2026-09-28).
    Fills g->colfixed (see struct tablegrid). */
-static void ComputeColumnFixed(struct tablegrid *g, const struct nodevec *rows)
+static void ComputeColumnFixed(struct tablegrid *g, const struct nodevec *rows, const struct htmlnode *tablenode)
 {
     long r, c;
     const struct htmlnode *td;
@@ -1997,7 +1997,7 @@ static void ComputeColumnFixed(struct tablegrid *g, const struct nodevec *rows)
             if (c >= g->stride) break;
             cs = CellColspan(td);
             if (cs == 1) {
-                long w = CellFixedPixelWidth(td);
+                long w = CellFixedPixelWidth(td, tablenode);
                 if (w > g->colfixed[c]) g->colfixed[c] = w;
             }
             c += cs;
@@ -2592,21 +2592,28 @@ static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnod
    used directly (not derived from EBX symbolically) since the exact
    remaining pixel or two beyond 2*EBX wasn't fully traced to a single
    line, and this value is confirmed correct against real fixture
-   icons rather than computed from firstprinciples. */
-#define ICONCELL_WIDTH_PAD 6
+   icons rather than computed from firstprinciples.
+
+   2026-11-15: htmllinkview now sets its embedded side margin to 0
+   (htmllinkv.c, EMBEDDED_TEXT_XMARGIN below), so the 2*EBX part is
+   gone; what remains is the untraced couple of pixels. */
+#define ICONCELL_WIDTH_PAD 2
 static void CellCssPadding(const struct htmlnode *td, long pad[4]);
 
 /* The pixel width a cell's column must give it: CellContentFixedWidth
-   plus the cell's horizontal CSS padding, which CSS adds outside a
-   cell's width. Without it, The Economist's social icons (32px images
-   in cells padded 0 8px) were clipped to 16px (2026-11-14). */
+   plus the cell's horizontal CSS padding and its table's cellpadding,
+   which BuildLsetCell both apply inside the column. Without the CSS
+   padding, The Economist's social icons (32px images in cells padded
+   0 8px) were clipped to 16px (2026-11-14); without cellpadding,
+   bookrack's 24px header icons (cellpadding 2) lost 2px (2026-11-15). */
 static long CellContentFixedWidth(const struct htmlnode *td);
-static long CellFixedPixelWidth(const struct htmlnode *td)
+static int TableCellPadding(const struct htmlnode *tablenode);
+static long CellFixedPixelWidth(const struct htmlnode *td, const struct htmlnode *tablenode)
 {
     long w = CellContentFixedWidth(td), pad[4];
     if (w <= 0) return w;
     CellCssPadding(td, pad);
-    return w + pad[1] + pad[3];
+    return w + pad[1] + pad[3] + 2 * TableCellPadding(tablenode);
 }
 
 static long CellContentFixedWidth(const struct htmlnode *td)
@@ -2694,9 +2701,10 @@ static long CellDeclaredPixelWidth(const struct htmlnode *td)
    mirroring BuildLsetGrid's own stacked-rows-take-the-max rule, since
    multiple embedded views within one cell's text are themselves
    stacked vertically, line after line, not side by side. */
-/* The left and right margin a textview keeps around its content when
-   embedded (textv.c's EBX; BX is for a top-level window). */
-#define EMBEDDED_TEXT_XMARGIN 2
+/* The left and right margin a cell's textview keeps around embedded
+   content: textv.c's EBX is 2, but htmllinkview sets it to 0
+   (htmllinkv.c), as a browser cell has none. */
+#define EMBEDDED_TEXT_XMARGIN 0
 
 static long TextMaxEmbeddedLsetMinwidth(struct text *t)
 {
@@ -3408,7 +3416,7 @@ static long CenteredFixedTableWidth(const struct htmlnode *tablenode)
         for (td = rows.items[0]->children; td; td = td->next) {
             long px;
             if (!NodeIsCell(td)) continue;
-            px = CellFixedPixelWidth(td);
+            px = CellFixedPixelWidth(td, tablenode);
             if (px <= 0) { w = 0; break; }
             w += px;
         }
@@ -3585,7 +3593,7 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
     char bgbuf[32];
     int hasBg;
     *outWeight = ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
-    *outFixedPx = CellFixedPixelWidth(td);
+    *outFixedPx = CellFixedPixelWidth(td, tableNode);
     if (!leaf) { st->hardfail = 1; return NULL; }
     hasBg = CellBgColorX11Cascaded(td, tr, tableNode, bgbuf, sizeof(bgbuf));
 
@@ -3817,7 +3825,7 @@ static long PushRowspanPlaceholders(const struct tablegrid *g, long r, long c, i
         }
         if (slot->td) {
             while (c < g->ncols && g->occ[r * g->stride + c].td == slot->td) ++c;
-            fixedpx = CellFixedPixelWidth(slot->td);
+            fixedpx = CellFixedPixelWidth(slot->td, tablenode);
             if (fixedpx == 0 && c - start == 1 && g->collapsible[start]) fixedpx = 1;
         } else if (toEnd) {
             while (c < g->ncols && !g->occ[r * g->stride + c].td) ++c;
@@ -3846,7 +3854,7 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
     lsetvec_init(outRows);
     CollectRows(tablenode, &rows);
     ComputeTableGrid(&rows, &grid);
-    ComputeColumnFixed(&grid, &rows);
+    ComputeColumnFixed(&grid, &rows, tablenode);
     FindSideColumns(&grid, &rows);
     ncols = grid.ncols - grid.sidecols;
     /* outRows index where each source row's output begins, for the
@@ -4256,12 +4264,17 @@ static long LsetFixedContentWidth(struct lset *ls)
     long l, r;
     if (!ls) return 0;
     if (!ls->left && !ls->right) {
+        long w;
         if (!ls->dobj) return 0;
         if (strcmp(class_GetTypeName(ls->dobj), "text") == 0)
-            return TextFixedContentWidth((struct text *) ls->dobj);
-        if (strcmp(class_GetTypeName(ls->dobj), "lset") == 0)
-            return LsetFixedContentWidth((struct lset *) ls->dobj);
-        return -1;
+            w = TextFixedContentWidth((struct text *) ls->dobj);
+        else if (strcmp(class_GetTypeName(ls->dobj), "lset") == 0)
+            w = LsetFixedContentWidth((struct lset *) ls->dobj);
+        else return -1;
+        /* The leaf's padding is inside its width: bookrack's header
+           icons (cellpadding 2) lost 4px to it (2026-11-15). */
+        if (w > 0) w += 2 * ls->padding + ls->padleft + ls->padright;
+        return w;
     }
     l = LsetFixedContentWidth((struct lset *) ls->left);
     r = LsetFixedContentWidth((struct lset *) ls->right);
