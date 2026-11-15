@@ -627,7 +627,7 @@ struct hax_listframe { int ordered; int counter; };
 #define HAX_AMBIENT_MAX 8
 /* padleft/padright: a flattened wrapper cell's side padding, which
    no leaf of its own can hold (ApplyAmbient). */
-struct hax_ambient { char bg[32]; long maxwidth; int halign; long padleft, padright; };
+struct hax_ambient { char bg[32]; long maxwidth; int halign; long padleft, padright; int side; };
 struct hax_state {
     struct text *dest;
     long pos;
@@ -758,6 +758,7 @@ static int PushCellAmbient(struct hax_state *st, int hasBg, const char *bg)
     a->maxwidth = 0;
     a->halign = lset_HALIGN_NONE;
     a->padleft = a->padright = 0;
+    a->side = lset_HALIGN_NONE;
     return 1;
 }
 
@@ -2853,20 +2854,40 @@ static int WrapperBgColor(const struct htmlnode *table, const struct htmlnode *c
 }
 
 /* The ambient a flattened wrapper table pushes for its content: its
-   color and its cell's side padding (The Economist's masthead cell,
-   padding 12px, drew its logo and date against the column's edges,
-   2026-11-15). Returns 0, pushing nothing, when it has neither. */
+   color, its cell's side padding plus its own (The Economist's
+   masthead cell, padding 12px, drew its logo and date against the
+   column's edges, 2026-11-15), and the side its cell's align= or
+   text-align places a shrink-to-fit table on (ContentSide: LinkedIn's
+   align="middle" button cells, 2026-11-16). Returns 0, pushing
+   nothing, when it has none of these. */
 static void CellCssPadding(const struct htmlnode *td, long pad[4]);
+static void TableCssPadding(const struct htmlnode *table, long pad[4]);
+static int CellContentSide(const struct htmlnode *td);
 static int WrapperAmbient(const struct htmlnode *table, const struct htmlnode *cell, struct hax_ambient *a)
 {
-    long pad[4];
+    long pad[4], tpad[4];
+    char *ta = htmlpart_GetStyleProp(cell, "text-align");
     if (!WrapperBgColor(table, cell, a->bg, sizeof(a->bg))) a->bg[0] = '\0';
     CellCssPadding(cell, pad);
-    a->padleft = pad[3];
-    a->padright = pad[1];
+    TableCssPadding(table, tpad);
+    a->padleft = pad[3] + tpad[3];
+    a->padright = pad[1] + tpad[1];
     a->maxwidth = 0;
     a->halign = lset_HALIGN_NONE;
-    return a->bg[0] != '\0' || a->padleft > 0 || a->padright > 0;
+    a->side = (ta || htmlpart_GetAttr(cell, "align")) ? CellContentSide(cell) : lset_HALIGN_NONE;
+    free(ta);
+    return a->bg[0] != '\0' || a->padleft > 0 || a->padright > 0 || a->side != lset_HALIGN_NONE;
+}
+
+/* Where a shrink-to-fit table goes: by the nearest flattened wrapper
+   cell that sets a side, else by the cell being rendered. Each cell
+   renders in a walk of its own, so the ambients are all inside it. */
+static int ContentSide(struct hax_state *st)
+{
+    int i;
+    for (i = st->ambientDepth - 1; i >= 0; --i)
+        if (st->ambient[i].side != lset_HALIGN_NONE) return st->ambient[i].side;
+    return CellContentSide(st->cell);
 }
 
 /* A <td>/<th> with no background of its own inherits one from its row
@@ -3056,6 +3077,7 @@ static int DivAmbient(const struct htmlnode *div, struct hax_ambient *a)
     a->maxwidth = 0;
     a->halign = lset_HALIGN_LEFT;
     a->padleft = a->padright = 0;
+    a->side = lset_HALIGN_NONE;
     if (!NodeOwnBgColorX11(div, a->bg, sizeof(a->bg))) a->bg[0] = '\0';
     sv = htmlpart_GetStyleProp(div, "max-width");
     if (sv) { a->maxwidth = CssPixelLength(sv); free(sv); }
@@ -3223,6 +3245,19 @@ static void CellCssPadding(const struct htmlnode *td, long pad[4])
     }
 }
 
+/* A table's own CSS padding, as CellCssPadding reads it, except that a
+   table with border-collapse: collapse has none, per CSS. Templates
+   often set collapse; LinkedIn's and National Grid's padded tables
+   don't (2026-11-16). */
+static void TableCssPadding(const struct htmlnode *table, long pad[4])
+{
+    char *bc = htmlpart_GetStyleProp(table, "border-collapse");
+    int collapse = bc && strncasecmp(bc, "collapse", 8) == 0;
+    if (bc) free(bc);
+    if (collapse) pad[0] = pad[1] = pad[2] = pad[3] = 0;
+    else CellCssPadding(table, pad);
+}
+
 /* A CSS border on one side (prop is border-top, -right, -bottom or
    -left), or else the border shorthand ("1px solid #808080"): returns
    its width in pixels, 0 for none, and copies its color into color
@@ -3291,6 +3326,7 @@ static long CssBorderSide(const struct htmlnode *n, const char *prop, char *colo
    line can't be shorter than its small font, about 2px, so a thinner
    rule comes out 2px. */
 #define RULE_MINHEIGHT 2
+#define HR_MARGIN 8	/* a default <hr>'s 0.5em margin, as Thunderbird draws it */
 static void InsertRuleRow(struct hax_state *st, const char *color, long px)
 {
     struct lset *leaf;
@@ -3488,6 +3524,24 @@ static struct lset *RoundTable(struct hax_state *st, struct lset *body, const st
     return leaf;
 }
 
+/* A table's own CSS padding around one of its rows, inside its
+   borders: the sides on every row, the top on the first and the bottom
+   on the last, in the table's background when it has one (else the
+   cell's, cascaded later). LinkedIn's py-2 tables hold their headlines
+   16px clear this way (2026-11-16). */
+static struct lset *TablePadRow(struct hax_state *st, struct lset *row, const struct htmlnode *table, int top, int bottom)
+{
+    char bg[32];
+    long pad[4];
+    TableCssPadding(table, pad);
+    if (!NodeOwnBgColorX11(table, bg, sizeof(bg))) bg[0] = '\0';
+    row = StackSideRule(st, row, bg, pad[3], 0);
+    row = StackSideRule(st, row, bg, pad[1], 1);
+    if (top) row = StackRule(st, row, bg, pad[0], 0);
+    if (bottom) row = StackRule(st, row, bg, pad[2], 1);
+    return row;
+}
+
 /* A table body with the table's own border: rounded when it can be,
    else square strips stacked around it. */
 static struct lset *TableBorders(struct hax_state *st, struct lset *body, const struct htmlnode *table)
@@ -3518,6 +3572,103 @@ static int LinkButtonDepth = 0;
    estimated from the label's length and font size; a browser shrinks
    it to fit exactly. Returns 0, inserting nothing, if it can't. */
 #define BUTTON_CHAR_WIDTH_PCT 55
+
+/* Whether a node's own CSS font-weight is bold, by the rule
+   PushFormattingMarks applies: "bold"/"bolder" or 600 and up. */
+static int CssIsBold(const struct htmlnode *n)
+{
+    char *sv = htmlpart_GetStyleProp(n, "font-weight");
+    int bold = sv && (value_contains_ci(sv, "bold") || atoi(sv) >= 600);
+    if (sv) free(sv);
+    return bold;
+}
+
+/* Helvetica's advance widths for ' ' through '~', in thousandths of
+   the font size (Adobe's AFM metrics), regular and bold: the sans
+   face mail labels render in here. A fixed share per character
+   wrapped LinkedIn's bold "Read more", which takes 82.7px at 16px
+   against 79 estimated (2026-11-16). */
+static const short HelvWidth[2][95] = {
+    { 278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+      556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,
+      1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,
+      667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,
+      333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,
+      556,556,333,500,278,556,500,722,500,500,500,334,260,334,584 },
+    { 278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+      556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,
+      975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,
+      667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,
+      333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,
+      611,611,389,556,333,611,556,778,556,556,500,389,280,389,584 }
+};
+
+/* A label's text view needs a little room beyond its text's width:
+   LinkedIn's "Read more" wrapped with 0.3px to spare (2026-11-16). */
+#define LABEL_SLACK 4
+
+/* The width of inline text in thousandths of its font size, spaces
+   collapsed as InlineTextLength counts them, a trailing one included
+   (*space says so). Bold by the node's or an ancestor's font-weight or
+   a <b>/<strong>. A character outside ASCII counts as a full em, one per
+   UTF-8 sequence, as it may come from a wider fallback font. */
+static long InlineTextMilli(const struct htmlnode *n, int *space, int bold)
+{
+    long w = 0, k;
+    for (; n; n = n->next) {
+        if (htmlpart_IsText(n)) {
+            for (k = 0; k < n->textlen; ++k) {
+                unsigned char c = (unsigned char) n->text[k];
+                if (is_collapsible_space(c)) {
+                    if (!*space) { w += HelvWidth[bold][0]; *space = 1; }
+                } else {
+                    *space = 0;
+                    if (c >= ' ' && c <= '~') w += HelvWidth[bold][c - ' '];
+                    else if (c < 0x80 || c >= 0xC0) w += 1000;	/* a full em: the Economist's &rarr; comes from a fallback font */
+                }
+            }
+        } else if (htmlpart_IsElement(n)) {
+            int b = bold || strcmp(n->tag, "b") == 0 || strcmp(n->tag, "strong") == 0 || CssIsBold(n);
+            w += InlineTextMilli(n->children, space, b);
+        }
+    }
+    return w;
+}
+
+/* Whether any of these nodes is, or holds, an <img>. */
+static int NodesHaveImg(const struct htmlnode *n)
+{
+    for (; n; n = n->next)
+        if (htmlpart_IsElement(n)
+            && (strcmp(n->tag, "img") == 0 || NodesHaveImg(n->children)))
+            return 1;
+    return 0;
+}
+
+/* A one-line label's text width in pixels, for a button sized to fit
+   it (RenderLinkButton, TableLabelWidth): the larger of 55% of the
+   font size per character (len) and Helvetica's own widths at the size
+   drawn plus LABEL_SLACK. Font sizes are whole points, so 17px draws
+   at 13pt, about 17.3px, and 14px at 11pt. Each alone wrapped a label:
+   55% The Economist's "Watch now", the metrics at the CSS size its
+   "Add to calendar" and LinkedIn's "Download for free" (2026-11-16).
+   An image has no metrics, so text holding one gets the 55%. A real
+   measurement at layout time would replace all of this; see
+   roadmap.md. */
+static long LabelTextWidth(const struct htmlnode *nodes, long len, long fontpx, int bold)
+{
+    long w = (len * fontpx * BUTTON_CHAR_WIDTH_PCT) / 100;
+    if (!NodesHaveImg(nodes)) {
+        int space = 1;
+        long drawnpx1000 = ((fontpx * 3 + 2) / 4) * 4000 / 3;	/* px -> whole pt -> px, x1000 */
+        long milli = InlineTextMilli(nodes, &space, bold), mw;
+        if (space) milli -= HelvWidth[0][0];	/* a trailing space */
+        mw = (milli * drawnpx1000 / 1000 + 999) / 1000 + LABEL_SLACK;
+        if (mw > w) w = mw;
+    }
+    return w;
+}
+
 static int RenderLinkButton(struct hax_state *st, const struct htmlnode *a)
 {
     struct htmlnode one = *a;
@@ -3554,7 +3705,7 @@ static int RenderLinkButton(struct hax_state *st, const struct htmlnode *a)
     if (fs) { long px = CssPixelLength(fs); if (px > 0) fontpx = px; free(fs); }
     len = text_GetLength(ct);
     while (len > 0 && text_GetChar(ct, len - 1) == '\n') --len;
-    w = (len * fontpx * BUTTON_CHAR_WIDTH_PCT) / 100 + pad[1] + pad[3];
+    w = LabelTextWidth(a->children, len, fontpx, CssIsBold(a)) + pad[1] + pad[3];
     body = RoundLeaf(leaf, a) ? leaf : StackBorders(st, leaf, a);
     {
         char color[32];
@@ -3695,10 +3846,9 @@ static long InlineTextLength(const struct htmlnode *n, int *space)
 /* The width a shrink-to-fit table takes when it is one cell holding a
    short line of inline text, LinkedIn's outlined buttons (2026-11-15):
    the cell's declared pixel width if it has one (CellDeclaredPixelWidth,
-   padding included), else its text's width estimated as for a button
-   link (RenderLinkButton), plus its padding; then its cellpadding and
-   side borders. 0 for any other table. Text can't be measured while the
-   layout is built, so the estimate can be off by a few pixels. */
+   padding included), else its text's estimated width (LabelTextWidth)
+   plus its padding; then its cellpadding and side borders. 0 for any
+   other table. */
 #define LABEL_MAXCHARS 60
 static long TableLabelWidth(const struct htmlnode *tablenode)
 {
@@ -3723,9 +3873,10 @@ static long TableLabelWidth(const struct htmlnode *tablenode)
         fs = htmlpart_GetStyleProp(cell, "font-size");
         if (fs) { long px = CssPixelLength(fs); if (px > 0) fontpx = px; free(fs); }
         CellCssPadding(cell, pad);
-        w = (len * fontpx * BUTTON_CHAR_WIDTH_PCT) / 100 + pad[1] + pad[3];
+        w = LabelTextWidth(cell->children, len, fontpx, CssIsBold(cell)) + pad[1] + pad[3];
     }
-    return w + 2 * TableCellPadding(tablenode)
+    TableCssPadding(tablenode, pad);	/* the table's own (TablePadRow) */
+    return w + pad[1] + pad[3] + 2 * TableCellPadding(tablenode)
         + CssBorderSide(cell, "border-left", color, sizeof(color))
         + CssBorderSide(cell, "border-right", color, sizeof(color));
 }
@@ -3836,7 +3987,7 @@ static void SpliceSoleTable(struct hax_state *st, struct lsetvec *rows,
     CellCssPadding(cell, pad);
     if (rows->count == 1) {
         struct lset *row = rows->items[0];
-        struct lset *box = TableBorders(st, row, soleTable);
+        struct lset *box = TableBorders(st, TablePadRow(st, row, soleTable, 1, 1), soleTable);
         struct lset *L = box;
         /* The cell's padding goes outside the table's borders, so a
            bordered table (or a split) gets a leaf of its own to hold it;
@@ -3859,7 +4010,8 @@ static void SpliceSoleTable(struct hax_state *st, struct lsetvec *rows,
         rows->items[0] = StackBorders(st, CenterFixedTable(L, soleTable, cell, st), cell);
     } else {
         for (j = 0; j <= last; ++j) {
-            struct lset *r = StackSides(st, rows->items[j], soleTable);
+            struct lset *r = TablePadRow(st, rows->items[j], soleTable, j == 0, j == last);
+            r = StackSides(st, r, soleTable);
             r = StackSideRule(st, r, "", pad[3] + cp, 0);
             r = StackSideRule(st, r, "", pad[1] + cp, 1);
             rows->items[j] = StackSides(st, r, cell);
@@ -4685,7 +4837,7 @@ static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode
            a solid bar, and vertically centered a one-cell float's text
            (a td's default valign) partway down the row. */
         {
-            struct lset *box = TableBorders(st, leaf, tablenode);
+            struct lset *box = TableBorders(st, TablePadRow(st, leaf, tablenode, 1, 1), tablenode);
             struct lset *fill, *node;
             fill = MakeFillerLeaf(st);
             node = (struct lset *) class_NewObject("lset");
@@ -4785,6 +4937,7 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         /* The table's CSS borders, exact to the pixel inside the row
            lsets: sides on every row, top and bottom on the first and
            last. */
+        rowRoot = TablePadRow(st, rowRoot, tablenode, i == 0, i == rows.count - 1);
         {
             struct lset *round = RoundTable(st, rowRoot, tablenode);
             rowRoot = round ? round
@@ -4793,7 +4946,7 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         }
         if (labelw > 0) {
             struct lset *placed = CenteredRowLeaf(rowRoot, labelw, st);
-            if (placed != rowRoot) placed->halign = CellContentSide(st->cell);
+            if (placed != rowRoot) placed->halign = ContentSide(st);
             rowRoot = placed;
         }
         EnsureLineBreak(st);
@@ -5665,6 +5818,8 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                     {
                         long pad[4];
                         InsertTableBorder(&st, n, "border-top");
+                        TableCssPadding(n, pad);
+                        InsertRuleRow(&st, "", pad[0]);
                         InsertTableBorder(&st, cellNode, "border-top");
                         CellCssPadding(cellNode, pad);
                         InsertRuleRow(&st, "", pad[0]);
@@ -5702,10 +5857,18 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 continue;
             }
             if (strcmp(n->tag, "hr") == 0) {
-                /* A browser's default <hr>: a 2px gray inset line. */
-                EnsureParaBreak(&st);
+                /* A browser's default <hr>: a 2px gray inset line with
+                   0.5em margins, 8px in Thunderbird. A paragraph break
+                   on each side, a blank line, put 13px too much above
+                   and below it (LinkedIn's divider, 2026-11-16). The
+                   top margin collapses into a paragraph break already
+                   there, as a browser's margins do. */
+                int gap = st.anyContent && st.trailingNL >= 2;
+                EnsureLineBreak(&st);
+                if (!gap) InsertRuleRow(&st, "", HR_MARGIN);
                 InsertRuleRow(&st, "#A0A0A0", 2);
-                EnsureParaBreak(&st);
+                InsertRuleRow(&st, "", HR_MARGIN);
+                EnsureLineBreak(&st);
                 continue;
             }
             if (strcmp(n->tag, "p") == 0 || strcmp(n->tag, "div") == 0) {
@@ -5737,6 +5900,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                     a.maxwidth = 0;
                     a.halign = lset_HALIGN_NONE;
                     a.padleft = a.padright = 0;
+                    a.side = lset_HALIGN_NONE;
                     st.ambient[st.ambientDepth++] = a;
                     /* Its top padding as a band of that color: the
                        gray above LinkedIn's card (padding-top: 8px).
@@ -5840,6 +6004,8 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                     CellCssPadding(cn, pad);
                     InsertRuleRow(&st, "", pad[2]);
                     InsertTableBorder(&st, cn, "border-bottom");
+                    TableCssPadding(n, pad);
+                    InsertRuleRow(&st, "", pad[2]);
                     InsertTableBorder(&st, n, "border-bottom");
                     if (st.ambientDepth > 0 && WrapperAmbient(n, cn, &a))
                         --st.ambientDepth;
