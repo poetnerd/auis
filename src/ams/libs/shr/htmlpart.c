@@ -607,8 +607,10 @@ static int href_scheme_ok(const char *href)
    `border-width`/`-style`/`-color` longhands: htmlatk.c pads table cells by them and draws a table's
    top and bottom borders as rule rows (The Economist's section
    dividers). `border-radius` came 2026-11-15, for rounded cells and
-   images (LinkedIn's pill buttons and round avatars). */
-#define HP_NSTYLEPROPS 33
+   images (LinkedIn's pill buttons and round avatars), with `width`:
+   htmlatk.c sizes a cell by its declared pixel width (LinkedIn's
+   390px button). */
+#define HP_NSTYLEPROPS 34
 static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "color", "background-color", "font-weight", "font-style", "text-decoration",
     "display", "visibility", "font-size", "font-family", "text-align", "border-bottom",
@@ -616,7 +618,8 @@ static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "margin-top", "margin-bottom", "max-width",
     "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
     "border-top", "border", "border-left", "border-right",
-    "border-width", "border-style", "border-color", "border-radius"
+    "border-width", "border-style", "border-color", "border-radius",
+    "width"
 };
 
 static char *filter_style(const char *raw)

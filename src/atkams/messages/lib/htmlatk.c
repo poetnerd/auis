@@ -674,6 +674,10 @@ struct hax_state {
     /* No <!DOCTYPE>: a table resets inherited font size, weight,
        style and alignment (InheritsIntoCell). */
     int quirks;
+    /* The table cell this walk renders, NULL for the message body: a
+       shrink-to-fit table inside it sits at the cell's alignment
+       (RenderTableAsLset). */
+    const struct htmlnode *cell;
 };
 
 /* Handoff from BuildLsetCell/TryRenderFloatImageBlock to the nested
@@ -3541,16 +3545,97 @@ static struct lset *CenteredRowLeaf(struct lset *row, long width, struct hax_sta
      left, the inner align="center" having nothing to center within.
    A leaf places its own child; a split gets a wrapper leaf
    (CenteredRowLeaf). */
+/* The characters of a node's text, whitespace runs counted as one, or
+   -1 if it holds anything but inline text: a line break, an image, a
+   table, a block, or a button link, which RenderLinkButton sizes as a
+   box of its own. */
+static long InlineTextLength(const struct htmlnode *n, int *space)
+{
+    static const char * const inl[] = { "a", "span", "b", "strong", "em", "i", "u", "font", "small", "big", NULL };
+    long len = 0, k;
+    int i;
+    for (; n; n = n->next) {
+        if (htmlpart_IsText(n)) {
+            for (k = 0; k < n->textlen; ++k) {
+                if (is_collapsible_space((unsigned char) n->text[k])) {
+                    if (!*space) { ++len; *space = 1; }
+                } else { ++len; *space = 0; }
+            }
+        } else if (htmlpart_IsElement(n)) {
+            for (i = 0; inl[i] && strcmp(n->tag, inl[i]) != 0; ++i) ;
+            if (!inl[i]) return -1;
+            if (strcmp(n->tag, "a") == 0 && LinkIsButton(n)) return -1;
+            k = InlineTextLength(n->children, space);
+            if (k < 0) return -1;
+            len += k;
+        }
+    }
+    return len;
+}
+
+/* The width a shrink-to-fit table takes when it is one cell holding a
+   short line of inline text, LinkedIn's outlined buttons (2026-11-15):
+   the cell's declared pixel width if it has one (CellDeclaredPixelWidth,
+   padding included), else its text's width estimated as for a button
+   link (RenderLinkButton), plus its padding; then its cellpadding and
+   side borders. 0 for any other table. Text can't be measured while the
+   layout is built, so the estimate can be off by a few pixels. */
+#define LABEL_MAXCHARS 60
+static long TableLabelWidth(const struct htmlnode *tablenode)
+{
+    struct nodevec rows;
+    const struct htmlnode *td, *cell = NULL;
+    long w = 0, len, fontpx = 14, pad[4];
+    int cells = 0, space = 1;
+    char color[32], *fs;
+
+    nodevec_init(&rows);
+    CollectRows(tablenode, &rows);
+    if (rows.count == 1)
+        for (td = rows.items[0]->children; td; td = td->next)
+            if (NodeIsCell(td)) { cell = td; ++cells; }
+    nodevec_free(&rows);
+    if (cells != 1) return 0;
+    w = CellDeclaredPixelWidth(cell);
+    if (w <= 0) {
+        len = InlineTextLength(cell->children, &space);
+        if (len > 0 && space) --len;	/* a trailing space */
+        if (len <= 0 || len > LABEL_MAXCHARS) return 0;
+        fs = htmlpart_GetStyleProp(cell, "font-size");
+        if (fs) { long px = CssPixelLength(fs); if (px > 0) fontpx = px; free(fs); }
+        CellCssPadding(cell, pad);
+        w = (len * fontpx * BUTTON_CHAR_WIDTH_PCT) / 100 + pad[1] + pad[3];
+    }
+    return w + 2 * TableCellPadding(tablenode)
+        + CssBorderSide(cell, "border-left", color, sizeof(color))
+        + CssBorderSide(cell, "border-right", color, sizeof(color));
+}
+
+/* Where a cell's align= or text-align places a shrink-to-fit table in
+   it (lset.ch's halign): left by default. align="middle" isn't HTML,
+   but browsers center by it (LinkedIn's 390px button). */
+static int CellContentSide(const struct htmlnode *td)
+{
+    const char *a = td ? htmlpart_GetAttr(td, "align") : NULL;
+    char *ta = td ? htmlpart_GetStyleProp(td, "text-align") : NULL;
+    const char *how = ta ? ta : a;
+    int side = lset_HALIGN_LEFT;
+    if (how && (strcasecmp(how, "center") == 0 || strcasecmp(how, "middle") == 0))
+        side = lset_HALIGN_CENTER;
+    else if (how && strcasecmp(how, "right") == 0) side = lset_HALIGN_RIGHT;
+    free(ta);
+    return side;
+}
+
 static struct lset *CenterFixedTable(struct lset *ls, const struct htmlnode *tablenode,
                                      const struct htmlnode *td, struct hax_state *st)
 {
     long w = CenteredFixedTableWidth(tablenode);
-    int side = lset_HALIGN_CENTER;
+    int side = lset_HALIGN_CENTER, label = 0;
+    const char *tw = htmlpart_GetAttr(tablenode, "width");
     if (!ls) return ls;
-    if (w <= 0 && !htmlpart_GetAttr(tablenode, "width")) {
-        const char *a = td ? htmlpart_GetAttr(td, "align") : NULL;
-        char *ta = td ? htmlpart_GetStyleProp(td, "text-align") : NULL;
-        const char *how = ta ? ta : a;
+    if (tw && strcasecmp(tw, "auto") == 0) tw = NULL;
+    if (w <= 0 && !tw) {
         long img = FloatTableSoleImageWidth(tablenode);
         char *mw = htmlpart_GetStyleProp(tablenode, "max-width");
         w = (img > 0) ? img + ICONCELL_WIDTH_PAD : 0;
@@ -3562,13 +3647,13 @@ static struct lset *CenterFixedTable(struct lset *ls, const struct htmlnode *tab
             long m = LsetFixedContentWidth(ls);
             if (m > 0) w = m + ICONCELL_WIDTH_PAD;
         }
-        if (how && strcasecmp(how, "center") == 0) side = lset_HALIGN_CENTER;
-        else if (how && strcasecmp(how, "right") == 0) side = lset_HALIGN_RIGHT;
-        else side = lset_HALIGN_LEFT;
-        free(ta);
+        if (w <= 0 && (w = TableLabelWidth(tablenode)) > 0) label = 1;
+        side = CellContentSide(td);
     }
     if (w <= 0) return ls;
-    if (ls->left != NULL) {
+    /* A rounded or colored label narrows as a whole, background and
+       corners too, not just its text within them. */
+    if (ls->left != NULL || ls->radius > 0 || ls->borderwidth > 0 || (label && ls->bgcolor[0])) {
         ls = CenteredRowLeaf(ls, w, st);
         if (ls->left == NULL) ls->halign = side;
         return ls;
@@ -4524,7 +4609,8 @@ static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode
 static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablenode)
 {
     struct lsetvec rows;
-    long i, centerw;
+    long i, centerw, labelw = 0;
+    const char *tw = htmlpart_GetAttr(tablenode, "width");
     int ok = BuildLsetGrid(tablenode, st, &rows);
     /* !ok means BuildLsetGrid found no real rows -- a benign, common
        case (a genuinely empty/decorative <table>), not a failure; see
@@ -4545,6 +4631,11 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         a->padleft = a->padright = 0;
     } else
         centerw = 0;
+    /* A shrink-to-fit table that is one short label, as
+       CenterFixedTable sizes one standing alone in a cell: LinkedIn's
+       outlined buttons, inside a link in a left-aligned cell. */
+    if (centerw == 0 && (!tw || strcasecmp(tw, "auto") == 0))
+        labelw = TableLabelWidth(tablenode);
     for (i = 0; i < rows.count; ++i) {
         struct lset *rowRoot = rows.items[i];
         /* dataobject_ViewName (dataobj.c) always constructs "lsetview"
@@ -4575,6 +4666,11 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
            last. */
         rowRoot = StackTopBottom(st, StackSides(st, rowRoot, tablenode), tablenode,
                                  i == 0, i == rows.count - 1);
+        if (labelw > 0) {
+            struct lset *placed = CenteredRowLeaf(rowRoot, labelw, st);
+            if (placed != rowRoot) placed->halign = CellContentSide(st->cell);
+            rowRoot = placed;
+        }
         EnsureLineBreak(st);
         InsertRowView(st, rowRoot);
     }
@@ -5306,6 +5402,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
     if (nested && NextRenderPaintedBg[0]) strcpy(st.paintedBg, NextRenderPaintedBg);
     NextRenderPaintedBg[0] = '\0';
     st.quirks = nested ? NextRenderQuirks : !htmlpart_LastParseHadDoctype();
+    st.cell = ambientCell;
     /* Inherited styles outermost, then the table, row and cell, so
        each nearer one wins. */
     if (nested) {
