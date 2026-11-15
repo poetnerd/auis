@@ -1435,6 +1435,62 @@ static void SetImageAlphaBg(struct hax_state *st)
     png_SetAlphaBackground(((long) r << 16) | (g << 8) | b);
 }
 
+/* CSS border-radius on an image (LinkedIn's round avatars, the
+   Economist's editor photo). Images have no alpha plane, so the pixels
+   outside the curve are blended into the color painted behind the
+   image now, as PNG transparency is (SetImageAlphaBg), antialiased by
+   4x4 supersampling like lsetv.c's rounded cells. Works on a true-color
+   copy (image_Expand) of a palette or bitmap image, swapped in as
+   ScaleImageToDeclaredSize swaps in its zoomed one. */
+static long CssBorderRadius(const struct htmlnode *n);
+#define IMGRR_SUB 4
+static void RoundImageCorners(struct dataobject **dobRef, const struct htmlnode *n, struct hax_state *st)
+{
+    struct image *img = (struct image *) *dobRef;
+    long r = CssBorderRadius(n), w, h, i, j, x, y, k, sx, sy, cov;
+    long ncov = IMGRR_SUB * IMGRR_SUB;
+    int br, bgr, bb;
+    double dx, dy;
+    unsigned char *p;
+
+    if (r <= 0) return;
+    if (!TRUEP(img)) {
+        struct image *t = image_Expand(img);
+        if (!t || t == img) return;
+        dataobject_Destroy(*dobRef);
+        *dobRef = (struct dataobject *) t;
+        img = t;
+    }
+    if (image_Pixlen(img) != 3) return;
+    w = image_Width(img);
+    h = image_Height(img);
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+    if (r <= 0) return;
+    if (!ColorRGB(st->paintedBg, &br, &bgr, &bb)) br = bgr = bb = 255;
+    for (j = 0; j < r; ++j)
+        for (i = 0; i < r; ++i) {
+            cov = 0;	/* samples inside the curve, centered at (r, r) */
+            for (sy = 0; sy < IMGRR_SUB; ++sy)
+                for (sx = 0; sx < IMGRR_SUB; ++sx) {
+                    dx = r - (i + (sx + 0.5) / IMGRR_SUB);
+                    dy = r - (j + (sy + 0.5) / IMGRR_SUB);
+                    if (dx * dx + dy * dy <= (double) r * r) ++cov;
+                }
+            if (cov == ncov) continue;
+            for (k = 0; k < 4; ++k) {
+                x = (k & 1) ? w - 1 - i : i;
+                y = (k & 2) ? h - 1 - j : j;
+                /* true-color pixels are R, G, B bytes (imageaux.c's
+                   doValToMem), rows unpadded */
+                p = image_Data(img) + (y * w + x) * 3;
+                p[0] = (unsigned char) ((p[0] * cov + br * (ncov - cov)) / ncov);
+                p[1] = (unsigned char) ((p[1] * cov + bgr * (ncov - cov)) / ncov);
+                p[2] = (unsigned char) ((p[2] * cov + bb * (ncov - cov)) / ncov);
+            }
+        }
+}
+
 static struct dataobject *ResolveImageDataObject(struct hax_state *st, const struct htmlnode *n,
                                                    boolean *outBeaconBlocked, char **outPlaceholderHint)
 {
@@ -1488,6 +1544,7 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
                the classes that actually have that field. */
             if (strcmp(dobClass, "raster") != 0) {
                 ScaleImageToDeclaredSize(&dob, n);
+                RoundImageCorners(&dob, n, st);
                 image_SetNoBorder((struct image *) dob, TRUE);
             }
             free(bytes);
