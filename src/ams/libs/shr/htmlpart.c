@@ -760,6 +760,14 @@ struct hpframe {
 				   (discard) for HPF_DROP. */
 };
 
+/* One simple stylesheet rule: "tag", ".cls" or "tag.cls" (either
+   part may be empty, not both), and its raw declarations. */
+struct hprule {
+    char tag[16];
+    char cls[64];
+    char *decls;
+};
+
 struct hpstack {
     struct hpframe **items;	/* array of pointers: growing this array
 				   via realloc must never invalidate a
@@ -770,6 +778,9 @@ struct hpstack {
     char **hidden;		/* classes a <style> block sets to
 				   display:none (collect_hidden_classes) */
     long nhidden, caphidden;
+    struct hprule *rules;	/* simple <style> rules merged into
+				   matching elements' style= (apply_rules) */
+    long nrules, caprules;
 };
 
 static void hpstack_init(struct hpstack *st)
@@ -779,6 +790,8 @@ static void hpstack_init(struct hpstack *st)
     st->cap = 0;
     st->hidden = NULL;
     st->nhidden = st->caphidden = 0;
+    st->rules = NULL;
+    st->nrules = st->caprules = 0;
 }
 
 static void hpstack_push(struct hpstack *st, struct hpframe *f)
@@ -853,6 +866,95 @@ static int decls_hide(const unsigned char *data, long start, long end)
     return 0;
 }
 
+/* Records one simple rule (see struct hprule); names too long for
+   its fields are skipped. */
+static void add_rule(struct hpstack *st, const unsigned char *tag, long tn,
+                     const unsigned char *cls, long cn, const unsigned char *decls, long dn)
+{
+    struct hprule *r;
+    long i;
+    if (tn >= (long) sizeof(r->tag) || cn >= (long) sizeof(r->cls) || dn <= 0) return;
+    if (st->nrules >= st->caprules) {
+        long ncap = st->caprules ? st->caprules * 2 : 16;
+        struct hprule *nr = (struct hprule *) realloc(st->rules, ncap * sizeof(struct hprule));
+        if (!nr) return;
+        st->rules = nr;
+        st->caprules = ncap;
+    }
+    r = &st->rules[st->nrules];
+    for (i = 0; i < tn; i++) r->tag[i] = (char) tolower(tag[i]);
+    r->tag[tn] = '\0';
+    memcpy(r->cls, cls, cn);
+    r->cls[cn] = '\0';
+    r->decls = (char *) malloc(dn + 1);
+    if (!r->decls) return;
+    memcpy(r->decls, decls, dn);
+    r->decls[dn] = '\0';
+    ++st->nrules;
+}
+
+/* Whether a class="..." value contains the class name cls. */
+static int class_list_has(const char *classattr, const char *cls)
+{
+    const char *p = classattr;
+    size_t n = strlen(cls);
+    while (*p) {
+        const char *w;
+        while (*p && isspace((unsigned char) *p)) ++p;
+        w = p;
+        while (*p && !isspace((unsigned char) *p)) ++p;
+        if ((size_t) (p - w) == n && strncmp(w, cls, n) == 0) return 1;
+    }
+    return 0;
+}
+
+/* Merges the stylesheet rules matching an element into its style=:
+   tag rules, then class rules, each in document order, then the
+   inline style, so that filter_style's last-wins keeps the CSS
+   precedence for these selectors. The Book Rack's a { text-decoration:
+   none } is why (2026-11-14): Thunderbird draws its links without the
+   underline every link got here. */
+static void apply_rules(struct hpstack *st, struct htmlnode *node, const char *classattr)
+{
+    struct hpbuf_s buf;
+    struct htmlattr *at, **tail;
+    char *merged, *filtered;
+    int pass, any = 0;
+    long i;
+
+    hpbuf_init(&buf);
+    for (pass = 0; pass < 2; pass++) {
+        for (i = 0; i < st->nrules; i++) {
+            struct hprule *r = &st->rules[i];
+            if ((r->cls[0] != '\0') != pass) continue;
+            if (r->tag[0] && strcmp(r->tag, node->tag) != 0) continue;
+            if (r->cls[0] && (!classattr || !class_list_has(classattr, r->cls))) continue;
+            hpbuf_puts(&buf, r->decls);
+            hpbuf_putc(&buf, ';');
+            any = 1;
+        }
+    }
+    if (!any) { free(hpbuf_finish(&buf, NULL)); return; }
+    for (tail = &node->attrs; (at = *tail) != NULL; tail = &at->next)
+        if (strcmp(at->name, "style") == 0) break;
+    if (at) hpbuf_puts(&buf, at->value);
+    merged = hpbuf_finish(&buf, NULL);
+    if (!merged) return;
+    filtered = filter_style(merged);
+    free(merged);
+    if (!filtered) return;
+    if (at) {
+        free(at->value);
+        at->value = filtered;
+    } else if ((at = (struct htmlattr *) malloc(sizeof(struct htmlattr))) != NULL) {
+        at->name = hp_strdup("style");
+        at->value = filtered;
+        at->next = NULL;
+        *tail = at;
+    } else
+        free(filtered);
+}
+
 /* Scans a <style> block's CSS for top-level rules that hide a class:
    ".x { display:none }", optionally tag-qualified ("table.x") and in
    a selector list. Everything inside an @-rule block is skipped:
@@ -894,22 +996,32 @@ static void collect_hidden_classes(struct hpstack *st, const unsigned char *data
             ++p;
         }
         if (data[ss] == '@' || depth > 0) continue;
-        if (!decls_hide(data, bs, p - 1)) continue;
 
-        /* each comma-separated selector: [tag].class, nothing else */
+        /* each comma-separated selector: [tag][.class], with a:link
+           and a:visited taken as a; nothing else */
         while (ss < se) {
-            long cs, ce, q;
+            long cs, ce, q, ts, te, ks = 0, ke = 0;
             while (ss < se && (isspace(data[ss]) || data[ss] == ',')) ++ss;
             cs = ss;
             while (ss < se && data[ss] != ',') ++ss;
             ce = ss;
             while (ce > cs && isspace(data[ce - 1])) --ce;
-            q = cs;
+            q = ts = cs;
             while (q < ce && isalnum(data[q])) ++q;
-            if (q >= ce || data[q] != '.') continue;
-            cs = ++q;
-            while (q < ce && (isalnum(data[q]) || data[q] == '-' || data[q] == '_')) ++q;
-            if (q == ce && ce > cs) add_hidden_class(st, data + cs, ce - cs);
+            te = q;
+            if (te - ts == 1 && data[ts] == 'a' && q < ce && data[q] == ':') {
+                if (ce - q >= 5 && strncmp((const char *) data + q, ":link", 5) == 0) q += 5;
+                else if (ce - q >= 8 && strncmp((const char *) data + q, ":visited", 8) == 0) q += 8;
+            }
+            if (q < ce && data[q] == '.') {
+                ks = ++q;
+                while (q < ce && (isalnum(data[q]) || data[q] == '-' || data[q] == '_')) ++q;
+                ke = q;
+                if (ke == ks) continue;
+            }
+            if (q != ce || (te == ts && ke == ks)) continue;
+            if (ke > ks && decls_hide(data, bs, p - 1)) add_hidden_class(st, data + ks, ke - ks);
+            add_rule(st, data + ts, te - ts, data + ks, ke - ks, data + bs, p - 1 - bs);
         }
     }
 }
@@ -1130,6 +1242,7 @@ static long handle_open_tag(const unsigned char *data, long pos, long len, struc
     struct htmlattr **attrtail;
     int selfclose;
     int classhidden = 0;
+    char *classval = NULL;
 
     p = read_name(data, pos + 1, len, namebuf, (int) sizeof(namebuf));
 
@@ -1203,13 +1316,13 @@ static long handle_open_tag(const unsigned char *data, long pos, long len, struc
                 hasvalue = 1;
             }
 
-            if (kindwanted != HPF_DROP && hasvalue && st->nhidden > 0 && strcmp(attrnamebuf, "class") == 0) {
-                char *cv = (char *) malloc(valend - valstart + 1);
-                if (cv) {
-                    memcpy(cv, data + valstart, valend - valstart);
-                    cv[valend - valstart] = '\0';
-                    if (class_is_hidden(st, cv)) classhidden = 1;
-                    free(cv);
+            if (kindwanted != HPF_DROP && hasvalue && (st->nhidden > 0 || st->nrules > 0)
+                && strcmp(attrnamebuf, "class") == 0 && !classval) {
+                classval = (char *) malloc(valend - valstart + 1);
+                if (classval) {
+                    memcpy(classval, data + valstart, valend - valstart);
+                    classval[valend - valstart] = '\0';
+                    if (class_is_hidden(st, classval)) classhidden = 1;
                 }
             }
 
@@ -1254,6 +1367,8 @@ static long handle_open_tag(const unsigned char *data, long pos, long len, struc
         node = NULL;
         kindwanted = HPF_DROP;
     }
+    if (node && st->nrules > 0) apply_rules(st, node, classval);
+    free(classval);
 
     if (selfclose || is_void_tag(namebuf)) {
         if (node) sink_append(currentsink(st, rootsink), node);
@@ -1334,6 +1449,8 @@ struct htmlnode *htmlpart_Parse(const unsigned char *data, long len)
     free(st.items);
     while (st.nhidden > 0) free(st.hidden[--st.nhidden]);
     free(st.hidden);
+    while (st.nrules > 0) free(st.rules[--st.nrules].decls);
+    free(st.rules);
 
     return rootsink.head;
 }
