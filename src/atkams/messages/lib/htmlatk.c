@@ -298,11 +298,13 @@ static int ColorCacheCount = 0;
    `color:inherit`).
 
    Returns a pointer into outbuf (caller-owned, at least 8 bytes) for
-   an rgb()/rgba() value converted to "#RRGGBB" (alpha is dropped --
-   ATK text color has no alpha/transparency channel, same "opaque"
-   degradation already implicit everywhere else in this renderer).
-   Returns NULL for inherit/initial/unset/currentColor/transparent (or
-   an empty value) -- there is no cascade here to inherit *from*, so
+   an rgb()/rgba() value converted to "#RRGGBB". ATK colors have no
+   alpha, so a partial alpha is blended onto white, the page default
+   (LinkedIn's rgba(0,0,0,0.75) text becomes #404040). Returns NULL
+   for inherit/initial/unset/currentColor/transparent, for an alpha
+   of 0 (LinkedIn's outlined buttons have background-color
+   rgba(0,0,0,0), which drew as solid black before 2026-11-14), or
+   an empty value -- there is no cascade here to inherit *from*, so
    "apply no color override" is the correct semantic, not a guess, and
    NULL propagates out through AttrColorStyleFor/marks_push (see
    marks_push's own note on why callers must not just assume every
@@ -348,6 +350,18 @@ static const char *CssColorToX11(const char *value, char *outbuf, size_t outbufs
         if (r < 0) r = 0; if (r > 255) r = 255;
         if (g < 0) g = 0; if (g > 255) g = 255;
         if (b < 0) b = 0; if (b > 255) b = 255;
+        p = endp; while (*p == ' ' || *p == ',' || *p == '/') ++p;
+        if (*p != ')' && *p != '\0') {
+            double a = strtod(p, &endp);
+            if (endp == p) return NULL;
+            if (*endp == '%') a /= 100.0;
+            if (a <= 0.0) return NULL;
+            if (a < 1.0) {
+                r = (long) (r * a + 255 * (1.0 - a) + 0.5);
+                g = (long) (g * a + 255 * (1.0 - a) + 0.5);
+                b = (long) (b * a + 255 * (1.0 - a) + 0.5);
+            }
+        }
         sprintf(outbuf, "#%02lx%02lx%02lx", r, g, b);
         return outbuf;
     }
@@ -658,6 +672,25 @@ static void SetNextRenderPaintedBg(struct hax_state *st, const char *own)
     if (!bg) bg = st->paintedBg;
     strncpy(NextRenderPaintedBg, bg, sizeof(NextRenderPaintedBg) - 1);
     NextRenderPaintedBg[sizeof(NextRenderPaintedBg) - 1] = '\0';
+}
+
+/* While a cell's sole nested table is spliced in its place, cells
+   inside it look up their background through their own table, which
+   has none when the color is the outer cell's: LinkedIn's header icons
+   sit in a table inside a white cell and were rendered (their PNG
+   transparency blended) against the gray body color instead
+   (2026-11-14). Pushing the outer cell's color as an ambient for the
+   inner build gives them that. Returns 1 if pushed; pop after. */
+static int PushCellAmbient(struct hax_state *st, int hasBg, const char *bg)
+{
+    struct hax_ambient *a;
+    if (!hasBg || st->ambientDepth >= HAX_AMBIENT_MAX) return 0;
+    a = &st->ambient[st->ambientDepth++];
+    strncpy(a->bg, bg, sizeof(a->bg) - 1);
+    a->bg[sizeof(a->bg) - 1] = '\0';
+    a->maxwidth = 0;
+    a->halign = lset_HALIGN_NONE;
+    return 1;
 }
 
 /* Returns 1 if a mark was actually pushed, 0 if not (NULL style, or a
@@ -2748,6 +2781,10 @@ static void ApplyBgColorRecursive(struct lset *node, const char *color)
         strncpy(node->bgcolor, color, sizeof(node->bgcolor) - 1);
         node->bgcolor[sizeof(node->bgcolor) - 1] = '\0';
     }
+    /* What's inside takes this leaf's color, which may be its own: a
+       table nested in LinkedIn's white card stays white under the
+       gray body color (2026-11-14). */
+    color = node->bgcolor;
     if (node->dobj && strcmp(class_GetTypeName(node->dobj), "text") == 0)
         ApplyBgColorToTextEmbeds((struct text *) node->dobj, color);
     /* CenteredRowLeaf's wrapper holds its row as an lset dobj. */
@@ -2820,9 +2857,9 @@ static int DivAmbient(const struct htmlnode *div, struct hax_ambient *a)
    outside that one, if any. Returns the row to embed. */
 static struct lset *ApplyAmbient(struct hax_state *st, struct lset *row)
 {
-    int i, k = -1;
+    int i, k = -1, rowbg = -1;
     for (i = st->ambientDepth - 1; i >= 0; --i) {
-        if (st->ambient[i].bg[0]) { ApplyBgColorRecursive(row, st->ambient[i].bg); break; }
+        if (st->ambient[i].bg[0]) { ApplyBgColorRecursive(row, st->ambient[i].bg); rowbg = i; break; }
     }
     for (i = st->ambientDepth - 1; i >= 0; --i) {
         if (st->ambient[i].maxwidth > 0) { k = i; break; }
@@ -2836,6 +2873,24 @@ static struct lset *ApplyAmbient(struct hax_state *st, struct lset *row)
                     strncpy(leaf->bgcolor, st->ambient[i].bg, sizeof(leaf->bgcolor) - 1);
                     leaf->bgcolor[sizeof(leaf->bgcolor) - 1] = '\0';
                     break;
+                }
+            }
+            /* The leaf's margins hold two colors when the row is
+               narrower than the column: outside the column, the
+               color outside it (The Economist's #f2f2f2 body); inside,
+               the column's own (its dark #0D0D0D div), which needs a
+               full-width leaf of its own around the row. With one
+               leaf, light bands showed between the footer blocks
+               (2026-11-14). */
+            if (leaf->bgcolor[0] && rowbg >= k
+                && strcasecmp(leaf->bgcolor, st->ambient[rowbg].bg) != 0) {
+                struct lset *col = CenteredRowLeaf(row, st->ambient[k].maxwidth, st);
+                if (col != row) {
+                    col->halign = lset_HALIGN_NONE;
+                    col->contentwidth = 0;
+                    strncpy(col->bgcolor, st->ambient[rowbg].bg, sizeof(col->bgcolor) - 1);
+                    col->bgcolor[sizeof(col->bgcolor) - 1] = '\0';
+                    leaf->dobj = (struct dataobject *) col;
                 }
             }
             row = leaf;
@@ -3331,7 +3386,10 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
     if (NodeIsSoleNestedTable(td, &soleTable)) {
         struct lsetvec innerRows;
         int savedHardfail = st->hardfail;
-        if (BuildLsetGrid(soleTable, st, &innerRows) && innerRows.count == 1
+        int pushed = PushCellAmbient(st, hasBg, bgbuf);
+        int built = BuildLsetGrid(soleTable, st, &innerRows);
+        if (pushed) --st->ambientDepth;
+        if (built && innerRows.count == 1
             && innerRows.items[0]->left == NULL) {
             /* inner is already a complete lset LEAF (not a split) for
                the nested table's one row -- i.e. that row itself has
@@ -3719,7 +3777,10 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                 long j;
                 char bgbuf[32];
                 int hasBg = CellBgColorX11Cascaded(soleCell, tr, tablenode, bgbuf, sizeof(bgbuf));
-                if (BuildLsetGrid(soleTable, st, &innerRows)) {
+                int pushed = PushCellAmbient(st, hasBg, bgbuf);
+                int built = BuildLsetGrid(soleTable, st, &innerRows);
+                if (pushed) --st->ambientDepth;
+                if (built) {
                     /* One spliced leaf stands in for the whole nested
                        table, which the outer cell's valign places (e.g.
                        bookrack's <td valign="bottom"> Buy button), same
@@ -4192,7 +4253,7 @@ static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode
 static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablenode)
 {
     struct lsetvec rows;
-    long i;
+    long i, centerw;
     int ok = BuildLsetGrid(tablenode, st, &rows);
     /* !ok means BuildLsetGrid found no real rows -- a benign, common
        case (a genuinely empty/decorative <table>), not a failure; see
@@ -4200,6 +4261,18 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
        st->hardfail. Just render nothing for this table and move on. */
     if (!ok) { lsetvec_free(&rows); return FALSE; }
     FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
+    /* A top-level <table width="512" align="center"> is a centered
+       column, as a <div>'s max-width is (LinkedIn, 2026-11-14); its
+       margins take the body color. Nested tables get the same from
+       CenterFixedTable. */
+    centerw = st->nested ? 0 : CenteredFixedTableWidth(tablenode);
+    if (centerw > 0 && st->ambientDepth < HAX_AMBIENT_MAX) {
+        struct hax_ambient *a = &st->ambient[st->ambientDepth++];
+        a->bg[0] = '\0';
+        a->maxwidth = centerw;
+        a->halign = lset_HALIGN_CENTER;
+    } else
+        centerw = 0;
     for (i = 0; i < rows.count; ++i) {
         struct lset *rowRoot = rows.items[i];
         /* dataobject_ViewName (dataobj.c) always constructs "lsetview"
@@ -4233,6 +4306,7 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         EnsureLineBreak(st);
         InsertRowView(st, rowRoot);
     }
+    if (centerw > 0) --st->ambientDepth;
     lsetvec_free(&rows);
     st->spacePending = 0;
     return !st->hardfail;
@@ -5153,6 +5227,24 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
             else if (strcmp(n->tag, "dt") == 0) { EnsureLineBreak(&st); }
             else if (strcmp(n->tag, "dd") == 0) { EnsureLineBreak(&st); InsertLiteral(&st, "    "); }
             else if (strcmp(n->tag, "pre") == 0) { EnsureParaBreak(&st); ++st.predepth; }
+            else if (strcmp(n->tag, "body") == 0) {
+                /* The page color, e.g. LinkedIn's gray around its
+                   white card; text views paint no background, so it
+                   reaches only the tables, like a <div>'s. Popped at
+                   the POST event. */
+                struct hax_ambient a;
+                if (NodeOwnBgColorX11(n, a.bg, sizeof(a.bg)) && st.ambientDepth < HAX_AMBIENT_MAX) {
+                    long pad[4];
+                    a.maxwidth = 0;
+                    a.halign = lset_HALIGN_NONE;
+                    st.ambient[st.ambientDepth++] = a;
+                    /* Its top padding as a band of that color: the
+                       gray above LinkedIn's card (padding-top: 8px).
+                       The bottom padding comes at the POST event. */
+                    CellCssPadding(n, pad);
+                    InsertRuleRow(&st, a.bg, pad[0]);
+                }
+            }
             else if (strcmp(n->tag, "div") == 0) {
                 struct hax_ambient a;
                 EnsureLineBreak(&st);
@@ -5219,6 +5311,14 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 EnsureLineBreak(&st);
             } else if (strcmp(n->tag, "pre") == 0) {
                 --st.predepth; EnsureParaBreak(&st);
+            } else if (strcmp(n->tag, "body") == 0) {
+                char buf[32];
+                if (st.ambientDepth > 0 && NodeOwnBgColorX11(n, buf, sizeof(buf))) {
+                    long pad[4];
+                    CellCssPadding(n, pad);
+                    InsertRuleRow(&st, buf, pad[2]);
+                    --st.ambientDepth;
+                }
             } else if (strcmp(n->tag, "div") == 0) {
                 struct hax_ambient a;
                 EnsureLineBreak(&st);
