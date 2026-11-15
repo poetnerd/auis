@@ -626,7 +626,12 @@ being front-loaded here.
         `@media` blocks are skipped (that's where templates re-show
         phone-only content), as are `<style>` blocks in Outlook-only
         comments. Elements with such a class are dropped like
-        `<script>`. Everything else in stylesheets is still ignored.
+        `<script>`. **2026-11-14**, wdc-confirmed: simple top-level
+        rules (`a`, `.x`, `a.x`, with `a:link`/`a:visited` as `a`) are
+        merged into matching elements' inline style, tag rules before
+        class rules before the element's own `style=` (filter_style's
+        last-wins keeps that precedence). Descendant selectors, ids,
+        other pseudo-classes and `@media` are ignored.
       - **RESOLVED 2026-11-14**, wdc-confirmed: bold headings were
         regular, because `font-weight` only recognized the word `bold`.
         A numeric weight of 600 or more (the Economist uses 700), or
@@ -731,14 +736,37 @@ being front-loaded here.
         footer showed light bands. The Economist now also shows its own
         `#f2f2f2` body color beside its dark column, as Thunderbird
         does.
-      - Button labels ("Comment", "See post") are underlined serif;
-        Thunderbird shows bold sans. The link style overrides the
-        cell's font and `text-decoration: none`.
-      - `font-family: -apple-system, system-ui, …` doesn't reach a
-        sans font, so body text falls back to Times.
+      - **RESOLVED 2026-11-14**, wdc-confirmed (LinkedIn, Economist,
+        National Grid, bookrack): button labels and body text were
+        serif, and links were underlined against their own
+        `text-decoration: none`. Each table cell renders in its own
+        walk, which didn't inherit the `font-family` from outside it;
+        the family open where a cell sits is now its outermost style.
+        `font-family` lists drop emoji and symbol families and
+        duplicates, so LinkedIn's long list reaches `Helvetica, Arial,
+        sans-serif`. A link with `text-decoration: none` gets no
+        underline, and the parser's stylesheet cascade (item 15)
+        delivers bookrack's `a { text-decoration: none }`. Bookrack's
+        cells take its Arial `<body>` font and the Economist's button
+        label its sans list, as in Thunderbird. Other properties (color,
+        size, alignment) still don't reach a cell from outside its own
+        table; see the context review below.
       - More vertical space above the logo row than Thunderbird.
       - Round avatars and pill buttons need `border-radius`, which is
-        unsupported (as for the Economist's buttons).
+        unsupported (as for the Economist's buttons). Assessed
+        2026-11-14 as moderate: ATK has rounded-rect primitives
+        (`xgraphic.c`'s `FillRRectSize`/`DrawRRectSize`, not
+        antialiased); the work is repainting corners in the outer color
+        after a cell's text draws, a rounded outline in place of the
+        rule-strip borders, and a separate corner mask in `imagev`.
+      - Context review, agreed 2026-11-14: several bugs came from
+        shortcut paths (wrapper flattening, the two sole-nested-table
+        splices, nested cell walks, `CenterFixedTable`,
+        `RenderLinkButton`, `ApplyAmbient`) each rebuilding the
+        surrounding context by hand and dropping a part of it: borders,
+        background, font. Plan: audit what each path carries against
+        the normal path, and why each exists; then one inherited-context
+        record that every walk starts from and every path passes on.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
