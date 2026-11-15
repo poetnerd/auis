@@ -625,7 +625,9 @@ struct hax_listframe { int ordered; int counter; };
    (bg[0] == '\0' for none) and, for a <div>, its max-width (0 for
    none) and where that narrower column sits (lset_HALIGN_*). */
 #define HAX_AMBIENT_MAX 8
-struct hax_ambient { char bg[32]; long maxwidth; int halign; };
+/* padleft/padright: a flattened wrapper cell's side padding, which
+   no leaf of its own can hold (ApplyAmbient). */
+struct hax_ambient { char bg[32]; long maxwidth; int halign; long padleft, padright; };
 struct hax_state {
     struct text *dest;
     long pos;
@@ -751,6 +753,7 @@ static int PushCellAmbient(struct hax_state *st, int hasBg, const char *bg)
     a->bg[sizeof(a->bg) - 1] = '\0';
     a->maxwidth = 0;
     a->halign = lset_HALIGN_NONE;
+    a->padleft = a->padright = 0;
     return 1;
 }
 
@@ -2788,6 +2791,23 @@ static int WrapperBgColor(const struct htmlnode *table, const struct htmlnode *c
     return NodeOwnBgColorX11(cell, outbuf, outbufsz) || NodeOwnBgColorX11(table, outbuf, outbufsz);
 }
 
+/* The ambient a flattened wrapper table pushes for its content: its
+   color and its cell's side padding (The Economist's masthead cell,
+   padding 12px, drew its logo and date against the column's edges,
+   2026-11-15). Returns 0, pushing nothing, when it has neither. */
+static void CellCssPadding(const struct htmlnode *td, long pad[4]);
+static int WrapperAmbient(const struct htmlnode *table, const struct htmlnode *cell, struct hax_ambient *a)
+{
+    long pad[4];
+    if (!WrapperBgColor(table, cell, a->bg, sizeof(a->bg))) a->bg[0] = '\0';
+    CellCssPadding(cell, pad);
+    a->padleft = pad[3];
+    a->padright = pad[1];
+    a->maxwidth = 0;
+    a->halign = lset_HALIGN_NONE;
+    return a->bg[0] != '\0' || a->padleft > 0 || a->padright > 0;
+}
+
 /* A <td>/<th> with no background of its own inherits one from its row
    or table, the same cascade a real browser applies when a template
    paints its background once at the <table>/<tr> level instead of
@@ -2974,6 +2994,7 @@ static int DivAmbient(const struct htmlnode *div, struct hax_ambient *a)
     a->bg[0] = '\0';
     a->maxwidth = 0;
     a->halign = lset_HALIGN_LEFT;
+    a->padleft = a->padright = 0;
     if (!NodeOwnBgColorX11(div, a->bg, sizeof(a->bg))) a->bg[0] = '\0';
     sv = htmlpart_GetStyleProp(div, "max-width");
     if (sv) { a->maxwidth = CssPixelLength(sv); free(sv); }
@@ -3000,8 +3021,29 @@ static int AmbientHasBg(const struct hax_state *st)
 static struct lset *ApplyAmbient(struct hax_state *st, struct lset *row)
 {
     int i, k = -1, rowbg = -1;
+    long padl = 0, padr = 0;
     for (i = st->ambientDepth - 1; i >= 0; --i) {
         if (st->ambient[i].bg[0]) { ApplyBgColorRecursive(row, st->ambient[i].bg); rowbg = i; break; }
+    }
+    /* Flattened wrappers' side padding, all of it inside the column,
+       in the innermost color. */
+    for (i = 0; i < st->ambientDepth; ++i) {
+        padl += st->ambient[i].padleft;
+        padr += st->ambient[i].padright;
+    }
+    if (padl > 0 || padr > 0) {
+        struct lset *pl = CenteredRowLeaf(row, 0, st);
+        if (pl != row) {
+            pl->halign = lset_HALIGN_NONE;
+            pl->padleft = (int) padl;
+            pl->padright = (int) padr;
+            if (pl->minwidth > 0) pl->minwidth += padl + padr;
+            if (rowbg >= 0) {
+                strncpy(pl->bgcolor, st->ambient[rowbg].bg, sizeof(pl->bgcolor) - 1);
+                pl->bgcolor[sizeof(pl->bgcolor) - 1] = '\0';
+            }
+            row = pl;
+        }
     }
     for (i = st->ambientDepth - 1; i >= 0; --i) {
         if (st->ambient[i].maxwidth > 0) { k = i; break; }
@@ -4456,6 +4498,7 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         a->bg[0] = '\0';
         a->maxwidth = centerw;
         a->halign = lset_HALIGN_CENTER;
+        a->padleft = a->padright = 0;
     } else
         centerw = 0;
     for (i = 0; i < rows.count; ++i) {
@@ -5346,14 +5389,9 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                        page). Keeping the wrapper as a table instead
                        brought back the one-huge-view problem above for
                        five fixtures. Popped at n's POST event. */
-                    if (st.ambientDepth < HAX_AMBIENT_MAX) {
-                        struct hax_ambient *a = &st.ambient[st.ambientDepth];
-                        if (WrapperBgColor(n, cellNode, a->bg, sizeof(a->bg))) {
-                            a->maxwidth = 0;
-                            a->halign = lset_HALIGN_NONE;
-                            ++st.ambientDepth;
-                        }
-                    }
+                    if (st.ambientDepth < HAX_AMBIENT_MAX
+                        && WrapperAmbient(n, cellNode, &st.ambient[st.ambientDepth]))
+                        ++st.ambientDepth;
                     /* No leaf holds a flattened cell's padding, so its
                        vertical padding becomes spacer rows in the
                        ambient color, inside the table's own borders.
@@ -5432,6 +5470,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                     long pad[4];
                     a.maxwidth = 0;
                     a.halign = lset_HALIGN_NONE;
+                    a.padleft = a.padright = 0;
                     st.ambient[st.ambientDepth++] = a;
                     /* Its top padding as a band of that color: the
                        gray above LinkedIn's card (padding-top: 8px).
@@ -5528,7 +5567,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 /* Only a flattened wrapper table gets a POST event;
                    undo its ambient push, if it made one. */
                 const struct htmlnode *cc, *cn;
-                char buf[32];
+                struct hax_ambient a;
                 EnsureLineBreak(&st);
                 if (TableIsTrivialWrapper(n, &cc, &cn)) {
                     long pad[4];
@@ -5536,7 +5575,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                     InsertRuleRow(&st, "", pad[2]);
                     InsertTableBorder(&st, cn, "border-bottom");
                     InsertTableBorder(&st, n, "border-bottom");
-                    if (st.ambientDepth > 0 && WrapperBgColor(n, cn, buf, sizeof(buf)))
+                    if (st.ambientDepth > 0 && WrapperAmbient(n, cn, &a))
                         --st.ambientDepth;
                 }
             } else if (tag_is_para(n->tag)) {
