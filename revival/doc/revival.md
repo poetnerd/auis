@@ -1016,6 +1016,24 @@ content. With the content a few pixels short, that rule got half the
 message, and every nested pair halved again. Overflowing content now
 gets the whole pair, clipped at the bottom.
 
+Why the content came up a few pixels short took a test page of two
+floated tables to find. The horizontal scroller that holds a wide table
+reserves room for its own scrollbar as a constant, because the real
+sizes aren't set until its first paint. Its comment adds up the parts
+to 24 pixels; the constant said 20. Every scrolled table had been 4
+pixels short since the scroller was written.
+
+A review of the renderer's shortcut paths followed. Each table cell
+is rendered by a walk of its own, and several paths build table
+structure without going through the normal one. Each had rebuilt the
+surrounding context by hand and dropped a different part of it: a
+cell's borders, its side padding, its background, every font and color
+set outside its own table. Cells now inherit what CSS says they should,
+including Firefox's quirks-mode rule that only color and font family
+cross into a table when a message has no doctype, and the two splice
+paths share one helper. The audit is in
+`html-mail-rendering-design.md`, "Context across the build paths".
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all
