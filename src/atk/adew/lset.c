@@ -272,7 +272,8 @@ putchar(c);
        minwidth (added \V 5), bgcolor (added \V 6, read separately
        below via lset_GetLine since it's a string, not a numeric sscanf
        field), noseam (added \V 7), and valign, minheight, halign,
-       contentwidth and padding (added \V 8) are each only present starting
+       contentwidth and padding (added \V 8), and the per-side padding
+       and fixedheight (added \V 9) are each only present starting
        with their own version -- older data has fewer fields, so parse
        each generation separately rather than let sscanf silently leave
        a field uninitialized against short input. */
@@ -281,7 +282,15 @@ putchar(c);
     self->halign = lset_HALIGN_NONE;
     self->contentwidth = 0;
     self->padding = 0;
-    if (version >= 8)
+    self->padtop = self->padright = self->padbottom = self->padleft = 0;
+    self->fixedheight = 0;
+    if (version >= 9)
+	sscanf(cbuf,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->nobar),
+	     &(self->vcenter),&(self->autoheight),&(self->minwidth),&(self->noseam),&(self->valign),&(self->minheight),
+	     &(self->halign),&(self->contentwidth),&(self->padding),
+	     &(self->padtop),&(self->padright),&(self->padbottom),&(self->padleft),&(self->fixedheight),
+	     &(self->application), &did,&lid,&rid,&textpending);
+    else if (version == 8)
 	sscanf(cbuf,"%d %d %d %d %d %d %d %d %d %d %d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->nobar),
 	     &(self->vcenter),&(self->autoheight),&(self->minwidth),&(self->noseam),&(self->valign),&(self->minheight),
 	     &(self->halign),&(self->contentwidth),&(self->padding),&(self->application), &did,&lid,&rid,&textpending);
@@ -367,11 +376,12 @@ long lset__Write(struct lset *self, FILE *file, long writeid, int level)
     self->header.dataobject.writeID = writeid;
 
     fprintf(file,"\\begindata{lset,%ld}\n",lset_GetID(self));
-    fprintf(file,"\\V 8\n"); /* Version Number -- bumped 2026-09-27 for valign/minheight, see lset.ch */
+    fprintf(file,"\\V 9\n"); /* Version Number -- bumped 2026-11-14 for per-side padding/fixedheight, see lset.ch */
     if(self->dobj){dataobject_Write(self->dobj,file,writeid,level+1); did = dataobject_UniqueID(self->dobj);}
     if(self->left){dataobject_Write(self->left,file,writeid,level+1);lid = dataobject_UniqueID(self->left);}
     if(self->right){ dataobject_Write(self->right,file,writeid,level+1);rid = dataobject_UniqueID(self->right);}
-    fprintf(file,"%d %d %d %d %d %d %d %d %d %d %d %d %d %ld %ld %ld %d\n>OBJ< %s\n>VIEW< %s\n>REF< %s\n>BGC< %s\n" ,self->type,self->pct,self->nobar,self->vcenter,self->autoheight,self->minwidth,self->noseam,self->valign,self->minheight,self->halign,self->contentwidth,self->padding,self->application,
+    fprintf(file,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %ld %ld %ld %d\n>OBJ< %s\n>VIEW< %s\n>REF< %s\n>BGC< %s\n" ,self->type,self->pct,self->nobar,self->vcenter,self->autoheight,self->minwidth,self->noseam,self->valign,self->minheight,self->halign,self->contentwidth,self->padding,
+	 self->padtop,self->padright,self->padbottom,self->padleft,self->fixedheight,self->application,
 	 did,lid,rid,(self->pdoc != NULL),self->dataname,self->viewname,self->refname,self->bgcolor);
     if(self->pdoc){
 	text_Write(self->pdoc,file,writeid,level+1);
@@ -398,6 +408,8 @@ self->minheight = 0;
 self->halign = lset_HALIGN_NONE;
 self->contentwidth = 0;
 self->padding = 0;
+self->padtop = self->padright = self->padbottom = self->padleft = 0;
+self->fixedheight = 0;
 self->toporigin = 0;
 self->revision = 0;
 self->dobj = NULL;

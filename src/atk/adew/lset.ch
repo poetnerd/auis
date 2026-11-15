@@ -45,9 +45,12 @@
 #define lset_HALIGN_CENTER 2
 #define lset_HALIGN_RIGHT 3
 
-/* GetOrigin's y offset for an lset with toporigin set (lsetv.c,
-   lsetscrlv.c): enough to cover the ascent of the small font on an
-   HTML row's line, small next to any real row. */
+/* The most GetOrigin's y offset can be for an lset with toporigin
+   set (lsetv.c, lsetscrlv.c); the offset is half the view's height up
+   to this. Enough to cover the ascent of the small font on an HTML
+   row's line, small next to any real row. Half, not all, of a short
+   row's height leaves room below for that font's descent, so a short
+   row (a 2px rule) still fills its line exactly. */
 #define lset_TOPORIGIN 8
 
 class lset : dataobject[dataobj] {
@@ -174,8 +177,18 @@ data:
 	   edges and its child on all four sides -- an HTML table's
 	   cellpadding. Added 2026-09-28 with halign; persisted as of \V 8. */
 	int padding;
+	/* A leaf's CSS padding, per side, in pixels, added to padding
+	   above -- an HTML cell's style="padding:...". Newsletter
+	   templates space their sections with it (The Economist's 48px
+	   below each section, 2026-11-14). Persisted as of \V 9. */
+	int padtop, padright, padbottom, padleft;
+	/* When nonzero, a leaf reports exactly this height whatever its
+	   child wants -- htmlatk.c's rule rows (an <hr>, or a table's CSS
+	   border-top/bottom), a thin strip of bgcolor around an empty text
+	   that would otherwise ask for a full line. Persisted as of \V 9. */
+	int fixedheight;
 	/* When set, a view of this lset embedded in text reports a y
-	   origin of lset_TOPORIGIN (or its height, if smaller) instead of
+	   origin of up to lset_TOPORIGIN (half its height) instead of
 	   0, so its top meets the top of its line. A view hangs below the
 	   baseline (view__GetOrigin's 0), leaving the line's font ascent
 	   as a strip of the text's white background above it; between

@@ -182,9 +182,12 @@ static void placechild(struct lsetview *self, struct rectangle *rr, boolean doEr
 	else if (ls->halign == lset_HALIGN_RIGHT) rr->left += rr->width - ls->contentwidth;
 	rr->width = ls->contentwidth;
     }
-    if (ls->padding > 0 && rr->width > 2 * ls->padding && rr->height > 2 * ls->padding) {
-	rr->left += ls->padding; rr->top += ls->padding;
-	rr->width -= 2 * ls->padding; rr->height -= 2 * ls->padding;
+    {
+	/* cellpadding (padding) plus the cell's own CSS padding per side */
+	long pl = ls->padding + ls->padleft, pr = ls->padding + ls->padright;
+	long pt = ls->padding + ls->padtop, pb = ls->padding + ls->padbottom;
+	if (rr->width > pl + pr) { rr->left += pl; rr->width -= pl + pr; }
+	if (rr->height > pt + pb) { rr->top += pt; rr->height -= pt + pb; }
     }
     if (ls->valign == lset_VALIGN_MIDDLE || ls->valign == lset_VALIGN_BOTTOM) {
 	view_DesiredSize(self->app, rr->width, rr->height, view_WidthSet, &dw, &dh);
@@ -508,7 +511,7 @@ void lsetview__GetOrigin(struct lsetview *self, long width, long height, long *o
     *originX = 0;
     *originY = 0;
     if (Data(self) && Data(self)->toporigin)
-        *originY = (height < lset_TOPORIGIN) ? height : lset_TOPORIGIN;
+        *originY = (height / 2 < lset_TOPORIGIN) ? height / 2 : lset_TOPORIGIN;
 }
 
 /* Added 2026-08-16 (html branch, lset-table-reflow task): lsetview had
@@ -555,14 +558,17 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
        and self-corrects on the next real layout pass once linked. */
     if (self->mode != lsetview_IsSplit && self->child && view_GetIM(self->child)) {
 	struct lset *ls = Data(self);
-	long w = width, h = height, pad2 = 2 * ls->padding;
+	long w = width, h = height;
+	long padw = 2 * ls->padding + ls->padleft + ls->padright;
+	long padh = 2 * ls->padding + ls->padtop + ls->padbottom;
 	/* Ask the child about the space placechild() will actually give
 	   it: a centered contentwidth, less padding on each side. */
 	if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && ls->contentwidth < w)
 	    w = ls->contentwidth;
-	if (pad2 > 0 && w > pad2) w -= pad2;
-	if (pad2 > 0 && h > pad2) h -= pad2;
+	if (padw > 0 && w > padw) w -= padw;
+	if (padh > 0 && h > padh) h -= padh;
 	result = view_DesiredSize(self->child, w, h, pass, dWidth, dHeight);
+	*dWidth += padw;
 	/* An aligned leaf fills the width it's offered and places its
 	   child within it, so that width is what it wants. Reporting the
 	   child's narrower width instead made text embedding the leaf
@@ -570,12 +576,15 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
 	   Economist's 166px icon block, 2026-09-28). */
 	if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && *dWidth < width)
 	    *dWidth = width;
-	*dHeight += pad2;
+	*dHeight += padh;
 	/* An HTML cell's height="N" (lset.ch's minheight) is a floor. */
 	if (ls->minheight > *dHeight) *dHeight = ls->minheight;
+	if (ls->fixedheight > 0) *dHeight = ls->fixedheight;
 	return result;
     }
     result = super_DesiredSize(self, width, height, pass, dWidth, dHeight);
+    if (self->mode != lsetview_IsSplit && Data(self) && Data(self)->fixedheight > 0)
+	*dHeight = Data(self)->fixedheight;
     /* A split's own composed minwidth (BuildLsetChain/BuildLsetGrid,
        htmlatk.c -- bottom-up sum/max of a real HTML table's declared
        column widths) is a genuine floor lpair's own DesiredSize above

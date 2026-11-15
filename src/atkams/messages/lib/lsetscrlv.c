@@ -87,7 +87,7 @@ void lsetscrollview__GetOrigin(struct lsetscrollview *self, long width, long hei
     *originX = 0;
     *originY = 0;
     if (ls && ls->toporigin)
-        *originY = (height < lset_TOPORIGIN) ? height : lset_TOPORIGIN;
+        *originY = (height / 2 < lset_TOPORIGIN) ? height / 2 : lset_TOPORIGIN;
 }
 
 /* Forwards lsetscrollcontent's genuine content height (lsetscrlc.c's
