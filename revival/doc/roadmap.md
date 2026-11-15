@@ -776,13 +776,11 @@ being front-loaded here.
         label its sans list, as in Thunderbird. Other properties (color,
         size, alignment) still don't reach a cell from outside its own
         table; see the context review below.
-      - LinkedIn's logo sits 18px too low (open). Measured against
-        Thunderbird 2026-11-16 ("solopreneur" message, linkedin-debug):
-        card top to logo 50px against 32. The logo cell is
-        `valign="middle"` beside a nested table of 25px icons, and an
-        18px offset is what a row 36px taller than the 37px logo gives;
-        the icon column is the suspect. Images decide this row, so it
-        can only be checked live in `htmlprv`.
+      - LinkedIn's logo sat 18px too low: **mostly RESOLVED
+        2026-11-16**, wdc-confirmed, by the image line fix below. Card
+        top to logo was 50px against Thunderbird's 32; now 36. The
+        icon column, the first suspect, wasn't it. The last 4px are
+        open and minor.
       - Table CSS padding: **RESOLVED 2026-11-16**, wdc-confirmed
         (LinkedIn, National Grid; Economist and bookrack unchanged). A
         table's own `padding` was ignored, on every build path: real
@@ -831,16 +829,20 @@ being front-loaded here.
         video box already took its `height="252"`; its cover is a CSS
         `background-image`, unsupported (Thunderbird shows the gray
         fallback too).
-      - Sole nested tables stretch to the outer cell's height (open).
-        Bookrack's review cards: a `<td valign="top" height="225">`
-        holds a small table (a 10px spacer row, then the cover).
-        Thunderbird puts that table at the cell's top; the splice
-        stretches its rows to fill 225px, so the cover's row (no
-        valign, so middle) centers the cover about 19px low, and the
-        buy button row sits lower than Thunderbird's. The outer cell's
-        height and valign should place the inner table at its natural
-        height, not stretch its rows. Deterministic, visible in the
-        markup (2026-11-16 side-by-side).
+      - Images a font ascent low: **RESOLVED 2026-11-16**,
+        wdc-confirmed (bookrack, LinkedIn: "prettier than Thunderbird").
+        A view in text hangs below the baseline, so its line reserves
+        the font's ascent above it; a browser sits an image on the
+        baseline. Rows had long had a 1pt font on their line for this,
+        images never: an image alone in a cell sat ~19px low.
+        Bookrack's covers did, and its buy buttons stood in 44px rows
+        for a 25px image, bottom-aligned. Every line of views alone now
+        gets the 1pt font (`SettleViewLines`), applied after all other
+        spans so it's innermost: over exactly the same text the earlier
+        span goes inside, and the buy buttons' table `font-size: 16px`
+        had won. This replaces a wrong diagnosis logged the same day
+        (sole tables "stretching" to the outer cell's height); a
+        temporary lsetview height trace found the 44px row in one run.
       - Rounded cells and buttons (`border-radius`): **RESOLVED
         2026-11-15**, wdc-confirmed (LinkedIn, Economist; no regression
         in National Grid or bookrack). A rounded cell or button link

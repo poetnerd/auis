@@ -1093,6 +1093,17 @@ the whitespace. The padding work had meanwhile produced rows of exact
 pixel height, so spacer rows now come back at the height they ask for.
 Bookrack opened up by about ninety such gaps, close to Thunderbird.
 
+That exposed covers and buy buttons sitting lower than Thunderbird's.
+The first diagnosis, read from the markup, was wrong; the second, a
+blank line at the end of each cell, made no difference on screen. A
+temporary trace of every card cell's height request found it in one
+run: a 25px buy button standing in a 44px row. An embedded view hangs
+below the text baseline, so a line holding only an image still
+reserved a font's height above it. Table rows had been given a
+one-point font on their lines for exactly this in 2026, but images
+never had. With images treated the same way, the covers, the buy
+buttons and LinkedIn's long-misplaced logo all moved into place.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all

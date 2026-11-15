@@ -819,6 +819,18 @@ height is now a fixed-height filler of exactly that height
 use; a blank row without one is still dropped, by the color- and
 border-aware rule.
 
+A view embedded in text hangs below the baseline (`view_GetOrigin`'s
+default), so its line reserves the font's whole ascent above it; a
+browser instead sits an image on the baseline. Table rows have long
+put a 1pt font on their line for this (`InsertRowView`, and lset's
+`toporigin` for the last pixel or two). Since 2026-11-16 every line
+holding only views gets the same font (`SettleViewLines`), so an image
+alone in a cell sits at its top, as in a browser; a line mixing views
+and text keeps the text's ascent. It runs after `ApplyPendingStyles`
+and wraps directly: `environment_WrapStyle` puts a later span inside
+an earlier one over exactly the same text, and a cell holding only
+its image under a table `font-size` would otherwise keep that size.
+
 ## Images: the `image` inset, capability-checked
 
 `image__ReadOtherFormat` (`src/atk/basics/common/image.c:2314`) checks
