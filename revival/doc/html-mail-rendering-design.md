@@ -809,6 +809,16 @@ to the ambient's side padding, outside its cell's. A table with
 default 0.5em margins; the top spacer is dropped after a paragraph
 break, since margins collapse rather than add.
 
+Heights are minimums, as browsers treat a cell's: a node's pixel CSS
+`height` wins over its `height=`, and percentages and keywords count
+for nothing (`NodeMinHeight`). Blank rows were all dropped once,
+because a row of cells can't be shorter than a text line, so keeping
+an 8px spacer row cost a full line. A blank row that declares a pixel
+height is now a fixed-height filler of exactly that height
+(`RowSpacerHeight`), the same leaf table padding and `<hr>` margins
+use; a blank row without one is still dropped, by the color- and
+border-aware rule.
+
 ## Images: the `image` inset, capability-checked
 
 `image__ReadOtherFormat` (`src/atk/basics/common/image.c:2314`) checks

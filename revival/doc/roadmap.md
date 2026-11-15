@@ -818,11 +818,29 @@ being front-loaded here.
         lsetview change in `adew`, perhaps a natural-width query on
         textview). That replaces the estimate, the Helvetica table and
         the slack, for any font.
-      - A cell's CSS `height` (the old message's 252px video box,
-        `style="height: 252px"`) is ignored; only the `height=`
-        attribute counts, as `height` isn't in the parser's CSS
-        allowlist. The video cover is a CSS `background-image`,
-        unsupported (Thunderbird shows the gray fallback too).
+      - CSS `height` and spacer rows: **RESOLVED 2026-11-16**,
+        wdc-confirmed (LinkedIn, bookrack; Economist and National Grid
+        unchanged). The parser keeps CSS `height`; a cell's, row's or
+        table's pixel CSS height is its minimum height, over its
+        `height=` (`NodeMinHeight`). A blank row with a pixel height is
+        kept as a spacer of exactly that height (`RowSpacerHeight`);
+        blank rows without one are still dropped. Every blank row had
+        been dropped, since a row couldn't be made shorter than a text
+        line: bookrack's ~99 `<td height="15" style="font-size:0" />`
+        spacers now show, and linkedin-debug's 16px ones. The 252px
+        video box already took its `height="252"`; its cover is a CSS
+        `background-image`, unsupported (Thunderbird shows the gray
+        fallback too).
+      - Sole nested tables stretch to the outer cell's height (open).
+        Bookrack's review cards: a `<td valign="top" height="225">`
+        holds a small table (a 10px spacer row, then the cover).
+        Thunderbird puts that table at the cell's top; the splice
+        stretches its rows to fill 225px, so the cover's row (no
+        valign, so middle) centers the cover about 19px low, and the
+        buy button row sits lower than Thunderbird's. The outer cell's
+        height and valign should place the inner table at its natural
+        height, not stretch its rows. Deterministic, visible in the
+        markup (2026-11-16 side-by-side).
       - Rounded cells and buttons (`border-radius`): **RESOLVED
         2026-11-15**, wdc-confirmed (LinkedIn, Economist; no regression
         in National Grid or bookrack). A rounded cell or button link
@@ -906,6 +924,11 @@ being front-loaded here.
         the pair's slack (bookrack's review cards and spacing now closer
         to Thunderbird). The test page also exposed the cause of item
         16's scroller shortfall, fixed in the same round.
+        Still dropped (2026-11-16): bookrack's "BOOK REVIEWS" heading
+        table sets `font-size: 20px` and `cellpadding="10"`, and its
+        box comes out 27px tall against Thunderbird's 47 (10 + 28 +
+        10); neither the table's size nor its cell padding reaches the
+        heading's cell.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not

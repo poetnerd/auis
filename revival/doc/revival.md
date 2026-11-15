@@ -1086,6 +1086,13 @@ are estimated, and each improvement to the estimate wrapped some other
 label. The estimate now errs wide, and measuring the text at layout
 time, as a browser does, is the next piece of work.
 
+Email templates space their sections with blank table rows of a
+declared height, and the renderer had always dropped them, because a
+row could be no shorter than a line of text and keeping them doubled
+the whitespace. The padding work had meanwhile produced rows of exact
+pixel height, so spacer rows now come back at the height they ask for.
+Bookrack opened up by about ninety such gaps, close to Thunderbird.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all
