@@ -601,17 +601,17 @@ static int href_scheme_ok(const char *href)
    600px; margin: 0 auto"> page column at that width.
 
    `padding` (and its four sides) and `border-top` were added
-   2026-11-14: htmlatk.c pads table cells by them and draws a table's
+   2026-11-14, then `border`, `border-left` and `border-right`: htmlatk.c pads table cells by them and draws a table's
    top and bottom borders as rule rows (The Economist's section
    dividers). */
-#define HP_NSTYLEPROPS 26
+#define HP_NSTYLEPROPS 29
 static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "color", "background-color", "font-weight", "font-style", "text-decoration",
     "display", "visibility", "font-size", "font-family", "text-align", "border-bottom",
     "line-height", "clear", "float", "margin", "max-height", "overflow",
     "margin-top", "margin-bottom", "max-width",
     "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
-    "border-top"
+    "border-top", "border", "border-left", "border-right"
 };
 
 static char *filter_style(const char *raw)

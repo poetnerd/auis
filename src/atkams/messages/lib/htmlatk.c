@@ -2908,12 +2908,14 @@ static void CellCssPadding(const struct htmlnode *td, long pad[4])
     }
 }
 
-/* A CSS border-top/border-bottom ("1px solid #808080"): returns its
-   width in pixels, 0 for none, and copies its color into color (gray
-   if it names none). */
+/* A CSS border on one side (prop is border-top, -right, -bottom or
+   -left), or else the border shorthand ("1px solid #808080"): returns
+   its width in pixels, 0 for none, and copies its color into color
+   (gray if it names none). */
 static long CssBorderSide(const struct htmlnode *n, const char *prop, char *color, size_t sz)
 {
     char *sv = htmlpart_GetStyleProp(n, prop);
+    if (!sv) sv = htmlpart_GetStyleProp(n, "border");
     char *p;
     long width = 1;
     int styled = 0;
@@ -3008,17 +3010,67 @@ static struct lset *StackRule(struct hax_state *st, struct lset *body, const cha
     return node;
 }
 
-/* A table's or cell's CSS border-top and border-bottom, stacked around
-   body as rules (StackRule). */
-static struct lset *StackBorders(struct hax_state *st, struct lset *body, const struct htmlnode *n)
+/* Puts a rule px pixels wide, in color, at body's left or right, as a
+   fixed-width column. The rule leaf reports a height of 1 so it never
+   makes the row taller; a side-by-side split gives it the full row
+   height anyway. */
+static struct lset *StackSideRule(struct hax_state *st, struct lset *body, const char *color, long px, int right)
+{
+    struct lset *rule, *node;
+    if (!body || px <= 0) return body;
+    rule = MakeFillerLeaf(st);
+    node = (struct lset *) class_NewObject("lset");
+    if (!rule || !node) return body;
+    strncpy(rule->bgcolor, color, sizeof(rule->bgcolor) - 1);
+    rule->bgcolor[sizeof(rule->bgcolor) - 1] = '\0';
+    rule->fixedheight = 1;
+    node->nobar = node->noseam = 1;
+    node->type = right ? lsetview_MakeHorzFixedRight : lsetview_MakeHorzFixed;
+    node->pct = (int) px;
+    node->minwidth = body->minwidth > 0 ? body->minwidth + px : 0;
+    node->left = (struct dataobject *) (right ? body : rule);
+    node->right = (struct dataobject *) (right ? rule : body);
+    return node;
+}
+
+/* A table's or cell's CSS left and right borders, as side rules. */
+static struct lset *StackSides(struct hax_state *st, struct lset *body, const struct htmlnode *n)
 {
     char color[32];
     long px;
-    if ((px = CssBorderSide(n, "border-top", color, sizeof(color))) > 0)
+    if ((px = CssBorderSide(n, "border-left", color, sizeof(color))) > 0)
+        body = StackSideRule(st, body, color, px, 0);
+    if ((px = CssBorderSide(n, "border-right", color, sizeof(color))) > 0)
+        body = StackSideRule(st, body, color, px, 1);
+    return body;
+}
+
+/* A table's or cell's CSS top and bottom borders, stacked as rules. */
+static struct lset *StackTopBottom(struct hax_state *st, struct lset *body, const struct htmlnode *n, int top, int bottom)
+{
+    char color[32];
+    long px;
+    if (top && (px = CssBorderSide(n, "border-top", color, sizeof(color))) > 0)
         body = StackRule(st, body, color, px, 0);
-    if ((px = CssBorderSide(n, "border-bottom", color, sizeof(color))) > 0)
+    if (bottom && (px = CssBorderSide(n, "border-bottom", color, sizeof(color))) > 0)
         body = StackRule(st, body, color, px, 1);
     return body;
+}
+
+/* All four CSS borders of a table or cell around body: the sides
+   first, so the top and bottom rules span the corners. */
+static struct lset *StackBorders(struct hax_state *st, struct lset *body, const struct htmlnode *n)
+{
+    return StackTopBottom(st, StackSides(st, body, n), n, 1, 1);
+}
+
+/* Whether a table or cell has a visible left or right border, which
+   can't be drawn around text flowed into the surrounding text. */
+static int HasSideBorder(const struct htmlnode *n)
+{
+    char color[32];
+    return CssBorderSide(n, "border-left", color, sizeof(color)) > 0
+        || CssBorderSide(n, "border-right", color, sizeof(color)) > 0;
 }
 
 /* A cell's valign (lset.ch's lset_VALIGN_*): the cell's own
@@ -3119,7 +3171,12 @@ static struct lset *CenterFixedTable(struct lset *ls, const struct htmlnode *tab
         char *ta = td ? htmlpart_GetStyleProp(td, "text-align") : NULL;
         const char *how = ta ? ta : a;
         long img = FloatTableSoleImageWidth(tablenode);
+        char *mw = htmlpart_GetStyleProp(tablenode, "max-width");
         w = (img > 0) ? img + ICONCELL_WIDTH_PAD : 0;
+        /* A table with no width= but a CSS max-width, as a browser
+           draws it: that wide (The Economist's 258px button). */
+        if (w <= 0 && mw) w = CssPixelLength(mw);
+        free(mw);
         if (w <= 0) {
             long m = LsetFixedContentWidth(ls);
             if (m > 0) w = m + ICONCELL_WIDTH_PAD;
@@ -3568,18 +3625,24 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                        table, which the outer cell's valign places (e.g.
                        bookrack's <td valign="bottom"> Buy button), same
                        as BuildLsetCell's own sole-nested-table case. */
+                    /* A one-row nested table gets its own four borders
+                       before it's centered, so the box is the table's
+                       width (The Economist's "Vote in the poll" button,
+                       a 258px max-width table with border:1px). */
                     if (innerRows.count == 1)
-                        innerRows.items[0] = CenterFixedTable(innerRows.items[0], soleTable, soleCell, st);
+                        innerRows.items[0] = CenterFixedTable(StackBorders(st, innerRows.items[0], soleTable),
+                                                              soleTable, soleCell, st);
                     if (innerRows.count == 1 && innerRows.items[0]->left == NULL) {
                         innerRows.items[0]->valign = CellValign(soleCell, tr);
                         RaiseMinHeight(innerRows.items[0], NodeMinHeight(soleCell));
                         innerRows.items[0]->padding += TableCellPadding(tablenode);
                     }
                     /* The splice drops the nested table and its cell,
-                       so put their edges on the first and last spliced
-                       rows, outward from the table: its borders, the
-                       cell's vertical padding (a spacer in the cell's
-                       color), the cell's borders. The Economist's
+                       so put their edges on the spliced rows, outward
+                       from the table: its borders (a one-row table's
+                       were added above), the cell's vertical padding (a
+                       spacer in the cell's color), the cell's top and
+                       bottom borders. The Economist's
                        section titles carry their divider this way
                        (2026-11-14). */
                     if (innerRows.count > 0) {
@@ -3587,10 +3650,12 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                         char color[32], *none = "";
                         long px;
                         CellCssPadding(soleCell, pad);
-                        if ((px = CssBorderSide(soleTable, "border-top", color, sizeof(color))) > 0)
-                            innerRows.items[0] = StackRule(st, innerRows.items[0], color, px, 0);
-                        if ((px = CssBorderSide(soleTable, "border-bottom", color, sizeof(color))) > 0)
-                            innerRows.items[last] = StackRule(st, innerRows.items[last], color, px, 1);
+                        if (innerRows.count > 1) {
+                            for (j = 0; j < innerRows.count; ++j)
+                                innerRows.items[j] = StackSides(st, innerRows.items[j], soleTable);
+                            innerRows.items[0] = StackTopBottom(st, innerRows.items[0], soleTable, 1, 0);
+                            innerRows.items[last] = StackTopBottom(st, innerRows.items[last], soleTable, 0, 1);
+                        }
                         innerRows.items[0] = StackRule(st, innerRows.items[0], none, pad[0], 0);
                         innerRows.items[last] = StackRule(st, innerRows.items[last], none, pad[2], 1);
                         if ((px = CssBorderSide(soleCell, "border-top", color, sizeof(color))) > 0)
@@ -4061,6 +4126,11 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         /* Every row, the first included: a table is a block, never on
            a line with the text before it (The Economist, 2026-09-28:
            a table after a link sat beside it, narrowed by it). */
+        /* The table's CSS borders, exact to the pixel inside the row
+           lsets: sides on every row, top and bottom on the first and
+           last. */
+        rowRoot = StackTopBottom(st, StackSides(st, rowRoot, tablenode), tablenode,
+                                 i == 0, i == rows.count - 1);
         EnsureLineBreak(st);
         InsertRowView(st, rowRoot);
     }
@@ -4866,6 +4936,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 char wrapbg[32];
                 const char *tw = htmlpart_GetAttr(n, "width");
                 if (!floatAlign && !tableHasPixelWidth && TableIsTrivialWrapper(n, &cellChildren, &cellNode)
+                    && !HasSideBorder(n) && !HasSideBorder(cellNode)
                     && !(tw && strchr(tw, '%') && WrapperBgColor(n, cellNode, wrapbg, sizeof(wrapbg))
                          && !NodesContainTable(cellChildren))) {
                     /* A table is a block: its content starts and ends
@@ -4942,9 +5013,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                    still renders its own content as an ordinary single-
                    column row instead of vanishing, just without a
                    partner to sit beside. */
-                InsertTableBorder(&st, n, "border-top");
                 if (!RenderTableAsLset(&st, n)) { /* hardfail already recorded */ }
-                InsertTableBorder(&st, n, "border-bottom");
                 continue;
             }
             if (strcmp(n->tag, "img") == 0) {
