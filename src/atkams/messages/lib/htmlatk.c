@@ -3741,11 +3741,16 @@ static int CellValign(const struct htmlnode *td, const struct htmlnode *tr)
     return lset_VALIGN_MIDDLE;
 }
 
-/* A <td>'s or <table>'s pixel height="N" (lset.ch's minheight), 0 if
-   none or a percentage. Browsers treat it as a minimum. */
+/* A <td>'s, <tr>'s or <table>'s pixel height (lset.ch's minheight):
+   its CSS height in px, else its height="N"; 0 if none, a percentage
+   or a keyword. Browsers treat it as a minimum. CSS height counts
+   since 2026-11-16 (LinkedIn's 252px video box). */
 static int NodeMinHeight(const struct htmlnode *n)
 {
-    long h = ParseFixedPixelWidth(htmlpart_GetAttr(n, "height"));
+    char *sv = htmlpart_GetStyleProp(n, "height");
+    long h = sv ? CssPixelLength(sv) : 0;
+    free(sv);
+    if (h <= 0) h = ParseFixedPixelWidth(htmlpart_GetAttr(n, "height"));
     return (h > 0 && h <= 4000) ? (int) h : 0;
 }
 
@@ -4226,6 +4231,17 @@ static int RowIsEntirelyBlank(const struct htmlnode *tr)
     return any;
 }
 
+/* The pixel height a blank row asks for, its own or its tallest
+   cell's (NodeMinHeight), 0 for none. */
+static int RowSpacerHeight(const struct htmlnode *tr)
+{
+    const struct htmlnode *td;
+    int h = NodeMinHeight(tr), c;
+    for (td = tr->children; td; td = td->next)
+        if (NodeIsCell(td) && (c = NodeMinHeight(td)) > h) h = c;
+    return h;
+}
+
 /* Real marketing/newsletter HTML routinely uses all-<td>-empty spacer
    <tr>s purely for vertical padding -- sometimes stacked (several
    consecutive blank rows), sometimes one isolated blank row between
@@ -4236,11 +4252,13 @@ static int RowIsEntirelyBlank(const struct htmlnode *tr)
    roundtrip` showing LSET-AT[9]/[13]/[17]/... as genuinely empty
    CELL-TEXT-CONTENT len=0 -- a single blank <tr> alternating with
    every one of the ~9 real content rows in the fixture's main body).
-   Every blank row is dropped unconditionally, isolated or not: each
+   Every blank row without a declared height is dropped, isolated or
+   not (one with a pixel height is kept at exactly that height,
+   RowSpacerHeight, since 2026-11-16): built as an ordinary row, each
    one becomes its own full text-line-height view in the surrounding
-   flow per RenderTableAsLset below (this renderer has no way to
-   represent a source spacer's actual intended height -- an 8px CSS
-   spacer and a full blank text line both come out the same size here),
+   flow per RenderTableAsLset below (a row of cells can't be shorter
+   than a text line -- an 8px spacer and a full blank text line both
+   come out the same size that way),
    so keeping even one isolated blank row between every real row means
    doubling the row count and, empirically, most of the "too much
    whitespace" complaint. An earlier version of this function only
@@ -4352,7 +4370,25 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
            work the same whether the neighboring row is an ordinary cell
            row or itself a sole-nested-table splice below. */
         if (RowIsEntirelyBlank(tr)) {
-            int keepAsSpacer = 0;
+            int keepAsSpacer = 0, sh = RowSpacerHeight(tr);
+            /* A blank row with a pixel height is a spacer of exactly
+               that height, now that a row can be one (a fixed-height
+               filler, as table padding and <hr> margins use): the
+               drop below predates that. LinkedIn's 16px spacers
+               between its posts (2026-11-16). */
+            if (sh > 0) {
+                struct lset *sp = MakeFillerLeaf(st);
+                char bgbuf[32];
+                if (sp) {
+                    sp->fixedheight = sh;
+                    if (RowEffectiveBgColor(tr, tablenode, bgbuf, sizeof(bgbuf))) {
+                        strncpy(sp->bgcolor, bgbuf, sizeof(sp->bgcolor) - 1);
+                        sp->bgcolor[sizeof(sp->bgcolor) - 1] = '\0';
+                    }
+                    lsetvec_push(outRows, sp);
+                }
+                continue;
+            }
             if (r == 0 || !RowIsEntirelyBlank(rows.items[r - 1])) {
                 char prevBuf[32], nextBuf[32];
                 int prevHas = (r > 0) &&

@@ -609,8 +609,10 @@ static int href_scheme_ok(const char *href)
    dividers). `border-radius` came 2026-11-15, for rounded cells and
    images (LinkedIn's pill buttons and round avatars), with `width`:
    htmlatk.c sizes a cell by its declared pixel width (LinkedIn's
-   390px button). */
-#define HP_NSTYLEPROPS 34
+   390px button). `height` came 2026-11-16: a cell's minimum height,
+   and a blank spacer row's exact one (LinkedIn's 252px video box and
+   16px spacers). */
+#define HP_NSTYLEPROPS 35
 static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "color", "background-color", "font-weight", "font-style", "text-decoration",
     "display", "visibility", "font-size", "font-family", "text-align", "border-bottom",
@@ -619,7 +621,7 @@ static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
     "border-top", "border", "border-left", "border-right",
     "border-width", "border-style", "border-color", "border-radius",
-    "width"
+    "width", "height"
 };
 
 static char *filter_style(const char *raw)
