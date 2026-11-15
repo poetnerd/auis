@@ -2638,6 +2638,10 @@ static long CellContentFixedWidth(const struct htmlnode *td)
    mirroring BuildLsetGrid's own stacked-rows-take-the-max rule, since
    multiple embedded views within one cell's text are themselves
    stacked vertically, line after line, not side by side. */
+/* The left and right margin a textview keeps around its content when
+   embedded (textv.c's EBX; BX is for a top-level window). */
+#define EMBEDDED_TEXT_XMARGIN 2
+
 static long TextMaxEmbeddedLsetMinwidth(struct text *t)
 {
     long i, tlen, best = 0;
@@ -2653,7 +2657,10 @@ static long TextMaxEmbeddedLsetMinwidth(struct text *t)
             }
         }
     }
-    return best;
+    /* The text holding the lset is wider by its own margins: without
+       them, Book Rack's 640px banner table, exactly filled by a 600px
+       image and cellpadding 20, lost its right edge (2026-11-15). */
+    return (best > 0) ? best + 2 * EMBEDDED_TEXT_XMARGIN : 0;
 }
 
 /* Resolves ONE node's own declared background color (roadmap.md item
@@ -3442,6 +3449,78 @@ static int TableCellPadding(const struct htmlnode *tablenode)
    ComputeTableGrid/cross-row alignment (colspan-based) and
    BuildLsetChain's fixed-vs-proportional split choice are unrelated
    concerns -- see BuildLsetChain's own comment. */
+/* Whether ls is a split, or a leaf wrapping one (SpliceSoleTable's
+   padding leaf, CenteredRowLeaf): BuildLsetCell's guard against
+   folding a multi-cell row into one cell has to see through those. */
+static int LsetHoldsSplit(struct lset *ls)
+{
+    while (ls && !ls->left && !ls->right && ls->dobj
+           && strcmp(class_GetTypeName(ls->dobj), "lset") == 0)
+        ls = (struct lset *) ls->dobj;
+    return ls && (ls->left || ls->right);
+}
+
+/* Finishes the rows of a cell's sole nested table, spliced in place of
+   the cell (BuildLsetCell's one-row case, BuildLsetGrid's row-level
+   case), with what the cell and table would have given them, from the
+   inside out as a browser draws it: the table's borders, then its
+   centering in the cell, the cell's padding (cellpadding plus CSS, four
+   sides), the cell's borders, and the cell's background under it all.
+   One row also takes the cell's valign and both heights. The two
+   splices each did part of this by hand and each dropped something
+   (the outer cell's borders, its left and right padding, the table's
+   height: html-mail-rendering-design.md, "Context across the build
+   paths", 2026-11-14). */
+static void SpliceSoleTable(struct hax_state *st, struct lsetvec *rows,
+                            const struct htmlnode *cell, const struct htmlnode *tr,
+                            const struct htmlnode *outerTable, const struct htmlnode *soleTable)
+{
+    char bg[32];
+    int hasBg = CellBgColorX11Cascaded(cell, tr, outerTable, bg, sizeof(bg));
+    long pad[4], cp = TableCellPadding(outerTable), j, last = rows->count - 1;
+    if (rows->count == 0) return;
+    CellCssPadding(cell, pad);
+    if (rows->count == 1) {
+        struct lset *row = rows->items[0];
+        struct lset *box = StackBorders(st, row, soleTable);
+        struct lset *L = box;
+        /* The cell's padding goes outside the table's borders, so a
+           bordered table (or a split) gets a leaf of its own to hold it;
+           a plain leaf takes it directly, as before. */
+        if (box != row || row->left != NULL) {
+            L = CenteredRowLeaf(box, 0, st);
+            L->halign = lset_HALIGN_NONE;
+            L->contentwidth = 0;
+        }
+        L->valign = CellValign(cell, tr);
+        RaiseMinHeight(L, NodeMinHeight(cell));
+        RaiseMinHeight(L, NodeMinHeight(soleTable));
+        L->padding += cp;
+        L->padtop += pad[0]; L->padright += pad[1];
+        L->padbottom += pad[2]; L->padleft += pad[3];
+        /* The minimum width covers the padding too (as a browser's
+           table width does: Book Rack's 560px cards in cellpadding-10
+           cells need 580). */
+        if (L->minwidth > 0) L->minwidth += 2 * cp + pad[1] + pad[3];
+        rows->items[0] = StackBorders(st, CenterFixedTable(L, soleTable, cell, st), cell);
+    } else {
+        for (j = 0; j <= last; ++j) {
+            struct lset *r = StackSides(st, rows->items[j], soleTable);
+            r = StackSideRule(st, r, "", pad[3] + cp, 0);
+            r = StackSideRule(st, r, "", pad[1] + cp, 1);
+            rows->items[j] = StackSides(st, r, cell);
+        }
+        rows->items[0] = StackTopBottom(st, rows->items[0], soleTable, 1, 0);
+        rows->items[last] = StackTopBottom(st, rows->items[last], soleTable, 0, 1);
+        rows->items[0] = StackRule(st, rows->items[0], "", pad[0] + cp, 0);
+        rows->items[last] = StackRule(st, rows->items[last], "", pad[2] + cp, 1);
+        rows->items[0] = StackTopBottom(st, rows->items[0], cell, 1, 0);
+        rows->items[last] = StackTopBottom(st, rows->items[last], cell, 0, 1);
+    }
+    if (hasBg)
+        for (j = 0; j <= last; ++j) ApplyBgColorRecursive(rows->items[j], bg);
+}
+
 static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlnode *tr, const struct htmlnode *tableNode, struct hax_state *st, long *outWeight, long *outFixedPx)
 {
     struct lset *leaf = (struct lset *) class_NewObject("lset");
@@ -3461,7 +3540,7 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
         int built = BuildLsetGrid(soleTable, st, &innerRows);
         if (pushed) --st->ambientDepth;
         if (built && innerRows.count == 1
-            && innerRows.items[0]->left == NULL) {
+            && !LsetHoldsSplit(innerRows.items[0])) {
             /* inner is already a complete lset LEAF (not a split) for
                the nested table's one row -- i.e. that row itself has
                at most one real cell, so there's no side-by-side
@@ -3509,34 +3588,11 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
                which re-walks it via htmlatk_Render/RenderTableAsLset
                and gets its own row-view(s) in the flow like any other
                table. */
-            struct lset *inner = innerRows.items[0];
-            lsetvec_free(&innerRows);
+            struct lset *inner;
             dataobject_Destroy((struct dataobject *) leaf);
-            /* This outer <td>'s own bgcolor would otherwise be lost
-               entirely along with the shell we just destroyed --
-               ApplyBgColorRecursive both fills it in only where
-               nothing more specific already exists AND reaches any
-               further nested lset embedded inside inner's own content
-               (see its comment). */
-            if (hasBg) ApplyBgColorRecursive(inner, bgbuf);
-            /* inner is a leaf (the guard above) standing in for the
-               whole nested table, which in a browser is placed by
-               this outer cell's valign, not the inner cell's. */
-            inner->valign = CellValign(td, tr);
-            RaiseMinHeight(inner, NodeMinHeight(td));
-            RaiseMinHeight(inner, NodeMinHeight(soleTable));
-            inner->padding += TableCellPadding(tableNode);
-            {
-                long pad[4];
-                CellCssPadding(td, pad);
-                inner->padtop += pad[0]; inner->padright += pad[1];
-                inner->padbottom += pad[2]; inner->padleft += pad[3];
-            }
-            /* The inner table stands in for this cell, so its borders
-               would otherwise be lost (The Economist's "Frame the
-               debate" title table, 2026-11-14). */
-            inner = StackBorders(st, inner, soleTable);
-            inner = CenterFixedTable(inner, soleTable, td, st);
+            SpliceSoleTable(st, &innerRows, td, tr, tableNode, soleTable);
+            inner = innerRows.items[0];
+            lsetvec_free(&innerRows);
             return inner;
         }
         /* More than one row, or a single row that's itself a real
@@ -3615,6 +3671,8 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
         CellCssPadding(td, pad);
         leaf->padtop = pad[0]; leaf->padright = pad[1];
         leaf->padbottom = pad[2]; leaf->padleft = pad[3];
+        /* As in SpliceSoleTable: the minimum covers the padding. */
+        if (leaf->minwidth > 0) leaf->minwidth += 2 * leaf->padding + pad[1] + pad[3];
     }
     return StackBorders(st, leaf, td);
 }
@@ -3852,52 +3910,9 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                 int built = BuildLsetGrid(soleTable, st, &innerRows);
                 if (pushed) --st->ambientDepth;
                 if (built) {
-                    /* One spliced leaf stands in for the whole nested
-                       table, which the outer cell's valign places (e.g.
-                       bookrack's <td valign="bottom"> Buy button), same
-                       as BuildLsetCell's own sole-nested-table case. */
-                    /* A one-row nested table gets its own four borders
-                       before it's centered, so the box is the table's
-                       width (The Economist's "Vote in the poll" button,
-                       a 258px max-width table with border:1px). */
-                    if (innerRows.count == 1)
-                        innerRows.items[0] = CenterFixedTable(StackBorders(st, innerRows.items[0], soleTable),
-                                                              soleTable, soleCell, st);
-                    if (innerRows.count == 1 && innerRows.items[0]->left == NULL) {
-                        innerRows.items[0]->valign = CellValign(soleCell, tr);
-                        RaiseMinHeight(innerRows.items[0], NodeMinHeight(soleCell));
-                        innerRows.items[0]->padding += TableCellPadding(tablenode);
-                    }
-                    /* The splice drops the nested table and its cell,
-                       so put their edges on the spliced rows, outward
-                       from the table: its borders (a one-row table's
-                       were added above), the cell's vertical padding (a
-                       spacer in the cell's color), the cell's top and
-                       bottom borders. The Economist's
-                       section titles carry their divider this way
-                       (2026-11-14). */
-                    if (innerRows.count > 0) {
-                        long pad[4], last = innerRows.count - 1;
-                        char color[32], *none = "";
-                        long px;
-                        CellCssPadding(soleCell, pad);
-                        if (innerRows.count > 1) {
-                            for (j = 0; j < innerRows.count; ++j)
-                                innerRows.items[j] = StackSides(st, innerRows.items[j], soleTable);
-                            innerRows.items[0] = StackTopBottom(st, innerRows.items[0], soleTable, 1, 0);
-                            innerRows.items[last] = StackTopBottom(st, innerRows.items[last], soleTable, 0, 1);
-                        }
-                        innerRows.items[0] = StackRule(st, innerRows.items[0], none, pad[0], 0);
-                        innerRows.items[last] = StackRule(st, innerRows.items[last], none, pad[2], 1);
-                        if ((px = CssBorderSide(soleCell, "border-top", color, sizeof(color))) > 0)
-                            innerRows.items[0] = StackRule(st, innerRows.items[0], color, px, 0);
-                        if ((px = CssBorderSide(soleCell, "border-bottom", color, sizeof(color))) > 0)
-                            innerRows.items[last] = StackRule(st, innerRows.items[last], color, px, 1);
-                    }
-                    for (j = 0; j < innerRows.count; ++j) {
-                        if (hasBg) ApplyBgColorRecursive(innerRows.items[j], bgbuf);
+                    SpliceSoleTable(st, &innerRows, soleCell, tr, tablenode, soleTable);
+                    for (j = 0; j < innerRows.count; ++j)
                         lsetvec_push(outRows, innerRows.items[j]);
-                    }
                 }
                 lsetvec_free(&innerRows);
                 continue;
