@@ -75,8 +75,10 @@ data:
        screenshot: a card's own background color sat inside a 1px
        inset from where the wrapping cell's background was painted,
        leaving a visible seam that doesn't exist in Thunderbird's
-       rendering of the same message). No other matte caller sets this
-       -- every existing embedded-object use (ez's own inline objects,
-       etc.) keeps the original bordered/resizable behavior unchanged. */
+       rendering of the same message). Also set, since 2026-11-14, for an
+       image marked noBorder (image.ch; htmlatk.c's inline mail images),
+       whose 1px frame showed as a white box on a dark background.
+       Every other embedded-object use (ez's own inline objects, etc.)
+       keeps the original bordered/resizable behavior unchanged. */
     int noborder;
 };

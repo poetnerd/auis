@@ -51,6 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <keymap.ih>
 
 #include <environ.ih>
+#include <image.ih>
 
 #include <matte.eh>
 static void UpdateCursors(struct matte *self);
@@ -332,8 +333,14 @@ struct matte * matte__Create(struct classheader *classID, struct viewref *vr, st
     self->ref = vr;
     self->desh = self->ref->desh;
     self->desw = self->ref->desw;
+    /* Also no border around an image marked borderless (image.ch's
+       noBorder, set by htmlatk.c on inline HTML-mail images): the
+       matte's 1px frame showed as a white box around The Economist's
+       icons and quote mark on its dark bands (2026-11-14). */
     self->noborder = (vr->dataObject != NULL) &&
-	class_IsTypeByName(class_GetTypeName(vr->dataObject), "lset");
+	(class_IsTypeByName(class_GetTypeName(vr->dataObject), "lset")
+	 || (class_IsTypeByName(class_GetTypeName(vr->dataObject), "image")
+	     && image_GetNoBorder((struct image *) vr->dataObject)));
     matte_LinkTree(self,parent);
 
     if(vr->dataObject && class_IsTypeByName(class_GetTypeName(vr->dataObject), "unknown")) {
