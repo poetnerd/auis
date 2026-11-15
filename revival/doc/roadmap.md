@@ -786,6 +786,15 @@ being front-loaded here.
         wrapper of inline content inside a colored block is built as a
         table, not flattened, so it takes the surrounding color (the
         Economist's second ad sat on a white band).
+        **Step 2 RESOLVED 2026-11-15**, wdc-confirmed (same messages):
+        both splices go through `SpliceSoleTable`, from the inside out
+        (table borders, centering, the cell's four-sided padding, its
+        borders, its background); BuildLsetCell's no-split guard looks
+        through wrapper leaves (`LsetHoldsSplit`). Found on the way:
+        `lsetview` centered before padding, so padding ate centered
+        content (the Economist's TikTok icon); it now pads first. Cell
+        minimum widths now include the cell's padding and the 2px
+        margins an embedded text keeps (bookrack's banner).
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
