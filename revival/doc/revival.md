@@ -999,6 +999,23 @@ takes from Homebrew in place of one it once carried itself. The
 rewrite also picked up CMYK JPEGs, which the 1992 code couldn't read
 either.
 
+A play icon on one of its buttons drew as a black square. ATK images
+have no alpha channel, and the PNG decoder simply dropped it, so
+see-through pixels kept whatever color they stored, which is usually
+black. The decoder now blends them onto the color the HTML renderer
+paints behind the image. The same button belonged to a phone-only
+block that the email's stylesheet hides on desktop. The parser now
+reads one kind of stylesheet rule, a class set to `display:none`, and
+skips `@media` blocks.
+
+National Grid's giant navy box was a fallback inside `lpair`, the
+class that splits a view in two. When the top half of a stacked pair
+asked for more height than the pair had, `lpair` split it 50/50
+instead. The message's outer border is a 1px rule stacked under the
+content. With the content a few pixels short, that rule got half the
+message, and every nested pair halved again. Overflowing content now
+gets the whole pair, clipped at the bottom.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all

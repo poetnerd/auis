@@ -573,8 +573,23 @@ being front-loaded here.
       view sit on its baseline, which broke `<space>` paging. That was
       reverted, and a 1pt row line now shrinks the stripe instead.
   15. Economist gaps left after item 14:
-      - Links styled as buttons render as plain text; ATK can't paint
-        a background behind inline text.
+      - **RESOLVED 2026-11-14**, wdc-confirmed: links styled as
+        buttons rendered as plain text, since ATK can't paint a
+        background behind inline text. A link with its own background
+        or a top or left border now becomes a small `lset` box on its
+        own line (`RenderLinkButton`), with the link's background,
+        padding and borders. The box width is estimated from the
+        label length and font size (text isn't measurable at render
+        time), so it runs wider than Thunderbird's; corners are
+        square. Border longhands (`border-width`/`-style`/`-color`)
+        are now read too.
+      - Transparent PNGs drew their see-through pixels as whatever
+        color they held, often black (the "Try it now" play icon was
+        a black square). **RESOLVED 2026-11-14**, wdc-confirmed,
+        improving National Grid too: `png.c` blends alpha and `tRNS`
+        transparency onto a background color
+        (`png_SetAlphaBackground`, default white), and the HTML
+        renderer sets it to the color painted behind each image.
       - **RESOLVED 2026-11-14**, wdc-confirmed in `htmlprv` and
         `messages` (Economist, National Grid paging, bookrack, the
         "Mail for your ears" demo): the 1–2px white seam between row
@@ -604,6 +619,14 @@ being front-loaded here.
         `font-family: inherit` no longer names a family.
       - The column holds 600px only because the HTML says so inline;
         the stylesheet isn't parsed. wdc chose to leave this as is.
+      - Content the stylesheet hides showed anyway (the phone-only
+        "Prefer to listen? / Try it now" block, which Thunderbird
+        hides). The parser now reads one kind of `<style>` rule:
+        top-level `.class { display:none }`, optionally tag-qualified.
+        `@media` blocks are skipped (that's where templates re-show
+        phone-only content), as are `<style>` blocks in Outlook-only
+        comments. Elements with such a class are dropped like
+        `<script>`. Everything else in stylesheets is still ignored.
       - **RESOLVED 2026-11-14**, wdc-confirmed: bold headings were
         regular, because `font-weight` only recognized the word `bold`.
         A numeric weight of 600 or more (the Economist uses 700), or
@@ -664,13 +687,33 @@ being front-loaded here.
         which doesn't cover the text view's own internal margins. The
         likely fix: size an image-only cell from the image width plus
         those real margins. The Featured buttons (110px) only fit by
-        the same guess.
+        the same guess. The clipping comes and goes between viewings
+        with an identical lset structure, so it may also belong to the
+        next entry.
+      - National Grid rendered squished (rows too short, photos and
+        paragraphs cut off) with a giant navy box at the end, first
+        intermittently, then every time. **RESOLVED 2026-11-14**,
+        wdc-confirmed (Economist, National Grid, bookrack, LinkedIn,
+        "Mail for your ears"): an `AUTOHEIGHT` stacked pair whose
+        content wanted more height than it had fell back to a 50/50
+        split. National Grid's outer 1px navy bottom border rule got
+        half the 2448px message, and every nested pair halved again.
+        Overflowing content now gets the whole pair and only the
+        bottom is clipped (`lpair.c`).
+      - The cause of that overflow remains: the horizontal scroller
+        around National Grid's 764px table (`lsetscrollcontent`)
+        reports 2448px of height, and the table then wants 2452px at
+        the same width, so the bottom 4px (the navy bottom border) is
+        clipped. Asking with `view_WidthSet` instead of `view_NoSet`
+        didn't change the answer. Unknown which nested view answers
+        differently between the measuring pass and layout.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
   todo items: non-Latin scripts (need a real Unicode text model), SVG
-  image support, no embedded image can render truly invisibly (border +
-  no transparency), image cache isn't persistent across reopens,
+  image support, no embedded image can render truly invisibly (PNG
+  transparency is flattened onto one background color at decode time,
+  not composited), image cache isn't persistent across reopens,
   whether `font`-element support is worth its own code path.
   With core rendering done and verified, the open question is whether
   to keep hardening on the `html` branch or merge it back into `trunk`
