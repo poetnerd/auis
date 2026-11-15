@@ -708,6 +708,38 @@ being front-loaded here.
         didn't change the answer. Unknown which nested view answers
         differently between the measuring pass and layout.
 
+  17. LinkedIn (fixtures `linkedin-post.html`, untracked, from the
+      Nov 14 "Sam Brauer … posted" digest, and
+      `revival/tests/linkedin-debug.html`):
+      - **RESOLVED 2026-11-14**, wdc-confirmed (LinkedIn, Economist,
+        National Grid, bookrack): outlined buttons ("See post") drew
+        as solid black. Their background is `rgba(0,0,0,0)`, and
+        `CssColorToX11` dropped the alpha. An alpha of 0 is now no
+        color, and a partial alpha is blended onto white.
+      - **RESOLVED 2026-11-14**, same confirmation: the gray page
+        around LinkedIn's white card. `<body>`'s `background-color`
+        now reaches the tables as an ambient, the way a colored
+        `<div>`'s does, and its top and bottom padding become bands of
+        that color. A top-level `<table width="512" align="center">` is
+        centered at that width, and the horizontal scroller lets such
+        a centered row fill the window (`lsetscrollcontent_FillsWidth`).
+        Nested cells now inherit the nearest painted color, and a
+        spliced sole nested table renders against its outer cell's
+        color, so the card's icons blend onto white, not the gray. A
+        centered row narrower than its column gets a column-colored
+        leaf inside the centering one; without it, the Economist's
+        footer showed light bands. The Economist now also shows its own
+        `#f2f2f2` body color beside its dark column, as Thunderbird
+        does.
+      - Button labels ("Comment", "See post") are underlined serif;
+        Thunderbird shows bold sans. The link style overrides the
+        cell's font and `text-decoration: none`.
+      - `font-family: -apple-system, system-ui, …` doesn't reach a
+        sans font, so body text falls back to Times.
+      - More vertical space above the logo row than Thunderbird.
+      - Round avatars and pill buttons need `border-radius`, which is
+        unsupported (as for the Economist's buttons).
+
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
   todo items: non-Latin scripts (need a real Unicode text model), SVG
