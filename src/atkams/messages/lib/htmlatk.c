@@ -510,6 +510,23 @@ static int ParseCssFontFamilyList(const char *raw, char *outbuf, size_t bufsz)
         if (nlen == 0 || strcasecmp(name, "inherit") == 0
             || strcasecmp(name, "initial") == 0 || strcasecmp(name, "unset") == 0)
             continue;
+        /* Emoji and symbol families are never wanted for text, and
+           LinkedIn's list (repeats included) ran past this buffer
+           before reaching Helvetica, Arial, sans-serif (2026-11-14). */
+        if (value_contains_ci(name, "emoji") || value_contains_ci(name, "symbol"))
+            continue;
+        {
+            const char *q = out;
+            int dup = 0;
+            out[olen] = '\0';
+            while (*q && !dup) {
+                const char *e = strchr(q, ',');
+                size_t l = e ? (size_t) (e - q) : strlen(q);
+                if (l == nlen && strncasecmp(q, name, nlen) == 0) dup = 1;
+                q = e ? e + 1 : q + l;
+            }
+            if (dup) continue;
+        }
         if (olen + (olen > 0) + nlen >= sizeof(out) || olen + (olen > 0) + nlen >= bufsz)
             continue;
         if (olen > 0) out[olen++] = ',';
@@ -658,6 +675,10 @@ struct hax_state {
    htmlatk_RenderAmbient walk they start: the background painted
    behind it. Consumed (cleared) by that walk's setup. */
 static char NextRenderPaintedBg[32];
+/* Likewise the font family open where the cell sits (CSS inherits it:
+   LinkedIn sets its sans list on <body>, and every cell, rendered by
+   its own walk, fell back to the serif default; 2026-11-14). */
+static char NextRenderFamily[200];
 
 /* Sets NextRenderPaintedBg for a cell rendered from st: the cell's own
    (cascaded) background if it has one, else whatever is painted where
@@ -672,6 +693,12 @@ static void SetNextRenderPaintedBg(struct hax_state *st, const char *own)
     if (!bg) bg = st->paintedBg;
     strncpy(NextRenderPaintedBg, bg, sizeof(NextRenderPaintedBg) - 1);
     NextRenderPaintedBg[sizeof(NextRenderPaintedBg) - 1] = '\0';
+    NextRenderFamily[0] = '\0';
+    for (i = (int) st->markcount - 1; i >= 0; --i) {
+        if (!st->marks[i].style) continue;
+        style_GetFontFamily(st->marks[i].style, NextRenderFamily, sizeof(NextRenderFamily));
+        if (NextRenderFamily[0]) break;
+    }
 }
 
 /* While a cell's sole nested table is spliced in its place, cells
@@ -5046,6 +5073,10 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
     strcpy(st.paintedBg, "#ffffff");
     if (nested && NextRenderPaintedBg[0]) strcpy(st.paintedBg, NextRenderPaintedBg);
     NextRenderPaintedBg[0] = '\0';
+    /* Outermost, so the cell's own font-family still wins. */
+    if (nested && NextRenderFamily[0])
+        ambientOpened += marks_push(&st, FontFamilyStyleFor(NextRenderFamily));
+    NextRenderFamily[0] = '\0';
 
     if (ambientNode1) ambientOpened += PushFormattingMarks(&st, ambientNode1);
     if (ambientNode2) ambientOpened += PushFormattingMarks(&st, ambientNode2);
@@ -5269,8 +5300,14 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                         if (LinkTemplateSt) {
                             ls = style_New();
                             if (ls) {
+                                char *td = htmlpart_GetStyleProp(n, "text-decoration");
                                 style_Copy(LinkTemplateSt, ls);
                                 style_AddAttribute(ls, "href", (char *) href);
+                                /* <a style="text-decoration: none">, as
+                                   on LinkedIn's buttons: no underline. */
+                                if (td && value_contains_ci(td, "none"))
+                                    style_UseOldUnderline(ls);
+                                free(td);
                                 /* Link blue is unreadable on a dark
                                    cell (The Economist's black footer,
                                    2026-09-28); a browser's default
