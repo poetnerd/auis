@@ -4310,7 +4310,31 @@ static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode
            Titles text column, height="200"); the stack's last row
            takes the slack (lpair_AUTOHEIGHT). */
         RaiseMinHeight(leaf, NodeMinHeight(tablenode));
-        return leaf ? leaf : MakeFillerLeaf(st);
+        if (!leaf) return MakeFillerLeaf(st);
+        /* Its own borders, as RenderTableAsLset gives any other table
+           (missing here until the 2026-11-15 context review). A float
+           is its own height, at the top, as in a browser: an empty
+           filler below takes the pair's slack. Given to the last row
+           instead, the slack grew a bordered float's bottom border into
+           a solid bar, and vertically centered a one-cell float's text
+           (a td's default valign) partway down the row. */
+        {
+            struct lset *box = StackBorders(st, leaf, tablenode);
+            struct lset *fill, *node;
+            fill = MakeFillerLeaf(st);
+            node = (struct lset *) class_NewObject("lset");
+            if (!fill || !node) return box;
+            /* Wanting a blank text line's height, the filler made the
+               row taller by that much. */
+            fill->fixedheight = 1;
+            node->nobar = node->noseam = node->autoheight = 1;
+            node->type = lsetview_MakeVert;
+            node->pct = 50;
+            node->minwidth = box->minwidth;
+            node->left = (struct dataobject *) box;
+            node->right = (struct dataobject *) fill;
+            return node;
+        }
     }
     lsetvec_free(&rows);
     return MakeFillerLeaf(st);
