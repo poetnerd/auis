@@ -713,7 +713,23 @@ A leaf's first draw goes through `lsetview__Update` (mode
 it showed an older bug: a leaf holding another leaf sets the inner
 view's background to its own color when it makes it, so a white
 button centered in a dark leaf erased its padding dark. `placechild`
-now sets the leaf's own color before it erases.
+now sets the leaf's own color before it erases. The first-draw path
+also placed the child in the leaf's visual bounds where `FullUpdate`
+uses its logical bounds; a button first drawn partly clipped gave its
+text a box too short for a line and showed an empty outline, so both
+now use logical bounds.
+
+An image can't be rounded after it draws the way a cell is, since
+nothing tracks what lies behind an embedded `imagev`. Instead
+`RoundImageCorners` masks the image itself once it is decoded and
+scaled to its declared size: each pixel outside the curve is blended,
+4x4 supersampled, into `st->paintedBg`, the background PNG
+transparency is already flattened onto. Only true-color pixels can be
+blended, so a palette or bitmap image is first replaced by its
+`image_Expand` copy. The radius is clamped to half the shorter side,
+so `50%` and LinkedIn's `9999px` both give a circle on a square image.
+The cost is that the corner color is fixed at load time; an image on a
+background the renderer doesn't track would show light corners.
 
 A browser shrinks a table with no width to fit its contents, which
 this renderer can't measure while the layout is built. For a table

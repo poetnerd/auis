@@ -1063,7 +1063,13 @@ another had its background overwritten by its parent's, which no one
 had noticed while such cells had no padding to show it. LinkedIn's
 outlined buttons then needed shrinking to fit their labels, which this
 renderer can't measure; their width is estimated from the label's
-length and font size.
+length and font size. Round images, LinkedIn's avatars and the
+Economist's editor photo, can't be cut afterward the same way, so each
+is masked as it loads, its corners blended into the color behind it,
+as transparent PNGs already were. Testing them turned up an original
+lset bug: a cell's first draw sized its content by the part of it
+then visible, so a button drawn while still partly clipped had no
+room for its label and showed an empty outline until redrawn.
 
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the

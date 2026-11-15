@@ -604,8 +604,8 @@ being front-loaded here.
         photo was missing because the vendored IJG v4 libjpeg (1992)
         can't decode progressive JPEGs. `jpeg.c` now uses Homebrew's
         libjpeg-turbo, linked statically, a new build prerequisite;
-        see `porting-changelog.md`. It's still drawn square, since
-        `border-radius` isn't supported.
+        see `porting-changelog.md`. Drawn round since 2026-11-15 (see
+        round images below).
       - Encoded Subject lines (RFC 2047) aren't decoded; no decoder
         exists anywhere in the tree.
       - **RESOLVED 2026-11-14**, wdc-confirmed: serif `font-family`
@@ -668,8 +668,8 @@ being front-loaded here.
         read, a table with no `width=` is centered at its CSS
         `max-width`, and a real table's borders are stacked into its
         row lsets, exact to the pixel. A wrapper table with side
-        borders is no longer flattened. Corners are square
-        (`border-radius` isn't supported).
+        borders is no longer flattened. Corners are square (a rounded
+        table is still open; see rounded cells below).
 
         four-sided CSS `border` on its table; only top and bottom
         borders are drawn so far.
@@ -791,11 +791,23 @@ being front-loaded here.
         as well as redraws, in the color of the nearest enclosing
         cell (else white), antialiased by 4x4 supersampling, since the
         X rounded-rectangle calls aren't. A border that differs by side
-        keeps square strips. Still open:
-        - Round images (LinkedIn's avatars, the Economist's editor
-          photo): planned as a mask applied when the image loads,
-          painting the pixels outside the circle in the color behind
-          it, as PNG transparency is blended.
+        keeps square strips.
+        - Round images: **RESOLVED 2026-11-15**, wdc-confirmed
+          (LinkedIn's avatars, the Economist's editor photo). An
+          `<img>` with `border-radius` has its corners masked once it
+          is decoded and scaled (`RoundImageCorners`): pixels outside
+          the curve are blended, 4x4 supersampled, into the background
+          known at load time, the one PNG transparency uses. A palette
+          or bitmap image is first expanded to true color. A
+          percentage radius is taken as a full circle or pill.
+        - A leaf's first draw placed its child in its *visual* bounds,
+          so a button first drawn partly clipped got a box too short
+          for its label: LinkedIn's white buttons showed their border
+          but no text until a redraw. **RESOLVED 2026-11-15**,
+          wdc-confirmed: `lsetview__Update` uses logical bounds, as
+          `FullUpdate` already did.
+
+        Still open:
         - A rounded *table* (the Economist's 4px poll button outline)
           stays square: its borders are stacked into its rows.
         - Corners are repainted on full redraws only; a partial redraw
