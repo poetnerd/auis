@@ -692,16 +692,33 @@ being front-loaded here.
         colspan, so the split was even and the cover's 150px of content
         got 145px. A row whose proportional cells all declare pixel
         widths is now split by those widths (`htmlatk.c`,
-        `CellDeclaredPixelWidth`). The fixed image-cell allowance
-        (`ICONCELL_WIDTH_PAD`, a guessed 6px) is still a guess. It
-        covers the 85px BUY and 110px Featured buttons, but it isn't
-        derived from the text view's real margins.
-      - bookrack's 600px Artemis Fowl banner and the header's social
-        icons lose a few pixels on the right. It predates the
-        declared-width split (checked live against the build before it).
-        The banner exactly fills the 640px table's 600px content width,
-        so the text view's 2px side margins (`EBX`) probably push it
-        past the edge.
+        `CellDeclaredPixelWidth`). The covers were still a few pixels
+        short until the margin fix in the next entry.
+      - bookrack's 600px Artemis Fowl banner and header icons, and its
+        covers, lost pixels on the right; the Economist's masthead text
+        sat against its column's edges. **RESOLVED 2026-11-15**,
+        wdc-confirmed (bookrack, Economist, National Grid, LinkedIn).
+        It predated the declared-width split (checked live against the
+        build before it). Four causes, all in `htmlatk.c` unless noted:
+        - The frame's fixed side columns (`[1|10|4|content|4|10|1]`)
+          weren't in its minwidth, so the scroller gave the 640px body
+          30px less than it needed. A row's fixed cells now count once
+          the row has a minwidth of its own; a row without one still
+          gets none, so an icon can't make a table scroll.
+        - Every cell is a text view, which kept a 2px side margin (`EBX`)
+          around embedded views, costing 4px a nesting level where a
+          browser spends nothing. `htmllinkview` now sets it to 0
+          (`htmllinkv.c`). The fixed image-cell allowance
+          (`ICONCELL_WIDTH_PAD`) drops from 6px to 2px, the part of the
+          original measurement that was never traced.
+        - A fixed cell's width left out its table's `cellpadding`, and
+          a floated table's width measured from its images left out its
+          cells' padding: the header icons (`cellpadding=2`) got 22px for
+          24px images.
+        - A flattened wrapper cell's left and right padding were dropped
+          (top and bottom already became bands). The ambient now carries
+          them, so the Economist's padded cells keep their 12px sides;
+          the old 2px margin had been the only gap.
       - National Grid rendered squished (rows too short, photos and
         paragraphs cut off) with a giant navy box at the end, first
         intermittently, then every time. **RESOLVED 2026-11-14**,

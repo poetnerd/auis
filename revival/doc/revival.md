@@ -1040,6 +1040,17 @@ column, but the renderer split table rows by column count alone and
 ignored declared widths, so the cover got 145px. Rows whose cells all
 declare pixel widths are now split in those proportions.
 
+That was only part of it. Every table cell is a text view, and a text
+view keeps a 2px margin on each side of anything embedded in it, so
+each level of nesting cost 4px that a browser doesn't spend. The covers
+sat two levels deep. HTML cells now set that margin to zero. The same
+pass turned up three other ways cells came out a few pixels short: the
+newsletter's fixed-width side columns were left out of its minimum
+width, `cellpadding` was left out of fixed icon columns, and a
+flattened wrapper cell lost its side padding. The last one had kept
+The Economist's masthead text pressed against the edges of its column,
+with only that 2px margin between them.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all

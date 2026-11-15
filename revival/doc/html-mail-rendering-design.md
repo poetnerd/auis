@@ -992,6 +992,29 @@ than one screen:
   those widths only when every proportional cell in the chain has one.
   Otherwise it falls back to colspan. Splits are whole percentages, so
   the result is within about 1% of the declared widths.
+- The `EBX` padding above (2026-11-15) is replaced at the source: every
+  cell is an `htmllinkview`, which now sets its embedded side margin to
+  0 through `textview_SetEmbeddedBorder`, the per-view setter help
+  already uses. A browser cell has no such margin, and with it each
+  nesting level cost 4px, enough to clip a 125px cover two tables
+  deep. Core `textview` is unchanged, and the vertical margin stays.
+  `ICONCELL_WIDTH_PAD` keeps 2px, the part of the original 6px
+  shortfall that was never traced.
+- Fixed widths now count the padding that `BuildLsetCell` applies
+  inside a cell: `CellFixedPixelWidth` adds the table's `cellpadding`
+  to the CSS padding it already added, and `LsetFixedContentWidth`
+  adds a leaf's padding to the image width it measures.
+- A row's minwidth leaves out its fixed cells, so that an icon column
+  alone never makes a table scroll (the 2026-09-23 correction at
+  `CellMinwidth`). Once some cell gives the row a real minwidth,
+  though, the fixed cells' pixels are added, since the row truly needs
+  them: bookrack's `[1|10|4|content|4|10|1]` frame had reported 648px
+  for 678px of content, and the scroller clipped the difference.
+- A flattened wrapper table has no leaf of its own, so its cell's
+  top and bottom padding become spacer bands, and its side padding now
+  rides on the ambient (`hax_ambient`'s `padleft`/`padright`).
+  `ApplyAmbient` wraps each row inside it in a leaf with the summed
+  side padding, in the innermost ambient color.
 
 ## Known issues and planned work
 
