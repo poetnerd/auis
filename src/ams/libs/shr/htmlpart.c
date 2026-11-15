@@ -74,6 +74,8 @@ struct hpstack;
 /* ---- forward declarations (static, alphabetical) ---- */
 
 static int attr_allowed(const char *tag, const char *attr);
+static int class_is_hidden(const struct hpstack *st, const char *classattr);
+static void collect_hidden_classes(struct hpstack *st, const unsigned char *data, long start, long end);
 static void decode_entities_into(struct hpbuf_s *out, const unsigned char *data, long start, long end);
 static char *filter_style(const char *raw);
 static void finalize_pop(struct hpframe *f, struct hpstack *st, struct childsink *rootsink);
@@ -765,6 +767,9 @@ struct hpstack {
 				   frame is holding, which it would if
 				   frames were stored inline */
     long count, cap;
+    char **hidden;		/* classes a <style> block sets to
+				   display:none (collect_hidden_classes) */
+    long nhidden, caphidden;
 };
 
 static void hpstack_init(struct hpstack *st)
@@ -772,6 +777,8 @@ static void hpstack_init(struct hpstack *st)
     st->items = NULL;
     st->count = 0;
     st->cap = 0;
+    st->hidden = NULL;
+    st->nhidden = st->caphidden = 0;
 }
 
 static void hpstack_push(struct hpstack *st, struct hpframe *f)
@@ -797,6 +804,132 @@ static struct hpframe *hpstack_top(const struct hpstack *st)
 {
     if (st->count <= 0) return NULL;
     return st->items[st->count - 1];
+}
+
+/* Records n bytes at name as a hidden class, if not already known. */
+static void add_hidden_class(struct hpstack *st, const unsigned char *name, long n)
+{
+    long i;
+    char *c;
+
+    for (i = 0; i < st->nhidden; i++)
+        if ((long) strlen(st->hidden[i]) == n && memcmp(st->hidden[i], name, n) == 0) return;
+    if (st->nhidden >= st->caphidden) {
+        long ncap = st->caphidden ? st->caphidden * 2 : 8;
+        char **nh = (char **) realloc(st->hidden, ncap * sizeof(char *));
+        if (!nh) return;
+        st->hidden = nh;
+        st->caphidden = ncap;
+    }
+    c = (char *) malloc(n + 1);
+    if (!c) return;
+    memcpy(c, name, n);
+    c[n] = '\0';
+    st->hidden[st->nhidden++] = c;
+}
+
+/* Whether the CSS declarations in data[start..end) include
+   display:none. */
+static int decls_hide(const unsigned char *data, long start, long end)
+{
+    long p = start;
+
+    while (p < end) {
+        long ns, ne, vs;
+        while (p < end && (isspace(data[p]) || data[p] == ';')) ++p;
+        ns = p;
+        while (p < end && data[p] != ':' && data[p] != ';') ++p;
+        ne = p;
+        while (ne > ns && isspace(data[ne - 1])) --ne;
+        if (p >= end || data[p] != ':') continue;
+        vs = ++p;
+        while (p < end && data[p] != ';') ++p;
+        if (ne - ns == 7 && strncasecmp((const char *) data + ns, "display", 7) == 0) {
+            long q;
+            for (q = vs; q + 4 <= p; q++)
+                if (strncasecmp((const char *) data + q, "none", 4) == 0) return 1;
+        }
+    }
+    return 0;
+}
+
+/* Scans a <style> block's CSS for top-level rules that hide a class:
+   ".x { display:none }", optionally tag-qualified ("table.x") and in
+   a selector list. Everything inside an @-rule block is skipped:
+   @media blocks are how mail templates re-show mobile-only content
+   on small screens, and this renderer is a desktop client. Any other
+   selector (descendants, ids, pseudo-classes) is ignored. Later
+   rules that might re-show a class are not considered.
+
+   Blocks inside conditional comments (<!--[if mso]><style>) never
+   get here: the main loop skips comments whole. */
+static void collect_hidden_classes(struct hpstack *st, const unsigned char *data, long start, long end)
+{
+    long p = start;
+
+    while (p < end) {
+        long ss, se, bs, depth;
+
+        while (p < end && isspace(data[p])) ++p;
+        if (p + 1 < end && data[p] == '/' && data[p + 1] == '*') {
+            p += 2;
+            while (p + 1 < end && !(data[p] == '*' && data[p + 1] == '/')) ++p;
+            p += 2;
+            continue;
+        }
+        if (p + 3 < end && memcmp(data + p, "<!--", 4) == 0) { p += 4; continue; }
+        if (p + 2 < end && memcmp(data + p, "-->", 3) == 0) { p += 3; continue; }
+        if (p >= end) break;
+
+        ss = p;
+        while (p < end && data[p] != '{' && data[p] != ';') ++p;
+        if (p >= end) break;
+        if (data[p] == ';') { ++p; continue; }	/* @import, @charset */
+        se = p;
+        bs = ++p;
+        depth = 1;
+        while (p < end && depth > 0) {
+            if (data[p] == '{') ++depth;
+            else if (data[p] == '}') --depth;
+            ++p;
+        }
+        if (data[ss] == '@' || depth > 0) continue;
+        if (!decls_hide(data, bs, p - 1)) continue;
+
+        /* each comma-separated selector: [tag].class, nothing else */
+        while (ss < se) {
+            long cs, ce, q;
+            while (ss < se && (isspace(data[ss]) || data[ss] == ',')) ++ss;
+            cs = ss;
+            while (ss < se && data[ss] != ',') ++ss;
+            ce = ss;
+            while (ce > cs && isspace(data[ce - 1])) --ce;
+            q = cs;
+            while (q < ce && isalnum(data[q])) ++q;
+            if (q >= ce || data[q] != '.') continue;
+            cs = ++q;
+            while (q < ce && (isalnum(data[q]) || data[q] == '-' || data[q] == '_')) ++q;
+            if (q == ce && ce > cs) add_hidden_class(st, data + cs, ce - cs);
+        }
+    }
+}
+
+/* Whether a class="..." value names a hidden class. */
+static int class_is_hidden(const struct hpstack *st, const char *classattr)
+{
+    const char *p = classattr;
+
+    while (*p) {
+        const char *w;
+        long i;
+        while (*p && isspace((unsigned char) *p)) ++p;
+        w = p;
+        while (*p && !isspace((unsigned char) *p)) ++p;
+        for (i = 0; i < st->nhidden; i++)
+            if ((long) strlen(st->hidden[i]) == p - w && strncmp(st->hidden[i], w, p - w) == 0)
+                return 1;
+    }
+    return 0;
 }
 
 static struct childsink *currentsink(const struct hpstack *st, struct childsink *rootsink)
@@ -996,6 +1129,7 @@ static long handle_open_tag(const unsigned char *data, long pos, long len, struc
     struct htmlnode *node;
     struct htmlattr **attrtail;
     int selfclose;
+    int classhidden = 0;
 
     p = read_name(data, pos + 1, len, namebuf, (int) sizeof(namebuf));
 
@@ -1006,7 +1140,14 @@ static long handle_open_tag(const unsigned char *data, long pos, long len, struc
     if (namebuf[0] != '\0'
         && (strcmp(namebuf, "script") == 0 || strcmp(namebuf, "style") == 0
             || strcmp(namebuf, "textarea") == 0)) {
-        return skip_rawtext_element(data, p, len, namebuf);
+        long end = skip_rawtext_element(data, p, len, namebuf);
+        if (strcmp(namebuf, "style") == 0 && !topdrop(st)) {
+            long cs = skip_to_tag_end(data, p, len), ce = end;
+            while (ce > cs && data[ce - 1] != '<') --ce;	/* back over </style> */
+            if (ce > cs) --ce;
+            collect_hidden_classes(st, data, cs, ce);
+        }
+        return end;
     }
 
     parentdrop = topdrop(st);
@@ -1062,6 +1203,16 @@ static long handle_open_tag(const unsigned char *data, long pos, long len, struc
                 hasvalue = 1;
             }
 
+            if (kindwanted != HPF_DROP && hasvalue && st->nhidden > 0 && strcmp(attrnamebuf, "class") == 0) {
+                char *cv = (char *) malloc(valend - valstart + 1);
+                if (cv) {
+                    memcpy(cv, data + valstart, valend - valstart);
+                    cv[valend - valstart] = '\0';
+                    if (class_is_hidden(st, cv)) classhidden = 1;
+                    free(cv);
+                }
+            }
+
             if (node && attrtail && attrnamebuf[0] != '\0' && attr_allowed(namebuf, attrnamebuf)) {
                 struct hpbuf_s buf;
                 char *decoded;
@@ -1094,6 +1245,14 @@ static long handle_open_tag(const unsigned char *data, long pos, long len, struc
                 }
             }
         }
+    }
+
+    /* hidden by a stylesheet class: drop it and its content, as for
+       a TAGRULE_DROP tag */
+    if (classhidden) {
+        htmlpart_Free(node);
+        node = NULL;
+        kindwanted = HPF_DROP;
     }
 
     if (selfclose || is_void_tag(namebuf)) {
@@ -1173,6 +1332,8 @@ struct htmlnode *htmlpart_Parse(const unsigned char *data, long len)
         if (f) finalize_pop(f, &st, &rootsink);
     }
     free(st.items);
+    while (st.nhidden > 0) free(st.hidden[--st.nhidden]);
+    free(st.hidden);
 
     return rootsink.head;
 }
