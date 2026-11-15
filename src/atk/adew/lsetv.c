@@ -759,7 +759,11 @@ void lsetview__Update(struct lsetview *self)
 	    {
 	    struct rectangle rr;
 	    long foo1,foo2;
-	    lsetview_GetVisualBounds(self,&rr);
+	    /* Logical bounds, as FullUpdate uses: a leaf first drawn while
+	       partly clipped by the cell holding it got a child too short
+	       for its one line, and LinkedIn's white buttons showed their
+	       border but no label until a redraw (2026-11-15). */
+	    lsetview_GetLogicalBounds(self,&rr);
 	    placechild(self, &rr, TRUE);
 	    view_InsertView(self->app, self, &rr);
 	    view_RetractViewCursors(self->app,self->app);
