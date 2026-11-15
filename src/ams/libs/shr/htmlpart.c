@@ -1405,6 +1405,15 @@ static long handle_open_tag(const unsigned char *data, long pos, long len, struc
 
 /* ---- public entry points ---- */
 
+/* Whether the most recent htmlpart_Parse saw a <!DOCTYPE>; see
+   htmlpart_LastParseHadDoctype. */
+static int HpSawDoctype = 0;
+
+int htmlpart_LastParseHadDoctype(void)
+{
+    return HpSawDoctype;
+}
+
 struct htmlnode *htmlpart_Parse(const unsigned char *data, long len)
 {
     struct childsink rootsink;
@@ -1414,12 +1423,15 @@ struct htmlnode *htmlpart_Parse(const unsigned char *data, long len)
     if (len < 0) len = 0;
     rootsink.head = rootsink.tail = NULL;
     hpstack_init(&st);
+    HpSawDoctype = 0;
 
     while (pos < len) {
         if (data[pos] == '<' && pos + 3 < len
             && data[pos + 1] == '!' && data[pos + 2] == '-' && data[pos + 3] == '-') {
             pos = skip_comment(data, pos, len);
         } else if (data[pos] == '<' && pos + 1 < len && data[pos + 1] == '!') {
+            if (pos + 9 <= len && strncasecmp((const char *) data + pos + 2, "doctype", 7) == 0)
+                HpSawDoctype = 1;
             pos = skip_bang_or_pi(data, pos, len);
         } else if (data[pos] == '<' && pos + 1 < len && data[pos + 1] == '?') {
             pos = skip_bang_or_pi(data, pos, len);

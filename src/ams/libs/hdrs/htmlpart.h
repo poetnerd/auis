@@ -218,4 +218,11 @@ const char *htmlpart_GetAttr(const struct htmlnode *n, const char *propname);
    safer than, hand-splitting htmlpart_GetAttr(n, "style") on ';'/':'. */
 char *htmlpart_GetStyleProp(const struct htmlnode *n, const char *propname);
 
+/* Whether the most recent htmlpart_Parse() call's input had a
+   <!DOCTYPE>. Without one a browser renders in quirks mode, which
+   changes what a table inherits (htmlatk.c's quirks handling). Valid
+   until the next htmlpart_Parse(); every caller renders right after
+   parsing. */
+int htmlpart_LastParseHadDoctype(void);
+
 #endif /* HTMLPART_H */
