@@ -713,7 +713,22 @@ A leaf's first draw goes through `lsetview__Update` (mode
 it showed an older bug: a leaf holding another leaf sets the inner
 view's background to its own color when it makes it, so a white
 button centered in a dark leaf erased its padding dark. `placechild`
-now sets the leaf's own color before it erases. The first-draw path
+now sets the leaf's own color before it erases.
+
+The corners are repainted only when the leaf itself draws. A child
+text view's own updates go straight to the window's update queue and
+never pass through the leaf's update, so a repaint of the cell's text
+would square them. In practice nothing does: textview draws a
+selection by inverting pixels in place, corners included, and mail is
+read-only. Should a case appear (an editable rounded cell), the fix is
+an lsetview `WantUpdate` override: a rounded leaf that sees a
+descendant's request passes it on, notes that its corners need
+repainting, then queues itself. `updatelist` runs requests in order
+and moves a repeat request to the end, so the leaf's update follows
+the child's and can redraw the corners, which are computed from
+colors rather than read from the screen and so are safe to repeat.
+
+The first-draw path
 also placed the child in the leaf's visual bounds where `FullUpdate`
 uses its logical bounds; a button first drawn partly clipped gave its
 text a box too short for a line and showed an empty outline, so both

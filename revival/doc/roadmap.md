@@ -810,9 +810,12 @@ being front-loaded here.
         Still open:
         - A rounded *table* (the Economist's 4px poll button outline)
           stays square: its borders are stacked into its rows.
-        - Corners are repainted on full redraws only; a partial redraw
-          of a cell's content (a selection) could square them until
-          the next.
+        - Corners after a partial redraw: **NOT NEEDED 2026-11-16**,
+          wdc-checked (LinkedIn). textview draws a selection by
+          inverting pixels in place, so the corner pixels flip with
+          everything else and the curves survive. Nothing else
+          repaints a rounded cell's text in read-only mail. The fix,
+          should a case appear, is in the design doc.
       - Shrink-to-fit buttons: **RESOLVED 2026-11-15**, wdc-confirmed
         (LinkedIn). A table with no width (or `width="auto"`) that is
         one cell holding a short line of text takes the cell's declared
