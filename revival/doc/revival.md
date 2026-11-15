@@ -1034,6 +1034,12 @@ cross into a table when a message has no doctype, and the two splice
 paths share one helper. The audit is in
 `html-mail-rendering-design.md`, "Context across the build paths".
 
+bookrack's book covers lost their right edge for a simpler reason.
+Each review card declares a 150px cover column beside a 140px text
+column, but the renderer split table rows by column count alone and
+ignored declared widths, so the cover got 145px. Rows whose cells all
+declare pixel widths are now split in those proportions.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all

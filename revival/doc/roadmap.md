@@ -685,16 +685,23 @@ being front-loaded here.
         auto-detection, but `imagev` is a view, not an image class,
         and it crashes (bus error). Nothing auto-detects image formats;
         Import makes the user pick the type.
-      - bookrack's Book Reviews BUY buttons are clipped on the right.
-        It predates the item 15 padding work (checked against the
-        commit before it). The 85px button image sits in a cell fixed
-        at 85px plus a guessed 6px allowance (`ICONCELL_WIDTH_PAD`),
-        which doesn't cover the text view's own internal margins. The
-        likely fix: size an image-only cell from the image width plus
-        those real margins. The Featured buttons (110px) only fit by
-        the same guess. The clipping comes and goes between viewings
-        with an identical lset structure, so it may also belong to the
-        next entry.
+      - bookrack's Book Reviews covers were clipped on the right.
+        **RESOLVED 2026-11-15**, wdc-confirmed (bookrack, Economist,
+        National Grid, LinkedIn). Each card is a `width=150` cover cell
+        beside a `width=140` text cell. Row cells were weighted only by
+        colspan, so the split was even and the cover's 150px of content
+        got 145px. A row whose proportional cells all declare pixel
+        widths is now split by those widths (`htmlatk.c`,
+        `CellDeclaredPixelWidth`). The fixed image-cell allowance
+        (`ICONCELL_WIDTH_PAD`, a guessed 6px) is still a guess. It
+        covers the 85px BUY and 110px Featured buttons, but it isn't
+        derived from the text view's real margins.
+      - bookrack's 600px Artemis Fowl banner and the header's social
+        icons lose a few pixels on the right. It predates the
+        declared-width split (checked live against the build before it).
+        The banner exactly fills the 640px table's 600px content width,
+        so the text view's 2px side margins (`EBX`) probably push it
+        past the edge.
       - National Grid rendered squished (rows too short, photos and
         paragraphs cut off) with a giant navy box at the end, first
         intermittently, then every time. **RESOLVED 2026-11-14**,

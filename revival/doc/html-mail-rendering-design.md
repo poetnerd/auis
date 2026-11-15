@@ -983,6 +983,15 @@ than one screen:
   a percentage split, gets it too), capped to icon-scale widths
   (`ICONCELL_MAXFIXEDPX`) after an uncapped first attempt let a 350px
   decorative divider image starve its row sibling.
+- A row's proportional cells were weighted by colspan alone, so
+  declared pixel widths were ignored and a `150 | 140` row split
+  evenly, clipping bookrack's 150px review covers (2026-11-15). A
+  cell's weight also counts its columns, so it wasn't changed. Each
+  cell records its declared pixel width (`width=` or CSS `width`, plus
+  horizontal padding) separately, and `BuildLsetChain` divides by
+  those widths only when every proportional cell in the chain has one.
+  Otherwise it falls back to colspan. Splits are whole percentages, so
+  the result is within about 1% of the declared widths.
 
 ## Known issues and planned work
 
