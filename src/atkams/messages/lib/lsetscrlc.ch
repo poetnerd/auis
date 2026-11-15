@@ -70,6 +70,14 @@
    its rightmost 4px (roadmap item 9). */
 #define lsetscrollcontent_MINWIDTH_SAFETY_PAD 12
 
+/* A row whose root is a centering leaf (htmlatk.c's CenteredRowLeaf:
+   a fixed-width column centered in the window, its margins in the
+   outer color) is the one tableau that should widen with the window:
+   the leaf keeps its child at the column width either way. LinkedIn's
+   512px card showed only a strip of its gray margins (2026-11-14). */
+#define lsetscrollcontent_FillsWidth(ls) \
+    ((ls) && (ls)->halign != lset_HALIGN_NONE && (ls)->contentwidth > 0)
+
 class lsetscrollcontent[lsetscrlc] : view {
 classprocedures:
     InitializeObject(struct lsetscrollcontent *self) returns boolean;

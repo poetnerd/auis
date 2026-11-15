@@ -174,6 +174,8 @@ enum view_DSattributes lsetscrollview__DesiredSize(struct lsetscrollview *self, 
        the box is narrower than this anyway. Reporting exactly the width
        lsetscrollcontent lays out at keeps a fitting table unclipped. */
     *dWidth = naturalWidth;
+    if (lsetscrollcontent_FillsWidth((struct lset *) dob) && width > naturalWidth)
+        *dWidth = width;
     *dHeight = dh + borderpad + barheight;
     return view_Fixed;
 }

@@ -146,6 +146,9 @@ static void place_inner(struct lsetscrollcontent *self)
        lsetscrollview__DesiredSize's now-fixed report one layer up
        (lsetscrlv.c), which should mean ownBounds rarely exceeds
        naturalWidth at all now, but this stays correct even if it does. */
+    if (lsetscrollcontent_FillsWidth((struct lset *) lsetscrollcontent_GetDataObject(self))
+        && ownBounds.width > naturalWidth)
+        naturalWidth = ownBounds.width;
     rectangle_SetRectSize(&r, ownBounds.left - self->panx, ownBounds.top, naturalWidth, ownBounds.height);
     /* CORRECTION (2026-09-25, found live -- endzone-jump-back-to-left-
        margin misdraw): DoFullUpdate (lpair.c) never clears background
