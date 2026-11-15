@@ -3203,6 +3203,39 @@ static void InsertRowView(struct hax_state *st, struct lset *row)
     st->spacePending = 0;
 }
 
+/* Gives every line of views alone (spaces aside) the row line's tiny
+   font, as InsertRowView gives a row's, over text [from, st->pos). An
+   image hangs below the baseline as a row does, so an image alone in
+   a cell sat a whole font ascent lower than a browser puts it, on the
+   baseline: LinkedIn's logo 18px, bookrack's covers 19px (2026-11-16).
+   A line with text keeps that text's own ascent. Run after
+   ApplyPendingStyles and wrapped directly, so the tiny font is
+   innermost even over a span of exactly the same text: a cell holding
+   only its image, under its table's font-size, kept that size, and
+   bookrack's buy buttons sat 19px low in 44px rows. */
+static void SettleViewLines(struct hax_state *st, long from)
+{
+    struct text *t = st->dest;
+    long ls = from, i, end = st->pos;
+    while (ls < end) {
+        int views = 0, other = 0;
+        for (i = ls; i < end && text_GetChar(t, i) != '\n'; ++i) {
+            struct environment *env;
+            long c = text_GetChar(t, i);
+            if (c == ' ') continue;
+            env = environment_GetInnerMost(t->rootEnvironment, i);
+            if ((c & 0xFF) == 0xFF && env && env->type == environment_View) ++views;
+            else { ++other; break; }
+        }
+        while (i < end && text_GetChar(t, i) != '\n') ++i;
+        if (views > 0 && !other
+            && !environment_WrapStyle(t->rootEnvironment, ls, (i < end ? i + 1 : i) - ls,
+                                      PointSizeStyleFor(ROWLINE_POINTSIZE)))
+            st->hardfail = 1;
+        ls = i + 1;
+    }
+}
+
 /* An HTML cell's CSS padding per side, in pixels: the padding
    shorthand (one to four lengths, in CSS's top, right, bottom, left
    order), then padding-top/-right/-bottom/-left. Only pixel lengths
@@ -6073,6 +6106,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
        recorded style spans -- see marks_finalize's comment. */
     ApplyPendingStyles(&st);
     free(st.pending);
+    SettleViewLines(&st, startpos);
 
     if (lengthOut) *lengthOut = st.pos - startpos;
     return !st.hardfail;
