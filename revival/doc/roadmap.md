@@ -591,18 +591,6 @@ being front-loaded here.
         libjpeg-turbo, linked statically, a new build prerequisite;
         see `porting-changelog.md`. It's still drawn square, since
         `border-radius` isn't supported.
-  16. Found during the JPEG work (item 15), not yet fixed:
-      - `gif.c`'s loader closes the `FILE*` its caller passed in, and
-        the callers (`image.c`, `image__ReadOtherFormat`,
-        `htmlatk.c`) close it again. If another `fopen` reuses the
-        slot in between, the second close shuts the wrong file.
-        `jpeg.c` had the same bug and is fixed.
-      - Exif orientation is ignored, so a phone photo stored sideways
-        displays sideways.
-      - `imgtest`'s header suggests the class `imagev` for format
-        auto-detection, but `imagev` is a view, not an image class,
-        and it crashes (bus error). Nothing auto-detects image formats;
-        Import makes the user pick the type.
       - Encoded Subject lines (RFC 2047) aren't decoded; no decoder
         exists anywhere in the tree.
       - **RESOLVED 2026-11-14**, wdc-confirmed: serif `font-family`
@@ -616,6 +604,48 @@ being front-loaded here.
         `font-family: inherit` no longer names a family.
       - The column holds 600px only because the HTML says so inline;
         the stylesheet isn't parsed. wdc chose to leave this as is.
+      - **RESOLVED 2026-11-14**, wdc-confirmed: bold headings were
+        regular, because `font-weight` only recognized the word `bold`.
+        A numeric weight of 600 or more (the Economist uses 700), or
+        `bolder`, is now bold.
+      - **RESOLVED 2026-11-14**, wdc-confirmed (Economist, National
+        Grid paging, bookrack, LinkedIn): no section dividers and no
+        space between sections. A table's or cell's CSS `border-top`
+        and `border-bottom` now draw as rules: an exactly-sized leaf
+        stacked in the cell's `lset` tree (`StackRule`), or, for a table
+        that sits directly in the text, a rule row of its own (at least
+        2px, the row line's minimum). CSS `padding` is kept and honored:
+        per side on table cells (new `lset` fields, `.ez` format `\V 9`,
+        alongside `fixedheight` for the rule leaves), and as spacer rows
+        for a flattened wrapper cell, which has no leaf to pad. Both
+        also survive the two shortcuts that let a nested table stand in
+        for its cell, which had dropped them. A cell's column includes
+        its horizontal padding, as in CSS. `<hr>` is a 2px gray rule,
+        not a line of dashes. `toporigin`'s offset is now half the
+        view's height, up to 8px, so a short row fills its line.
+      - The button-style link's outline ("Vote in the poll") is a full
+        four-sided CSS `border` on its table; only top and bottom
+        borders are drawn so far.
+  16. Found during the item 15 work, not yet fixed:
+      - `gif.c`'s loader closes the `FILE*` its caller passed in, and
+        the callers (`image.c`, `image__ReadOtherFormat`,
+        `htmlatk.c`) close it again. If another `fopen` reuses the
+        slot in between, the second close shuts the wrong file.
+        `jpeg.c` had the same bug and is fixed.
+      - Exif orientation is ignored, so a phone photo stored sideways
+        displays sideways.
+      - `imgtest`'s header suggests the class `imagev` for format
+        auto-detection, but `imagev` is a view, not an image class,
+        and it crashes (bus error). Nothing auto-detects image formats;
+        Import makes the user pick the type.
+      - bookrack's Book Reviews BUY buttons are clipped on the right.
+        It predates the item 15 padding work (checked against the
+        commit before it). The 85px button image sits in a cell fixed
+        at 85px plus a guessed 6px allowance (`ICONCELL_WIDTH_PAD`),
+        which doesn't cover the text view's own internal margins. The
+        likely fix: size an image-only cell from the image width plus
+        those real margins. The Featured buttons (110px) only fit by
+        the same guess.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
