@@ -518,17 +518,21 @@ static void lpair_ResetDimensions(struct lpair *self)
 	   before the placement loop below uses it, asks obj[0] for its
 	   own real desired height at this pair's actual width and gives
 	   it exactly that, handing whatever's left to obj[1] -- which
-	   recursively does the same for the row after it. Only applied
-	   when the query comes back sane (0 < dh0 < total); a degenerate
-	   result (obj[0] can't size itself yet, or claims more than the
-	   whole pair) falls through to the unmodified weighted split,
-	   same guarded-fallback shape as lpair_VCENTER's own check. */
+	   recursively does the same for the row after it. If obj[0]
+	   claims the whole pair or more, it gets all of it and obj[1]
+	   nothing, clipping at the bottom as a document would; the
+	   weighted split this used to fall back to handed half of a
+	   2448px National Grid message to its 1px bottom border rule
+	   when the content wanted 3px more than it was given
+	   (2026-11-14). Only a degenerate dh0 <= 0 (obj[0] can't size
+	   itself yet) keeps the weighted split. */
 	if (self->typex == lpair_HORIZONTAL && (self->movable & lpair_AUTOHEIGHT)
 	    && self->obj[0] && self->obj[1]) {
 		long dw, dh0, total;
 		view_DesiredSize(self->obj[0], lpair_GetLogicalWidth(self), lpair_GetLogicalHeight(self), view_WidthSet, &dw, &dh0);
 		total = lpair_GetLogicalHeight(self);
-		if (dh0 > 0 && dh0 < total) {
+		if (dh0 > 0) {
+			if (dh0 > total) dh0 = total;
 			self->objcvt[0] = dh0;
 			self->objcvt[1] = total - dh0;
 		}
