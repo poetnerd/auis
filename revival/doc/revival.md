@@ -1074,6 +1074,18 @@ last square corners, the Economist's poll button, belonged to a table
 whose border was assembled from four separate strips; wrapping the
 table in one rounded cell gave the corners an owner.
 
+LinkedIn's "extra space above the logo" turned out, once measured
+against Thunderbird pixel by pixel, to be two errors pulling opposite
+ways: the logo sat 18px low, while everything below it was packed too
+tight, because a table's own CSS padding had never been applied
+anywhere. Fixing the padding then exposed an `<hr>` drawn with a blank
+line on each side, 13px more than a browser's margins, which the
+missing padding had been hiding. Sizing buttons to their labels was
+less tidy: the layout is built before any font exists, so label widths
+are estimated, and each improvement to the estimate wrapped some other
+label. The estimate now errs wide, and measuring the text at layout
+time, as a browser does, is the next piece of work.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all

@@ -763,13 +763,39 @@ A browser shrinks a table with no width to fit its contents, which
 this renderer can't measure while the layout is built. For a table
 that is one cell holding a short line of inline text (60 characters
 at most, no line breaks, images or button links), `TableLabelWidth`
-gives the cell's declared pixel width or else estimates the text the
-way `RenderLinkButton` does (55% of the font size per character), plus
-padding and side borders. `CenterFixedTable` and `RenderTableAsLset`
-both use it, placing the box by the enclosing cell's alignment
-(`CellContentSide`, which also accepts browsers' `align="middle"`). A
-rounded or colored leaf narrowed this way is wrapped (`CenteredRowLeaf`)
-so its background and corners narrow with it.
+gives the cell's declared pixel width or else estimates the text as
+`RenderLinkButton` does (`LabelTextWidth`), plus padding and side
+borders. `CenterFixedTable` and `RenderTableAsLset` both use it,
+placing the box by the enclosing cell's alignment (`CellContentSide`,
+which also accepts browsers' `align="middle"`), or by a flattened
+wrapper cell's inside it (`ContentSide`, through the ambient's `side`;
+each cell renders in its own walk, so every ambient is inside the
+cell). A rounded or colored leaf narrowed this way is wrapped
+(`CenteredRowLeaf`) so its background and corners narrow with it.
+
+`LabelTextWidth` is the larger of two estimates: 55% of the font size
+per character, and Helvetica's AFM advance widths (regular or bold,
+by `font-weight` 600 and up or `<b>`/`<strong>`) at the size actually
+drawn, plus 4px. Font sizes are whole points (`ParseCssFontSizePoints`
+rounds px times 0.75), so 17px draws at 13pt, about 17.3px. Each
+estimate alone wrapped some label: 55% wraps wide letters (LinkedIn's
+bold "Read more", the Economist's "Watch now"), and the metrics at
+the CSS size wrap a 17px or 14px label by the rounding. Characters
+outside ASCII count a full em; a label holding an image gets only the
+55%. All of this guesses at what the text view will draw. The real
+fix is to measure at layout time instead: a shrink-to-fit leaf whose
+lsetview asks its text view for the one-line natural width (see
+roadmap.md).
+
+A table's own CSS padding goes inside its borders. Real tables get it
+around their rows (`TablePadRow`: side columns on every row, top and
+bottom on the first and last, in the table's color if it has one); a
+flattened wrapper gets spacer rows above and below and adds the sides
+to the ambient's side padding, outside its cell's. A table with
+`border-collapse: collapse` has no padding in CSS, and gets none here
+(`TableCssPadding`). An `<hr>` is a 2px rule between 8px spacers, its
+default 0.5em margins; the top spacer is dropped after a paragraph
+break, since margins collapse rather than add.
 
 ## Images: the `image` inset, capability-checked
 

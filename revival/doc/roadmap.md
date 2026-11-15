@@ -776,7 +776,48 @@ being front-loaded here.
         label its sans list, as in Thunderbird. Other properties (color,
         size, alignment) still don't reach a cell from outside its own
         table; see the context review below.
-      - More vertical space above the logo row than Thunderbird.
+      - LinkedIn's logo sits 18px too low (open). Measured against
+        Thunderbird 2026-11-16 ("solopreneur" message, linkedin-debug):
+        card top to logo 50px against 32. The logo cell is
+        `valign="middle"` beside a nested table of 25px icons, and an
+        18px offset is what a row 36px taller than the 37px logo gives;
+        the icon column is the suspect. Images decide this row, so it
+        can only be checked live in `htmlprv`.
+      - Table CSS padding: **RESOLVED 2026-11-16**, wdc-confirmed
+        (LinkedIn, National Grid; Economist and bookrack unchanged). A
+        table's own `padding` was ignored, on every build path: real
+        tables, the sole-table splices, floated tables and flattened
+        one-cell wrappers. LinkedIn's `py-2` tables lost 16px above and
+        below its headlines and dividers. It now goes inside the
+        table's borders (`TablePadRow`, wrapper spacer rows and side
+        padding), and not at all with `border-collapse: collapse`, as
+        CSS has it (`TableCssPadding`). The same measurement found the
+        old "extra space" was really an 18px-low logo with everything
+        below it 17px too tight, 13px short overall.
+      - `<hr>` spacing: **RESOLVED 2026-11-16**, wdc-confirmed
+        (LinkedIn). A paragraph break each side, a blank line of about
+        21px, against a browser's 8px margins: about 13px too much
+        above and below every `<hr>`. Now 8px spacers, the top one
+        dropped after a paragraph break, as margins collapse.
+      - Shrink-to-fit buttons in flattened cells: **RESOLVED
+        2026-11-16**, wdc-confirmed (LinkedIn). A button table inside a
+        flattened `align="middle"` cell was placed by the outer cell,
+        so LinkedIn's blue buttons sat left. A flattened cell's
+        explicit `align`/`text-align` now places them (`ContentSide`).
+      - Label widths estimated, not measured (open; the real fix is
+        next). Shrink-to-fit labels and button links are sized at
+        build time, before any font exists: the larger of 55% of the
+        font size a character and Helvetica's AFM widths at the size
+        drawn (font sizes are whole points: 17px draws at 13pt, about
+        17.3px) plus 4px slack (`LabelTextWidth`). That fixed LinkedIn's
+        "Read more" and the Economist's "Watch now" wrapping
+        (2026-11-16, wdc-confirmed), but each step tuned one guess
+        against another. The real fix: mark the label's leaf
+        shrink-to-fit and have lsetview ask its text view for the one-
+        line natural width at layout time, as a browser does (an
+        lsetview change in `adew`, perhaps a natural-width query on
+        textview). That replaces the estimate, the Helvetica table and
+        the slack, for any font.
       - A cell's CSS `height` (the old message's 252px video box,
         `style="height: 252px"`) is ignored; only the `height=`
         attribute counts, as `height` isn't in the parser's CSS
