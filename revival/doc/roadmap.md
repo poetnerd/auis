@@ -705,13 +705,14 @@ being front-loaded here.
         half the 2448px message, and every nested pair halved again.
         Overflowing content now gets the whole pair and only the
         bottom is clipped (`lpair.c`).
-      - The cause of that overflow remains: the horizontal scroller
-        around National Grid's 764px table (`lsetscrollcontent`)
-        reports 2448px of height, and the table then wants 2452px at
-        the same width, so the bottom 4px (the navy bottom border) is
-        clipped. Asking with `view_WidthSet` instead of `view_NoSet`
-        didn't change the answer. Unknown which nested view answers
-        differently between the measuring pass and layout.
+      - The cause of that overflow: **RESOLVED 2026-11-15**,
+        wdc-confirmed. The horizontal scroller (`lsetscrlv.c`) reserves
+        its scrollbar and border as constants, and
+        `LSETSCROLLVIEW_BAR_HEIGHT` was 20 where its own comment works
+        out 24, so every scrolled table got 4px less height than it
+        asked for: National Grid's navy bottom border was clipped, and a
+        bordered floated table lost its only line of text. Found with a
+        float test page (`LPAIR_TRACE`, temporary).
 
   17. LinkedIn (fixtures `linkedin-post.html`, untracked, from the
       Nov 14 "Sam Brauer … posted" digest, and
@@ -795,6 +796,12 @@ being front-loaded here.
         content (the Economist's TikTok icon); it now pads first. Cell
         minimum widths now include the cell's padding and the 2px
         margins an embedded text keeps (bookrack's banner).
+        **Step 3 RESOLVED 2026-11-15**, wdc-confirmed (same messages, a
+        float test page): a floated table draws its own borders and is
+        its own height, at the top, above a 1px empty filler that takes
+        the pair's slack (bookrack's review cards and spacing now closer
+        to Thunderbird). The test page also exposed the cause of item
+        16's scroller shortfall, fixed in the same round.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
