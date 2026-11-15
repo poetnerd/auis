@@ -598,13 +598,20 @@ static int href_scheme_ok(const char *href)
    came with them, so htmlatk.c can tell a zero-margin <p>/<h1> from
    one with a browser's default blank line. `max-width` came right
    after: htmlatk.c centers the tables inside a <div style="max-width:
-   600px; margin: 0 auto"> page column at that width. */
-#define HP_NSTYLEPROPS 20
+   600px; margin: 0 auto"> page column at that width.
+
+   `padding` (and its four sides) and `border-top` were added
+   2026-11-14: htmlatk.c pads table cells by them and draws a table's
+   top and bottom borders as rule rows (The Economist's section
+   dividers). */
+#define HP_NSTYLEPROPS 26
 static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "color", "background-color", "font-weight", "font-style", "text-decoration",
     "display", "visibility", "font-size", "font-family", "text-align", "border-bottom",
     "line-height", "clear", "float", "margin", "max-height", "overflow",
-    "margin-top", "margin-bottom", "max-width"
+    "margin-top", "margin-bottom", "max-width",
+    "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
+    "border-top"
 };
 
 static char *filter_style(const char *raw)

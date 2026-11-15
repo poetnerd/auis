@@ -2444,7 +2444,22 @@ static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnod
    line, and this value is confirmed correct against real fixture
    icons rather than computed from firstprinciples. */
 #define ICONCELL_WIDTH_PAD 6
+static void CellCssPadding(const struct htmlnode *td, long pad[4]);
+
+/* The pixel width a cell's column must give it: CellContentFixedWidth
+   plus the cell's horizontal CSS padding, which CSS adds outside a
+   cell's width. Without it, The Economist's social icons (32px images
+   in cells padded 0 8px) were clipped to 16px (2026-11-14). */
+static long CellContentFixedWidth(const struct htmlnode *td);
 static long CellFixedPixelWidth(const struct htmlnode *td)
+{
+    long w = CellContentFixedWidth(td), pad[4];
+    if (w <= 0) return w;
+    CellCssPadding(td, pad);
+    return w + pad[1] + pad[3];
+}
+
+static long CellContentFixedWidth(const struct htmlnode *td)
 {
     long w;
 
@@ -2851,6 +2866,161 @@ static void InsertRowView(struct hax_state *st, struct lset *row)
     st->spacePending = 0;
 }
 
+/* An HTML cell's CSS padding per side, in pixels: the padding
+   shorthand (one to four lengths, in CSS's top, right, bottom, left
+   order), then padding-top/-right/-bottom/-left. Only pixel lengths
+   count. Newsletter templates space their sections this way; The
+   Economist leaves 48px below each one (2026-11-14). */
+static void CellCssPadding(const struct htmlnode *td, long pad[4])
+{
+    static const char * const sides[4] = { "padding-top", "padding-right", "padding-bottom", "padding-left" };
+    char *sv;
+    int i;
+    pad[0] = pad[1] = pad[2] = pad[3] = 0;
+    if (!td) return;
+    sv = htmlpart_GetStyleProp(td, "padding");
+    if (sv) {
+        long v[4];
+        int k = 0;
+        char *p = sv;
+        while (k < 4) {
+            char tok[32];
+            int len = 0;
+            while (*p == ' ' || *p == '\t') ++p;
+            if (!*p || *p == '!') break;
+            while (*p && *p != ' ' && *p != '\t') {
+                if (len < (int) sizeof(tok) - 1) tok[len++] = *p;
+                ++p;
+            }
+            tok[len] = '\0';
+            v[k++] = CssPixelLength(tok);
+        }
+        if (k == 1) { pad[0] = pad[1] = pad[2] = pad[3] = v[0]; }
+        else if (k == 2) { pad[0] = pad[2] = v[0]; pad[1] = pad[3] = v[1]; }
+        else if (k == 3) { pad[0] = v[0]; pad[1] = pad[3] = v[1]; pad[2] = v[2]; }
+        else if (k == 4) { pad[0] = v[0]; pad[1] = v[1]; pad[2] = v[2]; pad[3] = v[3]; }
+        free(sv);
+    }
+    for (i = 0; i < 4; ++i) {
+        sv = htmlpart_GetStyleProp(td, sides[i]);
+        if (sv) { pad[i] = CssPixelLength(sv); free(sv); }
+        if (pad[i] > 200) pad[i] = 200;
+    }
+}
+
+/* A CSS border-top/border-bottom ("1px solid #808080"): returns its
+   width in pixels, 0 for none, and copies its color into color (gray
+   if it names none). */
+static long CssBorderSide(const struct htmlnode *n, const char *prop, char *color, size_t sz)
+{
+    char *sv = htmlpart_GetStyleProp(n, prop);
+    char *p;
+    long width = 1;
+    int styled = 0;
+    if (!sv) return 0;
+    strncpy(color, "#808080", sz - 1);
+    color[sz - 1] = '\0';
+    for (p = sv; *p; ) {
+        char tok[64];
+        int len = 0;
+        while (*p == ' ' || *p == '\t') ++p;
+        if (!*p || *p == '!') break;
+        while (*p && *p != ' ' && *p != '\t') {
+            if (len < (int) sizeof(tok) - 1) tok[len++] = *p;
+            ++p;
+        }
+        tok[len] = '\0';
+        if (isdigit((unsigned char) tok[0])) width = CssPixelLength(tok);
+        else if (strcasecmp(tok, "thin") == 0) width = 1;
+        else if (strcasecmp(tok, "medium") == 0) width = 3;
+        else if (strcasecmp(tok, "thick") == 0) width = 5;
+        else if (strcasecmp(tok, "none") == 0 || strcasecmp(tok, "hidden") == 0) width = 0;
+        else if (strcasecmp(tok, "solid") == 0 || strcasecmp(tok, "dashed") == 0
+                 || strcasecmp(tok, "dotted") == 0 || strcasecmp(tok, "double") == 0
+                 || strcasecmp(tok, "groove") == 0 || strcasecmp(tok, "ridge") == 0
+                 || strcasecmp(tok, "inset") == 0 || strcasecmp(tok, "outset") == 0) styled = 1;
+        else if (tok[0] == '#') {
+            /* #rrggbbaa: X has no alpha, keep #rrggbb */
+            if (len == 9) tok[7] = '\0';
+            strncpy(color, tok, sz - 1);
+            color[sz - 1] = '\0';
+        }
+        else if (isalpha((unsigned char) tok[0])) {
+            strncpy(color, tok, sz - 1);
+            color[sz - 1] = '\0';
+        }
+    }
+    free(sv);
+    return styled ? width : 0;
+}
+
+/* Embeds a thin row of solid color (or, with color empty, of the
+   surrounding ambient background) px pixels tall: a rule for an <hr>
+   or a table's CSS border-top/bottom, or a spacer for a flattened
+   wrapper cell's vertical padding. ATK draws no borders, so a border
+   becomes a row of its own between the rows above and below it. A row
+   line can't be shorter than its small font, about 2px, so a thinner
+   rule comes out 2px. */
+#define RULE_MINHEIGHT 2
+static void InsertRuleRow(struct hax_state *st, const char *color, long px)
+{
+    struct lset *leaf;
+    if (px <= 0) return;
+    leaf = MakeFillerLeaf(st);
+    if (!leaf) return;
+    if (color && *color) {
+        strncpy(leaf->bgcolor, color, sizeof(leaf->bgcolor) - 1);
+        leaf->bgcolor[sizeof(leaf->bgcolor) - 1] = '\0';
+    }
+    leaf->fixedheight = (px < RULE_MINHEIGHT) ? RULE_MINHEIGHT : px;
+    EnsureLineBreak(st);
+    InsertRowView(st, leaf);
+}
+
+/* A table's or flattened cell's CSS border on one side (border-top or
+   border-bottom), as a rule row. */
+static void InsertTableBorder(struct hax_state *st, const struct htmlnode *table, const char *prop)
+{
+    char color[32];
+    long px = CssBorderSide(table, prop, color, sizeof(color));
+    if (px > 0) InsertRuleRow(st, color, px);
+}
+
+/* Stacks a rule px pixels tall, in color, above or below body inside
+   an lset tree. There it needs no text line of its own, so unlike
+   InsertRuleRow it can be exactly px tall. */
+static struct lset *StackRule(struct hax_state *st, struct lset *body, const char *color, long px, int below)
+{
+    struct lset *rule, *node;
+    if (!body || px <= 0) return body;
+    rule = MakeFillerLeaf(st);
+    node = (struct lset *) class_NewObject("lset");
+    if (!rule || !node) return body;
+    strncpy(rule->bgcolor, color, sizeof(rule->bgcolor) - 1);
+    rule->bgcolor[sizeof(rule->bgcolor) - 1] = '\0';
+    rule->fixedheight = px;
+    node->nobar = node->noseam = node->autoheight = 1;
+    node->type = lsetview_MakeVert;
+    node->pct = 50;
+    node->minwidth = body->minwidth;
+    node->left = (struct dataobject *) (below ? body : rule);
+    node->right = (struct dataobject *) (below ? rule : body);
+    return node;
+}
+
+/* A table's or cell's CSS border-top and border-bottom, stacked around
+   body as rules (StackRule). */
+static struct lset *StackBorders(struct hax_state *st, struct lset *body, const struct htmlnode *n)
+{
+    char color[32];
+    long px;
+    if ((px = CssBorderSide(n, "border-top", color, sizeof(color))) > 0)
+        body = StackRule(st, body, color, px, 0);
+    if ((px = CssBorderSide(n, "border-bottom", color, sizeof(color))) > 0)
+        body = StackRule(st, body, color, px, 1);
+    return body;
+}
+
 /* A cell's valign (lset.ch's lset_VALIGN_*): the cell's own
    valign=, else its row's, else "middle", the browser default. HTML
    also allows valign="baseline", treated here as top. */
@@ -3071,6 +3241,16 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
             RaiseMinHeight(inner, NodeMinHeight(td));
             RaiseMinHeight(inner, NodeMinHeight(soleTable));
             inner->padding += TableCellPadding(tableNode);
+            {
+                long pad[4];
+                CellCssPadding(td, pad);
+                inner->padtop += pad[0]; inner->padright += pad[1];
+                inner->padbottom += pad[2]; inner->padleft += pad[3];
+            }
+            /* The inner table stands in for this cell, so its borders
+               would otherwise be lost (The Economist's "Frame the
+               debate" title table, 2026-11-14). */
+            inner = StackBorders(st, inner, soleTable);
             inner = CenterFixedTable(inner, soleTable, td, st);
             return inner;
         }
@@ -3145,7 +3325,13 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
     leaf->valign = CellValign(td, tr);
     RaiseMinHeight(leaf, NodeMinHeight(td));
     leaf->padding = TableCellPadding(tableNode);
-    return leaf;
+    {
+        long pad[4];
+        CellCssPadding(td, pad);
+        leaf->padtop = pad[0]; leaf->padright = pad[1];
+        leaf->padbottom = pad[2]; leaf->padleft = pad[3];
+    }
+    return StackBorders(st, leaf, td);
 }
 
 /* Fills a fresh root lset tree from tablenode's row/cell structure:
@@ -3388,6 +3574,29 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                         innerRows.items[0]->valign = CellValign(soleCell, tr);
                         RaiseMinHeight(innerRows.items[0], NodeMinHeight(soleCell));
                         innerRows.items[0]->padding += TableCellPadding(tablenode);
+                    }
+                    /* The splice drops the nested table and its cell,
+                       so put their edges on the first and last spliced
+                       rows, outward from the table: its borders, the
+                       cell's vertical padding (a spacer in the cell's
+                       color), the cell's borders. The Economist's
+                       section titles carry their divider this way
+                       (2026-11-14). */
+                    if (innerRows.count > 0) {
+                        long pad[4], last = innerRows.count - 1;
+                        char color[32], *none = "";
+                        long px;
+                        CellCssPadding(soleCell, pad);
+                        if ((px = CssBorderSide(soleTable, "border-top", color, sizeof(color))) > 0)
+                            innerRows.items[0] = StackRule(st, innerRows.items[0], color, px, 0);
+                        if ((px = CssBorderSide(soleTable, "border-bottom", color, sizeof(color))) > 0)
+                            innerRows.items[last] = StackRule(st, innerRows.items[last], color, px, 1);
+                        innerRows.items[0] = StackRule(st, innerRows.items[0], none, pad[0], 0);
+                        innerRows.items[last] = StackRule(st, innerRows.items[last], none, pad[2], 1);
+                        if ((px = CssBorderSide(soleCell, "border-top", color, sizeof(color))) > 0)
+                            innerRows.items[0] = StackRule(st, innerRows.items[0], color, px, 0);
+                        if ((px = CssBorderSide(soleCell, "border-bottom", color, sizeof(color))) > 0)
+                            innerRows.items[last] = StackRule(st, innerRows.items[last], color, px, 1);
                     }
                     for (j = 0; j < innerRows.count; ++j) {
                         if (hasBg) ApplyBgColorRecursive(innerRows.items[j], bgbuf);
@@ -4703,6 +4912,17 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                             ++st.ambientDepth;
                         }
                     }
+                    /* No leaf holds a flattened cell's padding, so its
+                       vertical padding becomes spacer rows in the
+                       ambient color, inside the table's own borders.
+                       The bottom ones come at n's POST event. */
+                    {
+                        long pad[4];
+                        InsertTableBorder(&st, n, "border-top");
+                        InsertTableBorder(&st, cellNode, "border-top");
+                        CellCssPadding(cellNode, pad);
+                        InsertRuleRow(&st, "", pad[0]);
+                    }
                     ws_push(&ws, n, 1, opened);
                     ws_push_siblings(&ws, cellChildren);
                     continue;
@@ -4722,7 +4942,9 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                    still renders its own content as an ordinary single-
                    column row instead of vanishing, just without a
                    partner to sit beside. */
+                InsertTableBorder(&st, n, "border-top");
                 if (!RenderTableAsLset(&st, n)) { /* hardfail already recorded */ }
+                InsertTableBorder(&st, n, "border-bottom");
                 continue;
             }
             if (strcmp(n->tag, "img") == 0) {
@@ -4736,8 +4958,9 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 continue;
             }
             if (strcmp(n->tag, "hr") == 0) {
+                /* A browser's default <hr>: a 2px gray inset line. */
                 EnsureParaBreak(&st);
-                InsertLiteral(&st, "----------------------------------------");
+                InsertRuleRow(&st, "#A0A0A0", 2);
                 EnsureParaBreak(&st);
                 continue;
             }
@@ -4835,9 +5058,15 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 const struct htmlnode *cc, *cn;
                 char buf[32];
                 EnsureLineBreak(&st);
-                if (st.ambientDepth > 0 && TableIsTrivialWrapper(n, &cc, &cn)
-                    && WrapperBgColor(n, cn, buf, sizeof(buf)))
-                    --st.ambientDepth;
+                if (TableIsTrivialWrapper(n, &cc, &cn)) {
+                    long pad[4];
+                    CellCssPadding(cn, pad);
+                    InsertRuleRow(&st, "", pad[2]);
+                    InsertTableBorder(&st, cn, "border-bottom");
+                    InsertTableBorder(&st, n, "border-bottom");
+                    if (st.ambientDepth > 0 && WrapperBgColor(n, cn, buf, sizeof(buf)))
+                        --st.ambientDepth;
+                }
             } else if (tag_is_para(n->tag)) {
                 int topZero, botZero;
                 ParaMarginsZero(n, &topZero, &botZero);
