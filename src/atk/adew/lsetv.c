@@ -183,8 +183,9 @@ static void placechild(struct lsetview *self, struct rectangle *rr, boolean doEr
        cell padded 12px a side, lost its TikTok icon (2026-11-15). */
     {
 	/* cellpadding (padding) plus the cell's own CSS padding per side */
-	long pl = ls->padding + ls->padleft, pr = ls->padding + ls->padright;
-	long pt = ls->padding + ls->padtop, pb = ls->padding + ls->padbottom;
+	long bw = (ls->borderwidth > 0 && ls->bordercolor[0]) ? ls->borderwidth : 0;
+	long pl = ls->padding + ls->padleft + bw, pr = ls->padding + ls->padright + bw;
+	long pt = ls->padding + ls->padtop + bw, pb = ls->padding + ls->padbottom + bw;
 	if (rr->width > pl + pr) { rr->left += pl; rr->width -= pl + pr; }
 	if (rr->height > pt + pb) { rr->top += pt; rr->height -= pt + pb; }
     }
@@ -202,10 +203,134 @@ static void placechild(struct lsetview *self, struct rectangle *rr, boolean doEr
 	}
     }
     if (doErase && (rr->width != full.width || rr->height != full.height)) {
+	/* Its own color, set again here: a leaf holding this one sets
+	   this view's background to its own color when it makes it
+	   (makeview), and The Economist's white buttons, centered in a
+	   dark leaf, erased their padding dark (2026-11-15). */
+	if (ls->bgcolor[0] != '\0')
+	    lsetview_SetBackgroundColor(self, ls->bgcolor, 0, 0, 0);
 	lsetview_SetTransferMode(self, graphic_COPY);
 	lsetview_EraseRect(self, &full);
     }
 }
+/* Rounded corners and a border along them (lset.ch's radius,
+   borderwidth, bordercolor), drawn over the leaf's full rectangle
+   after its child has drawn: a corner pixel outside the curve takes
+   the color behind the leaf, one on the border the border's, each
+   blended by 4x4 supersampling, since the X rounded-rectangle
+   primitives aren't antialiased. Pixels are grouped by blended color
+   so each color is set once per corner set. */
+#define RR_SUB 4
+#define RR_NCOV (RR_SUB * RR_SUB)
+#define RR_MAXRADIUS 64
+
+static void ResolveRGB(struct lsetview *self, char *name, long rgb[3])
+{
+    lsetview_SetForegroundColor(self, name, 0, 0, 0);
+    lsetview_GetForegroundColor(self, NULL, &rgb[0], &rgb[1], &rgb[2]);
+}
+
+/* The color behind a leaf: the nearest enclosing leaf's background
+   (the table cell it sits in), else white, the message's. */
+static void OuterRGB(struct lsetview *self, long rgb[3])
+{
+    struct view *v;
+    for (v = self->header.view.parent; v; v = v->parent) {
+	if (class_IsTypeByName(class_GetTypeName(v), "lsetview")) {
+	    struct lset *pl = (struct lset *) v->dataobject;
+	    if (pl && pl->bgcolor[0]) { ResolveRGB(self, pl->bgcolor, rgb); return; }
+	}
+    }
+    ResolveRGB(self, "white", rgb);
+}
+
+static void DrawRoundedBox(struct lsetview *self, struct rectangle *full)
+{
+    struct lset *ls = Data(self);
+    static short key[RR_MAXRADIUS][RR_MAXRADIUS];
+    static char present[RR_NCOV + 1][RR_NCOV + 1];
+    long L = full->left, T = full->top, w = full->width, h = full->height;
+    long r = ls->radius, bw = 0, i, j, k, no, nr, ni, sx, sy, c;
+    long outer[3], fill[3], border[3], rgb[3];
+    double rin2, rout2, dx, dy, d2;
+
+    if (ls->borderwidth > 0 && ls->bordercolor[0]) bw = ls->borderwidth;
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+    if (r > RR_MAXRADIUS) r = RR_MAXRADIUS;
+    if (r <= 0 && bw <= 0) return;
+    OuterRGB(self, outer);
+    if (ls->bgcolor[0]) ResolveRGB(self, ls->bgcolor, fill);
+    else for (c = 0; c < 3; ++c) fill[c] = outer[c];
+    if (bw > 0) ResolveRGB(self, ls->bordercolor, border);
+    lsetview_SetTransferMode(self, graphic_COPY);
+
+    /* The straight stretches of the border. */
+    if (bw > 0) {
+	lsetview_SetForegroundColor(self, NULL, border[0], border[1], border[2]);
+	if (w > 2 * r) {
+	    lsetview_FillRectSize(self, L + r, T, w - 2 * r, bw, lsetview_BlackPattern(self));
+	    lsetview_FillRectSize(self, L + r, T + h - bw, w - 2 * r, bw, lsetview_BlackPattern(self));
+	}
+	if (h > 2 * r) {
+	    lsetview_FillRectSize(self, L, T + r, bw, h - 2 * r, lsetview_BlackPattern(self));
+	    lsetview_FillRectSize(self, L + w - bw, T + r, bw, h - 2 * r, lsetview_BlackPattern(self));
+	}
+    }
+    if (r <= 0) { lsetview_SetForegroundColor(self, "black", 0, 0, 0); return; }
+
+    /* Classify the top-left corner's pixels, from the curve's center
+       at (r, r); the other corners mirror it. */
+    rout2 = (double) r * r;
+    rin2 = (bw > 0 && r > bw) ? (double) (r - bw) * (r - bw) : (bw > 0 ? -1.0 : rout2);
+    memset(present, 0, sizeof(present));
+    for (j = 0; j < r; ++j)
+	for (i = 0; i < r; ++i) {
+	    no = nr = 0;
+	    for (sy = 0; sy < RR_SUB; ++sy)
+		for (sx = 0; sx < RR_SUB; ++sx) {
+		    dx = r - (i + (sx + 0.5) / RR_SUB);
+		    dy = r - (j + (sy + 0.5) / RR_SUB);
+		    d2 = dx * dx + dy * dy;
+		    if (d2 > rout2) ++no;
+		    else if (d2 > rin2) ++nr;
+		}
+	    key[j][i] = (short) (no * (RR_NCOV + 1) + nr);
+	    present[no][nr] = 1;
+	}
+    for (no = 0; no <= RR_NCOV; ++no)
+	for (nr = 0; nr + no <= RR_NCOV; ++nr) {
+	    if (!present[no][nr] || (no == 0 && nr == 0)) continue;
+	    ni = RR_NCOV - no - nr;
+	    for (c = 0; c < 3; ++c)
+		rgb[c] = (outer[c] * no + border[c] * nr + fill[c] * ni) / RR_NCOV;
+	    lsetview_SetForegroundColor(self, NULL, rgb[0], rgb[1], rgb[2]);
+	    k = no * (RR_NCOV + 1) + nr;
+	    for (j = 0; j < r; ++j)
+		for (i = 0; i < r; ++i) {
+		    if (key[j][i] != k) continue;
+		    lsetview_FillRectSize(self, L + i, T + j, 1, 1, lsetview_BlackPattern(self));
+		    lsetview_FillRectSize(self, L + w - 1 - i, T + j, 1, 1, lsetview_BlackPattern(self));
+		    lsetview_FillRectSize(self, L + i, T + h - 1 - j, 1, 1, lsetview_BlackPattern(self));
+		    lsetview_FillRectSize(self, L + w - 1 - i, T + h - 1 - j, 1, 1, lsetview_BlackPattern(self));
+		}
+	}
+    lsetview_SetForegroundColor(self, "black", 0, 0, 0);
+}
+
+/* A leaf's rounded corners and border, after its child has drawn: on
+   the first draw (lsetview__Update) as well as on redraws, or the
+   first view of a message showed square buttons. */
+static void DrawLeafDecor(struct lsetview *self)
+{
+    struct lset *ls = Data(self);
+    struct rectangle rr;
+    if (ls && (ls->radius > 0 || ls->borderwidth > 0)) {
+	lsetview_GetLogicalBounds(self, &rr);
+	DrawRoundedBox(self, &rr);
+    }
+}
+
 int lsetview_SetMode(struct lsetview *self, int mode)
 {
 self->mode = mode;
@@ -563,8 +688,10 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
     if (self->mode != lsetview_IsSplit && self->child && view_GetIM(self->child)) {
 	struct lset *ls = Data(self);
 	long w = width, h = height;
-	long padw = 2 * ls->padding + ls->padleft + ls->padright;
-	long padh = 2 * ls->padding + ls->padtop + ls->padbottom;
+	/* A rounded border pads its child too, as in placechild(). */
+	long bw = (ls->borderwidth > 0 && ls->bordercolor[0]) ? ls->borderwidth : 0;
+	long padw = 2 * ls->padding + ls->padleft + ls->padright + 2 * bw;
+	long padh = 2 * ls->padding + ls->padtop + ls->padbottom + 2 * bw;
 	/* Ask the child about the space placechild() will actually give
 	   it: the width less padding on each side, then no more than the
 	   aligned contentwidth. */
@@ -638,6 +765,7 @@ void lsetview__Update(struct lsetview *self)
 	    view_RetractViewCursors(self->app,self->app);
 	    view_DesiredSize(self->app,rr.width,rr.height,view_NoSet,&foo1,&foo2);
 	    view_FullUpdate(self->app, view_FullRedraw,0,0,0,0);
+	    DrawLeafDecor(self);
 
 	    if(self->mode == lsetview_FirstUpdate && ls->application == CEL &&
 	       self->HasFocus)
@@ -733,6 +861,8 @@ void lsetview__FullUpdate(struct lsetview *self, enum view_UpdateType type, long
 	    view_FullUpdate(self->app,type,rr.left,rr.top,rr.width,rr.height);
 	else
 	    view_FullUpdate(self->app,type,left,top,width,height);
+	if (type == view_FullRedraw || type == view_PartialRedraw)
+	    DrawLeafDecor(self);
     }
     else if (self->mode == lsetview_IsSplit){
         super_FullUpdate(self,type,left,top,width,height);

@@ -374,6 +374,8 @@ static void DumpLsetTree(struct lset *ls, int indent)
     if (ls->padtop || ls->padright || ls->padbottom || ls->padleft)
         printf(" csspad=%d/%d/%d/%d", ls->padtop, ls->padright, ls->padbottom, ls->padleft);
     if (ls->fixedheight) printf(" fixedheight=%d", ls->fixedheight);
+    if (ls->radius) printf(" radius=%d", ls->radius);
+    if (ls->borderwidth) printf(" border=%d/%s", ls->borderwidth, ls->bordercolor);
     if (ls->left || ls->right) {
         printf(" (split)\n");
         printf("%*sLEFT:\n", indent + 2, "");

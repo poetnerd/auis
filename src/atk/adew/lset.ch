@@ -199,6 +199,14 @@ data:
 	   an origin of the full height broke that (2026-09-28). Set by
 	   htmlatk.c's InsertRowView; in memory only, not persisted. */
 	int toporigin;
+	/* Rounded corners (CSS border-radius), in pixels, and a border of
+	   borderwidth pixels in bordercolor drawn along the rounded edge,
+	   inside the leaf, which also pads its child by it. lsetv.c paints
+	   the corners in the color behind the leaf after the child draws.
+	   Set by htmlatk.c; in memory only, not persisted. */
+	int radius;
+	int borderwidth;
+	char bordercolor[32];
 	char dataname[32];
 	char viewname[32];
 	char refname[64];

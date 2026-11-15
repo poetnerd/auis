@@ -3330,6 +3330,49 @@ static struct lset *StackBorders(struct hax_state *st, struct lset *body, const 
     return StackTopBottom(st, StackSides(st, body, n), n, 1, 1);
 }
 
+/* A node's CSS border-radius in pixels, 0 for none. Only the first
+   length counts, as all four corners alike. 50% or more (a circle or
+   a pill) becomes a radius larger than any box, which lsetv.c clamps
+   to half the box's smaller side. */
+#define RADIUS_FULL 9999
+static long CssBorderRadius(const struct htmlnode *n)
+{
+    char *sv = htmlpart_GetStyleProp(n, "border-radius"), *end;
+    long r;
+    if (!sv) return 0;
+    r = strtol(sv, &end, 10);
+    if (end == sv || r <= 0) r = 0;
+    else if (*end == '%') r = (r >= 50) ? RADIUS_FULL : 0;
+    else if (*end && *end != ' ' && strncasecmp(end, "px", 2) != 0) r = 0;
+    if (r > RADIUS_FULL) r = RADIUS_FULL;
+    free(sv);
+    return r;
+}
+
+/* Rounds a leaf's corners when n has a border-radius (lset.ch's
+   radius). A border that's the same on all four sides is drawn along
+   the curve instead of as square strips, and 1 is returned so the
+   caller doesn't stack those strips around the leaf as well. A border
+   that differs by side keeps its strips and square corners. */
+static int RoundLeaf(struct lset *leaf, const struct htmlnode *n)
+{
+    static const char * const sides[4] = { "border-top", "border-right", "border-bottom", "border-left" };
+    char color[4][32];
+    long w[4], r = CssBorderRadius(n);
+    int i;
+    if (r <= 0) return 0;
+    for (i = 0; i < 4; ++i) w[i] = CssBorderSide(n, sides[i], color[i], sizeof(color[i]));
+    for (i = 1; i < 4; ++i)
+        if (w[i] != w[0] || (w[0] > 0 && strcmp(color[i], color[0]) != 0)) return 0;
+    leaf->radius = (int) r;
+    if (w[0] <= 0) return 0;
+    leaf->borderwidth = (int) w[0];
+    strncpy(leaf->bordercolor, color[0], sizeof(leaf->bordercolor) - 1);
+    leaf->bordercolor[sizeof(leaf->bordercolor) - 1] = '\0';
+    if (leaf->minwidth > 0) leaf->minwidth += 2 * w[0];
+    return 1;
+}
+
 /* Whether a link is styled as a button: a background color or a
    visible border of its own. ATK can paint neither behind inline text,
    so RenderLinkButton draws it as a small box of its own. */
@@ -3389,7 +3432,7 @@ static int RenderLinkButton(struct hax_state *st, const struct htmlnode *a)
     len = text_GetLength(ct);
     while (len > 0 && text_GetChar(ct, len - 1) == '\n') --len;
     w = (len * fontpx * BUTTON_CHAR_WIDTH_PCT) / 100 + pad[1] + pad[3];
-    body = StackBorders(st, leaf, a);
+    body = RoundLeaf(leaf, a) ? leaf : StackBorders(st, leaf, a);
     {
         char color[32];
         w += CssBorderSide(a, "border-left", color, sizeof(color))
@@ -3780,6 +3823,7 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, const struct htmlno
         /* As in SpliceSoleTable: the minimum covers the padding. */
         if (leaf->minwidth > 0) leaf->minwidth += 2 * leaf->padding + pad[1] + pad[3];
     }
+    if (RoundLeaf(leaf, td)) return leaf;
     return StackBorders(st, leaf, td);
 }
 
