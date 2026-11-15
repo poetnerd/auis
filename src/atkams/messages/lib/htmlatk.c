@@ -2916,6 +2916,18 @@ static long CssBorderSide(const struct htmlnode *n, const char *prop, char *colo
 {
     char *sv = htmlpart_GetStyleProp(n, prop);
     if (!sv) sv = htmlpart_GetStyleProp(n, "border");
+    if (!sv) {
+        /* the longhands, as LinkedIn writes its buttons' borders */
+        char *bw = htmlpart_GetStyleProp(n, "border-width");
+        char *bs = htmlpart_GetStyleProp(n, "border-style");
+        char *bc = htmlpart_GetStyleProp(n, "border-color");
+        if (bs) {
+            size_t len = strlen(bs) + (bw ? strlen(bw) : 1) + (bc ? strlen(bc) : 0) + 3;
+            sv = (char *) malloc(len);
+            if (sv) sprintf(sv, "%s %s %s", bw ? bw : "1px", bs, bc ? bc : "");
+        }
+        free(bw); free(bs); free(bc);
+    }
     char *p;
     long width = 1;
     int styled = 0;
@@ -3062,6 +3074,78 @@ static struct lset *StackTopBottom(struct hax_state *st, struct lset *body, cons
 static struct lset *StackBorders(struct hax_state *st, struct lset *body, const struct htmlnode *n)
 {
     return StackTopBottom(st, StackSides(st, body, n), n, 1, 1);
+}
+
+/* Whether a link is styled as a button: a background color or a
+   visible border of its own. ATK can paint neither behind inline text,
+   so RenderLinkButton draws it as a small box of its own. */
+static int LinkIsButton(const struct htmlnode *a)
+{
+    char buf[32], color[32];
+    if (NodeOwnBgColorX11(a, buf, sizeof(buf))) return 1;
+    return CssBorderSide(a, "border-top", color, sizeof(color)) > 0
+        || CssBorderSide(a, "border-left", color, sizeof(color)) > 0;
+}
+
+/* Rendering a button's own label must not box it again. */
+static int LinkButtonDepth = 0;
+
+/* Draws a button-styled link (The Economist's "Visit Insider hub",
+   2026-11-14: an <a> with padding, a 2px border and a background) as a
+   leaf of its own on a line of its own: the link rendered into it, as
+   a cell's content is, with the link's background, padding and
+   borders. Text can't be measured here, so the box's width is
+   estimated from the label's length and font size; a browser shrinks
+   it to fit exactly. Returns 0, inserting nothing, if it can't. */
+#define BUTTON_CHAR_WIDTH_PCT 55
+static int RenderLinkButton(struct hax_state *st, const struct htmlnode *a)
+{
+    struct htmlnode one = *a;
+    struct lset *leaf, *body;
+    struct text *ct;
+    struct style *centerSt;
+    char bg[32], *fs;
+    long len = 0, fontpx = 14, pad[4], w;
+    int hasBg = NodeOwnBgColorX11(a, bg, sizeof(bg));
+
+    leaf = (struct lset *) class_NewObject("lset");
+    ct = (struct text *) class_NewObject("text");
+    if (!leaf || !ct) return 0;
+    one.next = NULL;	/* just this link, not its siblings */
+    centerSt = JustificationStyleFor(style_Centered);
+    if (centerSt) text_SetGlobalStyle(ct, centerSt);
+    SetNextRenderPaintedBg(st, hasBg ? bg : NULL);
+    ++LinkButtonDepth;
+    if (!htmlatk_RenderAmbient(ct, 0, &one, NULL, NULL, st->resolver, st->resolverRock, &len, TRUE))
+        st->hardfail = 1;
+    --LinkButtonDepth;
+    text_SetReadOnly(ct, TRUE);
+    leaf->dobj = (struct dataobject *) ct;
+    strcpy(leaf->viewname, "htmllinkview");
+    strcpy(leaf->dataname, "text");
+    if (hasBg) {
+        strncpy(leaf->bgcolor, bg, sizeof(leaf->bgcolor) - 1);
+        leaf->bgcolor[sizeof(leaf->bgcolor) - 1] = '\0';
+    }
+    CellCssPadding(a, pad);
+    leaf->padtop = pad[0]; leaf->padright = pad[1];
+    leaf->padbottom = pad[2]; leaf->padleft = pad[3];
+    fs = htmlpart_GetStyleProp(a, "font-size");
+    if (fs) { long px = CssPixelLength(fs); if (px > 0) fontpx = px; free(fs); }
+    len = text_GetLength(ct);
+    while (len > 0 && text_GetChar(ct, len - 1) == '\n') --len;
+    w = (len * fontpx * BUTTON_CHAR_WIDTH_PCT) / 100 + pad[1] + pad[3];
+    body = StackBorders(st, leaf, a);
+    {
+        char color[32];
+        w += CssBorderSide(a, "border-left", color, sizeof(color))
+           + CssBorderSide(a, "border-right", color, sizeof(color));
+    }
+    body = CenteredRowLeaf(body, w, st);
+    if (body->left == NULL) body->halign = lset_HALIGN_LEFT;
+    EnsureLineBreak(st);
+    InsertRowView(st, body);
+    return 1;
 }
 
 /* Whether a table or cell has a visible left or right border, which
@@ -4892,6 +4976,9 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
             /* ELEMENT */
             if (tag_is_suppressed(n->tag)) continue;
             if (NodeIsStyleHidden(n)) continue;
+            if (strcmp(n->tag, "a") == 0 && LinkButtonDepth == 0 && LinkIsButton(n)
+                && RenderLinkButton(&st, n))
+                continue;
 
             if (strcmp(n->tag, "table") == 0) {
                 const struct htmlnode *cellChildren;
