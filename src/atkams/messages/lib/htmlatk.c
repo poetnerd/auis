@@ -3415,23 +3415,85 @@ static long CssBorderRadius(const struct htmlnode *n)
    the curve instead of as square strips, and 1 is returned so the
    caller doesn't stack those strips around the leaf as well. A border
    that differs by side keeps its strips and square corners. */
-static int RoundLeaf(struct lset *leaf, const struct htmlnode *n)
+static int RoundableBorder(const struct htmlnode *n, long *bw, char *color, size_t sz)
 {
     static const char * const sides[4] = { "border-top", "border-right", "border-bottom", "border-left" };
-    char color[4][32];
-    long w[4], r = CssBorderRadius(n);
+    char c[4][32];
+    long w[4];
     int i;
-    if (r <= 0) return 0;
-    for (i = 0; i < 4; ++i) w[i] = CssBorderSide(n, sides[i], color[i], sizeof(color[i]));
+    if (CssBorderRadius(n) <= 0) return 0;
+    for (i = 0; i < 4; ++i) w[i] = CssBorderSide(n, sides[i], c[i], sizeof(c[i]));
     for (i = 1; i < 4; ++i)
-        if (w[i] != w[0] || (w[0] > 0 && strcmp(color[i], color[0]) != 0)) return 0;
-    leaf->radius = (int) r;
-    if (w[0] <= 0) return 0;
-    leaf->borderwidth = (int) w[0];
-    strncpy(leaf->bordercolor, color[0], sizeof(leaf->bordercolor) - 1);
-    leaf->bordercolor[sizeof(leaf->bordercolor) - 1] = '\0';
-    if (leaf->minwidth > 0) leaf->minwidth += 2 * w[0];
+        if (w[i] != w[0] || (w[0] > 0 && strcmp(c[i], c[0]) != 0)) return 0;
+    *bw = w[0];
+    strncpy(color, c[0], sz - 1);
+    color[sz - 1] = '\0';
     return 1;
+}
+
+static int RoundLeaf(struct lset *leaf, const struct htmlnode *n)
+{
+    char color[32];
+    long bw;
+    if (!RoundableBorder(n, &bw, color, sizeof(color))) return 0;
+    leaf->radius = (int) CssBorderRadius(n);
+    if (bw <= 0) return 0;
+    leaf->borderwidth = (int) bw;
+    strcpy(leaf->bordercolor, color);
+    if (leaf->minwidth > 0) leaf->minwidth += 2 * bw;
+    return 1;
+}
+
+/* Whether a table's own border is drawn rounded (RoundTable) rather
+   than stacked into its rows as square strips. */
+static int TableIsRound(const struct htmlnode *table)
+{
+    char color[32];
+    long bw;
+    return table && RoundableBorder(table, &bw, color, sizeof(color));
+}
+
+/* A rounded table's rows as one body: its corners are drawn by a
+   single leaf around them all (RoundTable), so they can't be inserted
+   row by row. */
+static void JoinTableRows(struct hax_state *st, struct lsetvec *rows)
+{
+    struct wleaf *cells;
+    struct lset *body;
+    long j;
+    if (rows->count < 2) return;
+    cells = (struct wleaf *) calloc(rows->count, sizeof(*cells));
+    if (!cells) { st->hardfail = 1; return; }
+    for (j = 0; j < rows->count; ++j) cells[j].leaf = rows->items[j];
+    body = BuildLsetBalancedVertStack(cells, 0, rows->count, st);
+    free(cells);
+    if (!body) return;
+    rows->items[0] = body;
+    rows->count = 1;
+}
+
+/* A table's body, its rows joined (JoinTableRows), wrapped in a leaf
+   of its own that carries the table's border-radius and border
+   (RoundLeaf): its four border strips (StackBorders) leave no one view
+   owning the corners. The Economist's "Vote in the poll" button
+   (2026-11-16). NULL when the table isn't round (TableIsRound). */
+static struct lset *RoundTable(struct hax_state *st, struct lset *body, const struct htmlnode *table)
+{
+    struct lset *leaf;
+    if (!TableIsRound(table)) return NULL;
+    leaf = CenteredRowLeaf(body, 0, st);
+    if (leaf == body) return NULL;
+    leaf->halign = lset_HALIGN_NONE;
+    RoundLeaf(leaf, table);
+    return leaf;
+}
+
+/* A table body with the table's own border: rounded when it can be,
+   else square strips stacked around it. */
+static struct lset *TableBorders(struct hax_state *st, struct lset *body, const struct htmlnode *table)
+{
+    struct lset *round = RoundTable(st, body, table);
+    return round ? round : StackBorders(st, body, table);
 }
 
 /* Whether a link is styled as a button: a background color or a
@@ -3770,10 +3832,11 @@ static void SpliceSoleTable(struct hax_state *st, struct lsetvec *rows,
     int hasBg = CellBgColorX11Cascaded(cell, tr, outerTable, bg, sizeof(bg));
     long pad[4], cp = TableCellPadding(outerTable), j, last = rows->count - 1;
     if (rows->count == 0) return;
+    if (TableIsRound(soleTable)) JoinTableRows(st, rows);
     CellCssPadding(cell, pad);
     if (rows->count == 1) {
         struct lset *row = rows->items[0];
-        struct lset *box = StackBorders(st, row, soleTable);
+        struct lset *box = TableBorders(st, row, soleTable);
         struct lset *L = box;
         /* The cell's padding goes outside the table's borders, so a
            bordered table (or a split) gets a leaf of its own to hold it;
@@ -4622,7 +4685,7 @@ static struct lset *BuildLsetLeafFromFloatTable(const struct htmlnode *tablenode
            a solid bar, and vertically centered a one-cell float's text
            (a td's default valign) partway down the row. */
         {
-            struct lset *box = StackBorders(st, leaf, tablenode);
+            struct lset *box = TableBorders(st, leaf, tablenode);
             struct lset *fill, *node;
             fill = MakeFillerLeaf(st);
             node = (struct lset *) class_NewObject("lset");
@@ -4693,6 +4756,7 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
        outlined buttons, inside a link in a left-aligned cell. */
     if (centerw == 0 && (!tw || strcasecmp(tw, "auto") == 0))
         labelw = TableLabelWidth(tablenode);
+    if (TableIsRound(tablenode)) JoinTableRows(st, &rows);
     for (i = 0; i < rows.count; ++i) {
         struct lset *rowRoot = rows.items[i];
         /* dataobject_ViewName (dataobj.c) always constructs "lsetview"
@@ -4721,8 +4785,12 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         /* The table's CSS borders, exact to the pixel inside the row
            lsets: sides on every row, top and bottom on the first and
            last. */
-        rowRoot = StackTopBottom(st, StackSides(st, rowRoot, tablenode), tablenode,
+        {
+            struct lset *round = RoundTable(st, rowRoot, tablenode);
+            rowRoot = round ? round
+                : StackTopBottom(st, StackSides(st, rowRoot, tablenode), tablenode,
                                  i == 0, i == rows.count - 1);
+        }
         if (labelw > 0) {
             struct lset *placed = CenteredRowLeaf(rowRoot, labelw, st);
             if (placed != rowRoot) placed->halign = CellContentSide(st->cell);
