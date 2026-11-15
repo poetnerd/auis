@@ -687,6 +687,46 @@ rather than be rebuilt per path:
 
 Status of this work is tracked in `roadmap.md`.
 
+### Rounded corners and shrink-to-fit labels
+
+A cell or button link with CSS `border-radius` gets `lset.ch`'s
+`radius`; when its border is the same on all four sides it also gets
+`borderwidth` and `bordercolor`, in place of the square border strips
+`StackBorders` would build (`RoundLeaf`). A border that differs by side
+keeps the strips, and the corners stay square. The border pads the
+leaf's child, in both `placechild` and `DesiredSize`; leaving it out
+of `DesiredSize` gave the text a line too short to draw.
+
+The cell's color is painted by its child text view, not by the leaf,
+so the leaf can only round it afterward: `lsetv.c`'s `DrawRoundedBox`
+runs after the child draws and repaints each corner pixel outside the
+curve in the color behind the leaf, and each pixel on the border in
+the border's color. That color is the nearest enclosing `lsetview`
+leaf's background, found by walking up the view tree, else white;
+this works the same whatever build path made the cell. The X
+rounded-rectangle calls aren't antialiased, so each corner pixel is
+supersampled 4x4 and blended among the outer, border and fill colors.
+Pixels are grouped by blended color so each color is set once.
+
+A leaf's first draw goes through `lsetview__Update` (mode
+`FirstUpdate`), not `FullUpdate`; both now paint the corners. Making
+it showed an older bug: a leaf holding another leaf sets the inner
+view's background to its own color when it makes it, so a white
+button centered in a dark leaf erased its padding dark. `placechild`
+now sets the leaf's own color before it erases.
+
+A browser shrinks a table with no width to fit its contents, which
+this renderer can't measure while the layout is built. For a table
+that is one cell holding a short line of inline text (60 characters
+at most, no line breaks, images or button links), `TableLabelWidth`
+gives the cell's declared pixel width or else estimates the text the
+way `RenderLinkButton` does (55% of the font size per character), plus
+padding and side borders. `CenterFixedTable` and `RenderTableAsLset`
+both use it, placing the box by the enclosing cell's alignment
+(`CellContentSide`, which also accepts browsers' `align="middle"`). A
+rounded or colored leaf narrowed this way is wrapped (`CenteredRowLeaf`)
+so its background and corners narrow with it.
+
 ## Images: the `image` inset, capability-checked
 
 `image__ReadOtherFormat` (`src/atk/basics/common/image.c:2314`) checks

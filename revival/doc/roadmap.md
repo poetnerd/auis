@@ -782,13 +782,32 @@ being front-loaded here.
         attribute counts, as `height` isn't in the parser's CSS
         allowlist. The video cover is a CSS `background-image`,
         unsupported (Thunderbird shows the gray fallback too).
-      - Round avatars and pill buttons need `border-radius`, which is
-        unsupported (as for the Economist's buttons). Assessed
-        2026-11-14 as moderate: ATK has rounded-rect primitives
-        (`xgraphic.c`'s `FillRRectSize`/`DrawRRectSize`, not
-        antialiased); the work is repainting corners in the outer color
-        after a cell's text draws, a rounded outline in place of the
-        rule-strip borders, and a separate corner mask in `imagev`.
+      - Rounded cells and buttons (`border-radius`): **RESOLVED
+        2026-11-15**, wdc-confirmed (LinkedIn, Economist; no regression
+        in National Grid or bookrack). A rounded cell or button link
+        gets a radius and, when its border is the same on all four
+        sides, a border drawn along the curve (`lset.ch`). `lsetv.c`
+        paints the corners after the cell's content, on the first draw
+        as well as redraws, in the color of the nearest enclosing
+        cell (else white), antialiased by 4x4 supersampling, since the
+        X rounded-rectangle calls aren't. A border that differs by side
+        keeps square strips. Still open:
+        - Round images (LinkedIn's avatars, the Economist's editor
+          photo): planned as a mask applied when the image loads,
+          painting the pixels outside the circle in the color behind
+          it, as PNG transparency is blended.
+        - A rounded *table* (the Economist's 4px poll button outline)
+          stays square: its borders are stacked into its rows.
+        - Corners are repainted on full redraws only; a partial redraw
+          of a cell's content (a selection) could square them until
+          the next.
+      - Shrink-to-fit buttons: **RESOLVED 2026-11-15**, wdc-confirmed
+        (LinkedIn). A table with no width (or `width="auto"`) that is
+        one cell holding a short line of text takes the cell's declared
+        width, else its label's estimated width plus padding and
+        borders, placed by the enclosing cell's alignment. LinkedIn's
+        outlined buttons fit their labels, and its blue button takes its
+        CSS `width: 390px` (CSS `width` is now parsed).
       - Context review, agreed 2026-11-14: several bugs came from
         shortcut paths (wrapper flattening, the two sole-nested-table
         splices, nested cell walks, `CenterFixedTable`,

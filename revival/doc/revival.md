@@ -1051,6 +1051,20 @@ flattened wrapper cell lost its side padding. The last one had kept
 The Economist's masthead text pressed against the edges of its column,
 with only that 2px margin between them.
 
+Rounded corners came next. ATK has rounded-rectangle drawing calls,
+but a table cell's color is painted by the text view inside it, so the
+corners have to be cut afterward: once the cell's content has drawn,
+its view repaints each corner pixel outside the curve in the color of
+the cell around it. X draws curves without antialiasing, so each
+corner pixel is sampled sixteen times and blended. Two bugs surfaced
+on the way: the first draw of a cell takes a different code path from
+a redraw and skipped the corners, and a cell nested directly in
+another had its background overwritten by its parent's, which no one
+had noticed while such cells had no padding to show it. LinkedIn's
+outlined buttons then needed shrinking to fit their labels, which this
+renderer can't measure; their width is estimated from the label's
+length and font size.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all
