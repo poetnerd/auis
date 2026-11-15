@@ -177,17 +177,21 @@ static void placechild(struct lsetview *self, struct rectangle *rr, boolean doEr
     if (ls == NULL || rr->width <= 0 || rr->height <= 0 || view_GetIM(self->app) == NULL)
 	return;
     full = *rr;
-    if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && ls->contentwidth < rr->width) {
-	if (ls->halign == lset_HALIGN_CENTER) rr->left += (rr->width - ls->contentwidth) / 2;
-	else if (ls->halign == lset_HALIGN_RIGHT) rr->left += rr->width - ls->contentwidth;
-	rr->width = ls->contentwidth;
-    }
+    /* Padding first, then alignment within what's left, as CSS places
+       content in a padded box. The other order took the padding out of
+       the content width: The Economist's 262px icon row, centered in a
+       cell padded 12px a side, lost its TikTok icon (2026-11-15). */
     {
 	/* cellpadding (padding) plus the cell's own CSS padding per side */
 	long pl = ls->padding + ls->padleft, pr = ls->padding + ls->padright;
 	long pt = ls->padding + ls->padtop, pb = ls->padding + ls->padbottom;
 	if (rr->width > pl + pr) { rr->left += pl; rr->width -= pl + pr; }
 	if (rr->height > pt + pb) { rr->top += pt; rr->height -= pt + pb; }
+    }
+    if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && ls->contentwidth < rr->width) {
+	if (ls->halign == lset_HALIGN_CENTER) rr->left += (rr->width - ls->contentwidth) / 2;
+	else if (ls->halign == lset_HALIGN_RIGHT) rr->left += rr->width - ls->contentwidth;
+	rr->width = ls->contentwidth;
     }
     if (ls->valign == lset_VALIGN_MIDDLE || ls->valign == lset_VALIGN_BOTTOM) {
 	view_DesiredSize(self->app, rr->width, rr->height, view_WidthSet, &dw, &dh);
@@ -562,10 +566,11 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
 	long padw = 2 * ls->padding + ls->padleft + ls->padright;
 	long padh = 2 * ls->padding + ls->padtop + ls->padbottom;
 	/* Ask the child about the space placechild() will actually give
-	   it: a centered contentwidth, less padding on each side. */
+	   it: the width less padding on each side, then no more than the
+	   aligned contentwidth. */
+	if (padw > 0 && w > padw) w -= padw;
 	if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && ls->contentwidth < w)
 	    w = ls->contentwidth;
-	if (padw > 0 && w > padw) w -= padw;
 	if (padh > 0 && h > padh) h -= padh;
 	result = view_DesiredSize(self->child, w, h, pass, dWidth, dHeight);
 	*dWidth += padw;
