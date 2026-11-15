@@ -787,6 +787,18 @@ fix is to measure at layout time instead: a shrink-to-fit leaf whose
 lsetview asks its text view for the one-line natural width (see
 roadmap.md).
 
+`font-weight` maps to bold at 600 and up, regular below, and that is
+a decision, not a gap (2026-11-16). ATK fonts have only regular and
+bold. CSS font matching, given a 500 (medium) request and no medium
+face, tries 400 first, so a browser with our fonts would also draw
+500 regular. Thunderbird looks heavier only because the macOS system
+font it reaches through `system-ui` has a real medium face. Medium is
+also nearer regular (400) than bold (700) to the eye. A medium face
+would mean a weight scale in fontdesc and its Xft naming, a lot of
+work for a slight gain: the Economist's headings, author lines and
+two buttons are nearly the only 500s in the fixtures. It isn't
+planned.
+
 A table's own CSS padding goes inside its borders. Real tables get it
 around their rows (`TablePadRow`: side columns on every row, top and
 bottom on the first and last, in the table's color if it has one); a
