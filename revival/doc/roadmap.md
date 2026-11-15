@@ -633,6 +633,15 @@ being front-loaded here.
         inline mail images), as it already did for `lset` content.
       - The quote mark draws at 32x24 from its `width="32"`; Thunderbird
         follows its inline style, 28x20.
+      - **RESOLVED 2026-11-14**, wdc-confirmed (Economist, bookrack): the
+        "Vote in the poll" button's outline, a four-sided CSS `border`
+        on a 258px `max-width` table. Left and right borders are now
+        fixed 1px columns (`StackSideRule`), the `border` shorthand is
+        read, a table with no `width=` is centered at its CSS
+        `max-width`, and a real table's borders are stacked into its
+        row lsets, exact to the pixel. A wrapper table with side
+        borders is no longer flattened. Corners are square
+        (`border-radius` isn't supported).
 
         four-sided CSS `border` on its table; only top and bottom
         borders are drawn so far.
