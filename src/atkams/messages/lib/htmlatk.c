@@ -2220,7 +2220,7 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
     struct lset *rest;
     long i;
     long remainingWeight;
-    long restMinwidth;
+    long restMinwidth, restFixed;
     int usePx, nprop;
 
     if (count <= 0) return NULL;
@@ -2244,7 +2244,11 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
             node->nobar = node->noseam = node->autoheight = 1;
             node->type = lsetview_MakeHorzFixedRight;
             node->pct = (int) px;
-            node->minwidth = prefix->minwidth + suffix->minwidth;
+            /* The run's pixels count once the row has a real minwidth
+               (see FIXEDMINWIDTH below). */
+            node->minwidth = (prefix->minwidth > 0)
+                ? prefix->minwidth + ((suffix->minwidth > px) ? suffix->minwidth : px)
+                : suffix->minwidth;
             node->left = (struct dataobject *) prefix;
             node->right = (struct dataobject *) suffix;
             return node;
@@ -2263,6 +2267,19 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
     rest = cells[count - 1].leaf;
     remainingWeight = (cells[count - 1].fixedpx > 0) ? 0 : CHAINWEIGHT(cells[count - 1]);
     restMinwidth = CellMinwidth(&cells[count - 1]);
+    /* A side-by-side row's fixed cells add their pixels to its
+       minwidth, but only once some cell gives the row a real minwidth
+       (a tableau floor). bookrack.html's 640px body sits in a
+       [1|10|4|content|4|10|1] frame whose minwidth left out those 30px,
+       so the scroller gave the content cell 30px less than it needed
+       and clipped the banner and icons at its right edge. A row with
+       no floor still gets none: an icon's fixed width must not make
+       its table scroll (see CellMinwidth). restMinwidth stays the
+       cells' own minwidths; restFixed sums what the fixed cells' widths
+       add beyond those. */
+#define FIXEDEXTRA(c, m) (((c).fixedpx > (m)) ? (c).fixedpx - (m) : 0)
+#define FIXEDMINWIDTH(m, f) (((m) > 0) ? (m) + (f) : 0)
+    restFixed = (splittype == lsetview_MakeHorz) ? FIXEDEXTRA(cells[count - 1], restMinwidth) : 0;
     for (i = count - 2; i >= 0; --i) {
         struct lset *node = (struct lset *) class_NewObject("lset");
         long thisMinwidth;
@@ -2314,9 +2331,14 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
            width (the split's natural width is whichever child needs
            more, not their sum). Matches BuildLsetGrid's own row-stacking
            use of this same function. */
-        node->minwidth = (splittype == lsetview_MakeHorz) ? (thisMinwidth + restMinwidth)
-            : ((thisMinwidth > restMinwidth) ? thisMinwidth : restMinwidth);
-        restMinwidth = node->minwidth;
+        if (splittype == lsetview_MakeHorz) {
+            restMinwidth += thisMinwidth;
+            restFixed += FIXEDEXTRA(cells[i], thisMinwidth);
+            node->minwidth = FIXEDMINWIDTH(restMinwidth, restFixed);
+        } else {
+            node->minwidth = (thisMinwidth > restMinwidth) ? thisMinwidth : restMinwidth;
+            restMinwidth = node->minwidth;
+        }
         node->left = (struct dataobject *) cells[i].leaf;
         node->right = (struct dataobject *) rest;
         rest = node;
@@ -2328,6 +2350,8 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
        in a lone fixed-pixel cell's own commitment, see CellMinwidth). */
     if (count == 1) rest->minwidth = restMinwidth;
     return rest;
+#undef FIXEDMINWIDTH
+#undef FIXEDEXTRA
 #undef CHAINWEIGHT
 }
 
