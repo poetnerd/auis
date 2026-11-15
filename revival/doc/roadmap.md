@@ -752,6 +752,11 @@ being front-loaded here.
         size, alignment) still don't reach a cell from outside its own
         table; see the context review below.
       - More vertical space above the logo row than Thunderbird.
+      - A cell's CSS `height` (the old message's 252px video box,
+        `style="height: 252px"`) is ignored; only the `height=`
+        attribute counts, as `height` isn't in the parser's CSS
+        allowlist. The video cover is a CSS `background-image`,
+        unsupported (Thunderbird shows the gray fallback too).
       - Round avatars and pill buttons need `border-radius`, which is
         unsupported (as for the Economist's buttons). Assessed
         2026-11-14 as moderate: ATK has rounded-rect primitives
@@ -764,9 +769,23 @@ being front-loaded here.
         splices, nested cell walks, `CenterFixedTable`,
         `RenderLinkButton`, `ApplyAmbient`) each rebuilding the
         surrounding context by hand and dropping a part of it: borders,
-        background, font. Plan: audit what each path carries against
-        the normal path, and why each exists; then one inherited-context
-        record that every walk starts from and every path passes on.
+        background, font. Audit done 2026-11-14: see
+        `html-mail-rendering-design.md`, "Context across the build
+        paths". Next, in order, each visually checked before commit:
+        (1) an inherited-context record, with Firefox's quirks-mode
+        table reset, plus `<tr>` styles and `<th>` defaults; (2) one
+        helper for both sole-table splices; (3) floated tables stack
+        their own borders.
+        **Step 1 RESOLVED 2026-11-14**, wdc-confirmed (Economist,
+        National Grid, bookrack, both LinkedIns, a test page): a nested
+        walk reopens the inheritable styles open where it starts
+        (`SetNextRenderContext`/`InheritsIntoCell`); with no doctype
+        (`htmlpart_LastParseHadDoctype`), only color and family cross
+        into a table. `<tr>` styles apply between the table's and the
+        cell's; `<th>` is bold and centered. Same round: an uncolored
+        wrapper of inline content inside a colored block is built as a
+        table, not flattened, so it takes the surrounding color (the
+        Economist's second ad sat on a white band).
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not

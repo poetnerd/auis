@@ -596,6 +596,97 @@ paragraph text is still the right response to a genuine parse
 failure partway through a table (a malformed/unclosed structure the
 parser can't make sense of), just not to depth or nesting alone.
 
+### Context across the build paths
+
+A browser computes each element's style once, from the cascade and
+inheritance, and every box gets it the same way. This renderer has no
+such single place. Each table cell is rendered by its own walk
+(`htmlatk_RenderAmbient`) into its own `text`, and several shortcut
+paths assemble a table's lsets without going through the normal one.
+Each path rebuilds the surrounding context by hand. Several bugs fixed
+on 2026-11-14 had the same cause: a path that forgot part of it.
+
+- Section rules missing: the sole-nested-table splices dropped
+  borders and padding.
+- LinkedIn's icons boxed in gray: the splices rendered the inner
+  table against the body color, not the white cell around it.
+- Serif text in every cell: no nested walk inherited `font-family`.
+- Light bands in The Economist's footer: one centering leaf can't
+  hold both the color outside a column and the column's own.
+
+An audit of every path (2026-11-14) gave this picture.
+
+**The normal path** (`BuildLsetCell`'s general case, then
+`RenderTableAsLset`) provides two kinds of context:
+
+- Text styles: a cell's walk opens marks (`PushFormattingMarks`)
+  for exactly two nodes, its `<table>` and its `<td>`
+  (`ambientNode1`/`ambientNode2`). Within a walk, marks nest, so
+  everything inside the cell inherits them.
+- Box: the background (cascaded cell, row, table:
+  `CellBgColorX11Cascaded`), padding (`cellpadding` plus CSS, four
+  sides), borders (table and cell, four sides, as rule-strip lsets),
+  `valign`, `height` as a minimum, and centering of fixed-width tables
+  (`CenterFixedTable`).
+
+**What each path carries:**
+
+| Path | Text styles from outside the cell's table | Background | Padding | Borders | Why it exists |
+|---|---|---|---|---|---|
+| Normal cell walk | `font-family` only | yes | 4 sides | yes | Core design: each cell is its own `text` |
+| Cell-level sole-table splice (`BuildLsetCell`) | as normal | yes | 4 sides | outer cell's dropped | Avoids an lset-in-text-in-lset for the spacer-table idiom |
+| Row-level sole-table splice (`BuildLsetGrid`) | as normal | yes | top and bottom only | outer cell's sides dropped; inner table's `height` dropped | Keeps a nested table's rows as row views in the text flow, for paging |
+| Flattened 1×1 wrapper | wrapper's own reach direct text only | yes (ambient) | top and bottom only | top and bottom (side borders prevent flattening) | One huge embedded view breaks paging |
+| Floated table (`BuildLsetLeafFromFloatTable`) | as normal | yes | per cell | floated table's own dropped | Float pairing needs one leaf per table |
+| `RenderLinkButton`, `TryRenderFloatImageBlock` | own node, plus family | yes | yes | yes | Features |
+
+**Gaps common to every path,** confirmed with a test page:
+
+1. Inheritance: `color`, `font-size`, weight, style and `text-align`
+   set outside a cell's own `<table>` and `<td>` never reach it. That
+   covers an outer `<td>`, a `<div>`, `<body>`, and a flattened
+   wrapper's styles reaching tables inside it.
+2. `<tr>`: its text styles are never applied (its background and
+   `valign` are).
+3. `<th>`: not bold or centered by default.
+
+**Quirks mode.** Correct inheritance depends on the document mode. A
+message with no doctype renders in quirks mode, and Firefox (hence
+Thunderbird) applies this to every table (`layout/style/res/quirk.css`):
+
+```css
+table {
+  text-align: start;
+  white-space: normal; /* compatible with IE & spec */
+  line-height: normal;
+  /* Quirk: cut off all font inheritance in tables except for family. */
+  font-size: initial;
+  font-weight: initial;
+  font-style: initial;
+  font-variant: initial;
+}
+```
+
+So in quirks mode only `color` and `font-family` cross into a table;
+with a doctype, everything inheritable does. Of the fixtures, only
+National Grid declares one.
+
+**The design that follows.** Context should flow through one record
+rather than be rebuilt per path:
+
+1. An inherited-context record: effective `color`, `font-family`,
+   `font-size`, weight, style, `text-align`, the painted background,
+   and the quirks flag. Each walk starts from the record it is handed,
+   marks update it as elements open, and every nested walk receives a
+   copy, reset per the quirks rule when it enters a table. It replaces
+   the separate `NextRenderPaintedBg` and `NextRenderFamily` handoffs.
+   `<tr>` (and `<th>`'s defaults) join the nodes a cell's walk opens.
+2. One splice helper for both sole-table splices, carrying the union
+   of what each handles today.
+3. Floated tables stack their own borders, as other tables do.
+
+Status of this work is tracked in `roadmap.md`.
+
 ## Images: the `image` inset, capability-checked
 
 `image__ReadOtherFormat` (`src/atk/basics/common/image.c:2314`) checks
