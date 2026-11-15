@@ -1100,8 +1100,8 @@ temporary trace of every card cell's height request found it in one
 run: a 25px buy button standing in a 44px row. An embedded view hangs
 below the text baseline, so a line holding only an image still
 reserved a font's height above it. Table rows had been given a
-one-point font on their lines for exactly this in 2026, but images
-never had. With images treated the same way, the covers, the buy
+one-point font on their lines for exactly this in September, but
+images never had. With images treated the same way, the covers, the buy
 buttons and LinkedIn's long-misplaced logo all moved into place.
 
 One hang turned out to be a new library meeting old code. Every so
