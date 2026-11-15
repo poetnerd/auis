@@ -76,6 +76,7 @@
 #include <fontdesc.ih>
 #include <dataobj.ih>
 #include <image.ih>
+#include <png.ih>
 #include <lset.ih>
 #include <lsetv.ih>
 #include <viewref.ih>
@@ -1321,6 +1322,18 @@ static void ScaleImageToDeclaredSize(struct dataobject **dobRef, const struct ht
    three-way placeholder-vs-silence decision is unchanged, just now
    driven by these out-params. Caller owns the returned dataobject and
    must free() *outPlaceholderHint when non-NULL. */
+static int ColorRGB(const char *c, int *r, int *g, int *b);
+
+/* PNG transparency is blended onto one color at decode time, since
+   images have no alpha plane: use the background painted behind
+   this image. */
+static void SetImageAlphaBg(struct hax_state *st)
+{
+    int r, g, b;
+    if (!ColorRGB(st->paintedBg, &r, &g, &b)) r = g = b = 255;
+    png_SetAlphaBackground(((long) r << 16) | (g << 8) | b);
+}
+
 static struct dataobject *ResolveImageDataObject(struct hax_state *st, const struct htmlnode *n,
                                                    boolean *outBeaconBlocked, char **outPlaceholderHint)
 {
@@ -1349,6 +1362,7 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
         *outPlaceholderHint = mimetype ? strdup(mimetype) : NULL;
         dobClass = ImageClassForMimetype(mimetype);
         dob = (struct dataobject *) class_NewObject((char *) dobClass);
+        SetImageAlphaBg(st);
         savedErr = SuppressStderrBegin(); /* speculative: a labeled-decode failure here is expected/routine now, see SuppressStderrBegin's own comment */
         ok = dob && TryReadImageInto(dob, mimetype, bytes, len);
         SuppressStderrEnd(savedErr);
@@ -1364,6 +1378,7 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
                 *outPlaceholderHint = strdup(sniffed); /* the truth, whether or not this retry itself succeeded */
             }
         }
+        png_SetAlphaBackground(0xFFFFFFL);
 
         if (ok) {
             /* "raster" (ImageClassForMimetype's fallback for anything

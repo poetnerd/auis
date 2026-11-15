@@ -28,7 +28,8 @@
 
 /* Decode-only: no encoder yet, same cut TIFF took (Write forwards to
    super_Write, WriteNative left unimplemented). See png.c for the
-   decode-side limitations (no interlace, no alpha, 16-bit truncated). */
+   decode-side limitations (no interlace, 16-bit truncated). Alpha is
+   blended onto the color set by SetAlphaBackground (default white). */
 
 class png : image {
     overrides:
@@ -38,4 +39,5 @@ class png : image {
 
     classprocedures:
       Ident( char *fullname ) returns int;
+      SetAlphaBackground( long rgb );
 };

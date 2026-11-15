@@ -41,9 +41,12 @@ static char rcsid[]="$Header$";
    root cause (image.ch's data model has no alpha plane and no wider-
    than-8-bit-per-channel storage):
      - Alpha channel (color types 4 and 6, and tRNS-based simple
-       transparency) is decoded and then discarded; images are always
-       flattened to opaque RGB/grey/palette. Revisit if/when the image/
-       imagev view layer ever grows real alpha compositing.
+       transparency) is blended onto a single background color, set
+       by png_SetAlphaBackground (default white); images are always
+       flattened to opaque RGB/grey/palette. The HTML renderer sets
+       the color painted behind each image before decoding it.
+       Revisit if/when the image/imagev view layer ever grows real
+       alpha compositing.
      - 16-bit-per-channel samples are truncated to 8 bits (high byte
        of each big-endian sample) - matches the existing jpeg.c/gif.c
        convention of working in 8-bit-per-channel throughout.
@@ -57,6 +60,8 @@ static char rcsid[]="$Header$";
 #define PNG_CT_PLTE 0x504c5445UL /* "PLTE" */
 #define PNG_CT_IDAT 0x49444154UL /* "IDAT" */
 #define PNG_CT_IEND 0x49454e44UL /* "IEND" */
+#define PNG_CT_tRNS 0x74524e53UL /* "tRNS" */
+
 
 static unsigned char PNGSignature[8] = {0x89,'P','N','G',0x0d,0x0a,0x1a,0x0a};
 
@@ -217,6 +222,39 @@ static unsigned int GetPackedSample(unsigned char *rowdata, unsigned long n, int
     return((byte >> shift) & ((1 << depth) - 1));
 }
 
+static unsigned char AlphaBg[3] = {255, 255, 255};
+
+void png__SetAlphaBackground(struct classheader *classID, long rgb)
+{
+    AlphaBg[0] = (rgb >> 16) & 0xff;
+    AlphaBg[1] = (rgb >> 8) & 0xff;
+    AlphaBg[2] = rgb & 0xff;
+}
+
+/* v (0..255) at opacity a (0..255) over AlphaBg[c]. */
+static unsigned char Blend(unsigned int v, unsigned int a, int c)
+{
+    return((unsigned char)((v * a + AlphaBg[c] * (255 - a) + 127) / 255));
+}
+
+/* Sample i of pixel x: *full is the raw sample (for tRNS key
+   compares), the return value is scaled to 8 bits. */
+static unsigned int Sample(unsigned char *rowdata, unsigned long x, int channels,
+			   int i, int bitdepth, unsigned int *full)
+{
+    if (bitdepth == 16) {
+	unsigned long off = (x * channels + i) * 2;
+	*full = (rowdata[off] << 8) | rowdata[off + 1];
+	return(rowdata[off]);
+    }
+    if (bitdepth == 8) {
+	*full = rowdata[x * channels + i];
+	return(*full);
+    }
+    *full = GetPackedSample(rowdata, x, bitdepth); /* grey only */
+    return(*full * 255 / ((1 << bitdepth) - 1));
+}
+
 int png__Load(struct png *self, char *fullname, FILE *fp)
 {
     FILE *f = fp;
@@ -227,6 +265,9 @@ int png__Load(struct png *self, char *fullname, FILE *fp)
     struct bytebuf idat, raw;
     unsigned char palette[256][3];
     unsigned int palettesize = 0;
+    unsigned char trnsAlpha[256];	/* palette images */
+    unsigned int trnsKey[3];		/* grey/RGB images: transparent color */
+    boolean haveTRNS = FALSE;
     int channels, bpp, samplesPerPixel;
     unsigned long rowbytes;
     unsigned long y, x;
@@ -281,6 +322,20 @@ int png__Load(struct png *self, char *fullname, FILE *fp)
 		palette[i][1] = chunkdata[i*3+1];
 		palette[i][2] = chunkdata[i*3+2];
 	    }
+	} else if (type == PNG_CT_tRNS) {
+	    unsigned int i;
+	    if (colortype == 3) {
+		for (i = 0; i < 256; i++)
+		    trnsAlpha[i] = (i < length) ? chunkdata[i] : 255;
+		haveTRNS = TRUE;
+	    } else if (colortype == 0 && length >= 2) {
+		trnsKey[0] = (chunkdata[0] << 8) | chunkdata[1];
+		haveTRNS = TRUE;
+	    } else if (colortype == 2 && length >= 6) {
+		for (i = 0; i < 3; i++)
+		    trnsKey[i] = (chunkdata[i*2] << 8) | chunkdata[i*2+1];
+		haveTRNS = TRUE;
+	    }
 	} else if (type == PNG_CT_IDAT) {
 	    if (length > 0 && !buf_append(&idat, chunkdata, length)) {
 		if (chunkdata) free(chunkdata);
@@ -291,7 +346,7 @@ int png__Load(struct png *self, char *fullname, FILE *fp)
 	    fseek(f, 4, SEEK_CUR); /* CRC: unchecked, see design note in png.ch */
 	    break;
 	}
-	/* All other chunk types (gAMA, cHRM, sRGB, tRNS, tEXt, ...) are
+	/* All other chunk types (gAMA, cHRM, sRGB, tEXt, ...) are
 	   ancillary to a basic decode and are silently skipped. */
 
 	if (chunkdata) free(chunkdata);
@@ -342,9 +397,10 @@ int png__Load(struct png *self, char *fullname, FILE *fp)
 	if (palettesize > maxpal)
 	    palettesize = maxpal;
 	for (i = 0; i < palettesize; i++) {
-	    png_RedPixel(self, i)   = ((unsigned long) palette[i][0]) << 8;
-	    png_GreenPixel(self, i) = ((unsigned long) palette[i][1]) << 8;
-	    png_BluePixel(self, i)  = ((unsigned long) palette[i][2]) << 8;
+	    unsigned int a = haveTRNS ? trnsAlpha[i] : 255;
+	    png_RedPixel(self, i)   = ((unsigned long) Blend(palette[i][0], a, 0)) << 8;
+	    png_GreenPixel(self, i) = ((unsigned long) Blend(palette[i][1], a, 1)) << 8;
+	    png_BluePixel(self, i)  = ((unsigned long) Blend(palette[i][2], a, 2)) << 8;
 	}
 	png_RGBUsed(self) = palettesize;
 	for (y = 0; y < height; y++) {
@@ -355,8 +411,8 @@ int png__Load(struct png *self, char *fullname, FILE *fp)
 		outrow[x] = (unsigned char) idx;
 	    }
 	}
-    } else if (colortype == 0 || colortype == 4) {
-	/* grey, or grey+alpha with alpha dropped */
+    } else if (colortype == 0 && !haveTRNS) {
+	/* opaque grey */
 	int outdepth = (bitdepth == 16) ? 8 : bitdepth;
 	unsigned int i, greys;
 	png_newGreyImage(self, (unsigned int) width, (unsigned int) height, outdepth);
@@ -383,17 +439,28 @@ int png__Load(struct png *self, char *fullname, FILE *fp)
 	    }
 	}
     } else {
-	/* colortype 2 (RGB) or 6 (RGBA, alpha dropped) */
+	/* RGB, RGBA, grey+alpha, or grey with a tRNS key: blended onto
+	   AlphaBg, which needn't be grey, so all become truecolor. */
+	boolean grey = (colortype == 0 || colortype == 4);
 	png_newTrueImage(self, (unsigned int) width, (unsigned int) height);
 	for (y = 0; y < height; y++) {
 	    unsigned char *rowdata = raw.data + y * (rowbytes + 1) + 1;
 	    unsigned char *outrow = png_Data(self) + y * width * 3;
 	    for (x = 0; x < width; x++) {
-		unsigned long sampleoff = x * (unsigned long) channels * (bitdepth == 16 ? 2 : 1);
-		int stride = (bitdepth == 16) ? 2 : 1;
-		outrow[x*3]   = rowdata[sampleoff];
-		outrow[x*3+1] = rowdata[sampleoff + stride];
-		outrow[x*3+2] = rowdata[sampleoff + stride*2];
+		unsigned int v[3], full[3], a, c;
+		for (c = 0; c < (grey ? 1u : 3u); c++)
+		    v[c] = Sample(rowdata, x, channels, c, bitdepth, &full[c]);
+		if (grey)
+		    v[1] = v[2] = v[0];
+		if (colortype == 4 || colortype == 6)
+		    a = Sample(rowdata, x, channels, channels - 1, bitdepth, &c);
+		else if (haveTRNS && full[0] == trnsKey[0]
+			 && (grey || (full[1] == trnsKey[1] && full[2] == trnsKey[2])))
+		    a = 0;
+		else
+		    a = 255;
+		for (c = 0; c < 3; c++)
+		    outrow[x*3+c] = Blend(v[c], a, c);
 	    }
 	}
     }
