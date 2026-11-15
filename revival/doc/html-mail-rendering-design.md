@@ -715,6 +715,19 @@ view's background to its own color when it makes it, so a white
 button centered in a dark leaf erased its padding dark. `placechild`
 now sets the leaf's own color before it erases.
 
+A table's own border is built as four strips around its rows
+(`StackBorders`: a fixed column each side, a rule row top and
+bottom), so no single view owns its corners. A table with a radius
+and the same border on every side (`TableIsRound`) is instead joined
+into one body (`JoinTableRows`, a balanced vertical stack, as floated
+tables use) and wrapped in a leaf of its own (`RoundTable`, built on
+`CenteredRowLeaf`) that `RoundLeaf` gives the table's radius and
+border. The wrapper draws the corners after the whole table has drawn
+inside it; its first draw is synchronous with its children's, so the
+first view is already round. The cell's background, cascaded onto the
+wrapper, is the fill the corner blend uses. A table with sides that
+differ keeps the square strips.
+
 The corners are repainted only when the leaf itself draws. A child
 text view's own updates go straight to the window's update queue and
 never pass through the leaf's update, so a repaint of the cell's text

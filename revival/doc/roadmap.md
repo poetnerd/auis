@@ -668,8 +668,8 @@ being front-loaded here.
         read, a table with no `width=` is centered at its CSS
         `max-width`, and a real table's borders are stacked into its
         row lsets, exact to the pixel. A wrapper table with side
-        borders is no longer flattened. Corners are square (a rounded
-        table is still open; see rounded cells below).
+        borders is no longer flattened. Its corners have been
+        rounded since 2026-11-16 (see rounded tables below).
 
         four-sided CSS `border` on its table; only top and bottom
         borders are drawn so far.
@@ -806,10 +806,15 @@ being front-loaded here.
           but no text until a redraw. **RESOLVED 2026-11-15**,
           wdc-confirmed: `lsetview__Update` uses logical bounds, as
           `FullUpdate` already did.
-
-        Still open:
-        - A rounded *table* (the Economist's 4px poll button outline)
-          stays square: its borders are stacked into its rows.
+        - Rounded tables: **RESOLVED 2026-11-16**, wdc-confirmed
+          (Economist poll button, first draw included; no change in
+          LinkedIn, bookrack or National Grid). A table's border had
+          been four square strips stacked around its rows, leaving no
+          one view owning the corners. A round table's body is now
+          wrapped in one leaf carrying its radius and border
+          (`RoundTable`), its rows joined first (`JoinTableRows`).
+          Tables of more than one row take that path untested: no
+          fixture has one.
         - Corners after a partial redraw: **NOT NEEDED 2026-11-16**,
           wdc-checked (LinkedIn). textview draws a selection by
           inverting pixels in place, so the corner pixels flip with

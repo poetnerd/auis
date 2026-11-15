@@ -1069,7 +1069,10 @@ is masked as it loads, its corners blended into the color behind it,
 as transparent PNGs already were. Testing them turned up an original
 lset bug: a cell's first draw sized its content by the part of it
 then visible, so a button drawn while still partly clipped had no
-room for its label and showed an empty outline until redrawn.
+room for its label and showed an empty outline until redrawn. The
+last square corners, the Economist's poll button, belonged to a table
+whose border was assembled from four separate strips; wrapping the
+table in one rounded cell gave the corners an owner.
 
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
