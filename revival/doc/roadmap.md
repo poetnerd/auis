@@ -623,7 +623,17 @@ being front-loaded here.
         its horizontal padding, as in CSS. `<hr>` is a 2px gray rule,
         not a line of dashes. `toporigin`'s offset is now half the
         view's height, up to 8px, so a short row fills its line.
-      - The button-style link's outline ("Vote in the poll") is a full
+      - **RESOLVED 2026-11-14**, wdc-confirmed: a 1px white box around
+        inline images on dark bands (the footer icons, the red quote
+        mark). Traced with temporary file-based tracing: each image
+        view painted exactly its own rectangle, but text wraps every
+        embedded view in a `matte`, whose 1px border is cleared in the
+        matte's own (white) background. `matte` now drops that border
+        for an image marked borderless (`image_SetNoBorder`, set on
+        inline mail images), as it already did for `lset` content.
+      - The quote mark draws at 32x24 from its `width="32"`; Thunderbird
+        follows its inline style, 28x20.
+
         four-sided CSS `border` on its table; only top and bottom
         borders are drawn so far.
   16. Found during the item 15 work, not yet fixed:
