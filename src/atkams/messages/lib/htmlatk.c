@@ -3745,7 +3745,11 @@ static int RenderLinkButton(struct hax_state *st, const struct htmlnode *a)
         w += CssBorderSide(a, "border-left", color, sizeof(color))
            + CssBorderSide(a, "border-right", color, sizeof(color));
     }
-    body = CenteredRowLeaf(body, w, st);
+    {
+        struct lset *box = CenteredRowLeaf(body, w, st);
+        if (box != body) box->shrinkwidth = 1;	/* w is an estimate; measured once it can be */
+        body = box;
+    }
     if (body->left == NULL) body->halign = lset_HALIGN_LEFT;
     EnsureLineBreak(st);
     InsertRowView(st, body);
@@ -3886,9 +3890,11 @@ static long InlineTextLength(const struct htmlnode *n, int *space)
    the cell's declared pixel width if it has one (CellDeclaredPixelWidth,
    padding included), else its text's estimated width (LabelTextWidth)
    plus its padding; then its cellpadding and side borders. 0 for any
-   other table. */
+   other table. *estimated says the width is an estimate, so the box
+   should be measured once it can be (lset.ch's shrinkwidth); a
+   declared width is kept (LinkedIn's 390px button). */
 #define LABEL_MAXCHARS 60
-static long TableLabelWidth(const struct htmlnode *tablenode)
+static long TableLabelWidth(const struct htmlnode *tablenode, int *estimated)
 {
     struct nodevec rows;
     const struct htmlnode *td, *cell = NULL;
@@ -3896,6 +3902,7 @@ static long TableLabelWidth(const struct htmlnode *tablenode)
     int cells = 0, space = 1;
     char color[32], *fs;
 
+    *estimated = 0;
     nodevec_init(&rows);
     CollectRows(tablenode, &rows);
     if (rows.count == 1)
@@ -3912,6 +3919,7 @@ static long TableLabelWidth(const struct htmlnode *tablenode)
         if (fs) { long px = CssPixelLength(fs); if (px > 0) fontpx = px; free(fs); }
         CellCssPadding(cell, pad);
         w = LabelTextWidth(cell->children, len, fontpx, CssIsBold(cell)) + pad[1] + pad[3];
+        *estimated = 1;
     }
     TableCssPadding(tablenode, pad);	/* the table's own (TablePadRow) */
     return w + pad[1] + pad[3] + 2 * TableCellPadding(tablenode)
@@ -3939,7 +3947,7 @@ static struct lset *CenterFixedTable(struct lset *ls, const struct htmlnode *tab
                                      const struct htmlnode *td, struct hax_state *st)
 {
     long w = CenteredFixedTableWidth(tablenode);
-    int side = lset_HALIGN_CENTER, label = 0;
+    int side = lset_HALIGN_CENTER, label = 0, shrink = 0;
     const char *tw = htmlpart_GetAttr(tablenode, "width");
     if (!ls) return ls;
     if (tw && strcasecmp(tw, "auto") == 0) tw = NULL;
@@ -3955,20 +3963,23 @@ static struct lset *CenterFixedTable(struct lset *ls, const struct htmlnode *tab
             long m = LsetFixedContentWidth(ls);
             if (m > 0) w = m + ICONCELL_WIDTH_PAD;
         }
-        if (w <= 0 && (w = TableLabelWidth(tablenode)) > 0) label = 1;
+        if (w <= 0 && (w = TableLabelWidth(tablenode, &shrink)) > 0) label = 1;
         side = CellContentSide(td);
     }
     if (w <= 0) return ls;
     /* A rounded or colored label narrows as a whole, background and
-       corners too, not just its text within them. */
+       corners too, not just its text within them. An estimated label
+       width is measured once the box can be (lset.ch's shrinkwidth). */
     if (ls->left != NULL || ls->radius > 0 || ls->borderwidth > 0 || (label && ls->bgcolor[0])) {
-        ls = CenteredRowLeaf(ls, w, st);
-        if (ls->left == NULL) ls->halign = side;
-        return ls;
+        struct lset *box = CenteredRowLeaf(ls, w, st);
+        if (box != ls) box->shrinkwidth = shrink;
+        if (box->left == NULL) box->halign = side;
+        return box;
     }
     if (ls->halign == lset_HALIGN_NONE) {
         ls->halign = side;
         ls->contentwidth = (int) w;
+        ls->shrinkwidth = shrink;
     }
     return ls;
 }
@@ -4951,6 +4962,7 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
 {
     struct lsetvec rows;
     long i, centerw, labelw = 0;
+    int labelEst = 0;
     const char *tw = htmlpart_GetAttr(tablenode, "width");
     int ok = BuildLsetGrid(tablenode, st, &rows);
     /* !ok means BuildLsetGrid found no real rows -- a benign, common
@@ -4970,13 +4982,14 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         a->maxwidth = centerw;
         a->halign = lset_HALIGN_CENTER;
         a->padleft = a->padright = 0;
+        a->side = lset_HALIGN_NONE;
     } else
         centerw = 0;
     /* A shrink-to-fit table that is one short label, as
        CenterFixedTable sizes one standing alone in a cell: LinkedIn's
        outlined buttons, inside a link in a left-aligned cell. */
     if (centerw == 0 && (!tw || strcasecmp(tw, "auto") == 0))
-        labelw = TableLabelWidth(tablenode);
+        labelw = TableLabelWidth(tablenode, &labelEst);
     if (TableIsRound(tablenode)) JoinTableRows(st, &rows);
     for (i = 0; i < rows.count; ++i) {
         struct lset *rowRoot = rows.items[i];
@@ -5015,7 +5028,10 @@ static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablen
         }
         if (labelw > 0) {
             struct lset *placed = CenteredRowLeaf(rowRoot, labelw, st);
-            if (placed != rowRoot) placed->halign = ContentSide(st);
+            if (placed != rowRoot) {
+                placed->halign = ContentSide(st);
+                placed->shrinkwidth = labelEst;	/* measured once it can be */
+            }
             rowRoot = placed;
         }
         EnsureLineBreak(st);
