@@ -214,10 +214,19 @@ static int do_charset(const char *fixture, const char *outfile)
     return 0;
 }
 
+/* Decodes one header value given on the command line. */
+static int do_header(const char *value)
+{
+    char *d = mimepart_DecodeHeader(value, (long) strlen(value));
+    printf("[%s]\n", d ? d : "(null)");
+    free(d);
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 3) {
-        fprintf(stderr, "usage: mimeparttest.test dump|select|decodepart|htmlstrip|charset ...\n");
+        fprintf(stderr, "usage: mimeparttest.test dump|select|decodepart|htmlstrip|charset|header ...\n");
         return 2;
     }
     if (strcmp(argv[1], "dump") == 0) {
@@ -230,7 +239,9 @@ int main(int argc, char **argv)
         return do_htmlstrip(argv[2], argv[3]);
     } else if (strcmp(argv[1], "charset") == 0 && argc == 4) {
         return do_charset(argv[2], argv[3]);
+    } else if (strcmp(argv[1], "header") == 0) {
+        return do_header(argv[2]);
     }
-    fprintf(stderr, "usage: mimeparttest.test dump|select|decodepart|htmlstrip|charset ...\n");
+    fprintf(stderr, "usage: mimeparttest.test dump|select|decodepart|htmlstrip|charset|header ...\n");
     return 2;
 }

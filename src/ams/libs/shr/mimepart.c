@@ -914,3 +914,106 @@ unsigned char *mimepart_Utf8ToLatin1(const unsigned char *in, long inlen, long *
     if (outlenp) *outlenp = o;
     return out;
 }
+
+/* ---- RFC 2047 encoded-words in headers ---- */
+
+/* Appends len bytes in charset cs to out at *op, as Latin-1. */
+static void emit_charset(char *out, long *op, const char *cs, long cslen,
+                         const unsigned char *b, long len)
+{
+    long i, o = *op;
+
+#define CSIS(name) (cslen == (long) strlen(name) && strncasecmp(cs, name, cslen) == 0)
+    if (CSIS("utf-8") || CSIS("utf8")) {
+        long n;
+        unsigned char *l = mimepart_Utf8ToLatin1(b, len, &n);
+        if (l) { memcpy(out + o, l, n); o += n; free(l); }
+    } else if (CSIS("iso-8859-1") || CSIS("latin1") || CSIS("us-ascii")) {
+        memcpy(out + o, b, len); o += len;
+    } else if (CSIS("windows-1252") || CSIS("cp1252")) {
+        for (i = 0; i < len; i++) {
+            switch (b[i]) {
+            case 0x91: case 0x92: out[o++] = '\''; break;
+            case 0x93: case 0x94: out[o++] = '"'; break;
+            case 0x96: out[o++] = '-'; break;
+            case 0x97: out[o++] = '-'; out[o++] = '-'; break;
+            case 0x85: out[o++] = '.'; out[o++] = '.'; out[o++] = '.'; break;
+            default: out[o++] = (b[i] >= 0x80 && b[i] < 0xA0) ? '?' : b[i]; break;
+            }
+        }
+    } else {
+        for (i = 0; i < len; i++) out[o++] = (b[i] < 0x80) ? b[i] : '?';
+    }
+#undef CSIS
+    *op = o;
+}
+
+char *mimepart_DecodeHeader(const char *in, long len)
+{
+    /* Decoding never grows the text except Windows-1252's ellipsis
+       (one byte, at least three encoded) and em dash; 3x is ample. */
+    char *out = (char *) malloc(len * 3 + 1);
+    long i = 0, o = 0, afterword = -1;
+
+    if (!out) return NULL;
+    while (i < len) {
+        if (in[i] == '=' && i + 1 < len && in[i+1] == '?') {
+            /* =?charset?enc?text?= with no whitespace inside */
+            long cs = i + 2, q1, q2, end, j;
+            int enc, ok = 0;
+
+            for (q1 = cs; q1 < len && in[q1] != '?' && !isspace((unsigned char) in[q1]); q1++)
+                ;
+            if (q1 + 2 < len && in[q1] == '?' && q1 > cs && in[q1+2] == '?') {
+                enc = toupper((unsigned char) in[q1+1]);
+                q2 = q1 + 2;
+                for (end = q2 + 1; end + 1 < len && !(in[end] == '?' && in[end+1] == '=')
+                                   && !isspace((unsigned char) in[end]); end++)
+                    ;
+                if ((enc == 'Q' || enc == 'B') && end + 1 < len && in[end] == '?')
+                    ok = 1;
+            }
+            if (ok) {
+                unsigned char *b = NULL;
+                long blen = 0, cslen = q1 - cs;
+                const unsigned char *t = (const unsigned char *) in + q2 + 1;
+                long tlen = end - (q2 + 1);
+
+                /* RFC 2231 language suffix: charset*lang */
+                for (j = cs; j < q1; j++)
+                    if (in[j] == '*') { cslen = j - cs; break; }
+                if (enc == 'B') {
+                    blen = mimepart_DecodeBase64(t, tlen, &b);
+                } else {
+                    b = (unsigned char *) malloc(tlen + 1);
+                    if (b) {
+                        for (j = 0; j < tlen; j++) {
+                            int h1, h2;
+                            if (t[j] == '_') b[blen++] = ' ';
+                            else if (t[j] == '=' && j + 2 < tlen
+                                     && (h1 = hexval(t[j+1])) >= 0 && (h2 = hexval(t[j+2])) >= 0) {
+                                b[blen++] = (unsigned char) (h1 << 4 | h2);
+                                j += 2;
+                            } else b[blen++] = t[j];
+                        }
+                    }
+                }
+                if (b && blen >= 0) {
+                    if (afterword >= 0)
+                        o = afterword;	/* only whitespace since the last word */
+                    emit_charset(out, &o, in + cs, cslen, b, blen);
+                    free(b);
+                    afterword = o;
+                    i = end + 2;
+                    continue;
+                }
+                if (b) free(b);
+            }
+        }
+        if (!isspace((unsigned char) in[i]))
+            afterword = -1;
+        out[o++] = in[i++];
+    }
+    out[o] = '\0';
+    return out;
+}

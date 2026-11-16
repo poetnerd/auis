@@ -229,4 +229,14 @@ char *mimepart_HtmlToText(const char *html, long len);
 unsigned char *mimepart_Utf8ToLatin1(const unsigned char *in, long inlen,
                                       long *outlenp);
 
+/* Decodes RFC 2047 encoded-words (=?charset?Q|B?text?=) in a header
+   value to Latin-1, the display charset.  UTF-8 goes through
+   mimepart_Utf8ToLatin1; ISO-8859-1 and US-ASCII pass through;
+   Windows-1252's quotes and dashes become ASCII; other charsets' high
+   bytes become '?'.  Whitespace between adjacent encoded-words is
+   dropped, as RFC 2047 requires; a malformed one is left as is.
+   Returns a malloc'd, NUL-terminated string (caller frees); NULL only
+   on allocation failure. */
+char *mimepart_DecodeHeader(const char *in, long len);
+
 #endif /* MIMEPART_H */
