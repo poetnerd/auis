@@ -965,6 +965,16 @@ static void EnsureParaBreak(struct hax_state *st)
    driven by the counters above instead of buffer-peeking. */
 static int is_collapsible_space(unsigned char c) { return isspace(c) || c == 0xA0; }
 
+static int NodeIsCell(const struct htmlnode *td);
+static int NodeIsStyleHidden(const struct htmlnode *n);
+
+/* A soft hyphen (&shy;, U+00AD) marks where a word may break; it is
+   drawn only at such a break.  This renderer never breaks words there,
+   so it drops them: Latin-1 fonts draw 0xAD as a plain hyphen, and
+   Kohl's preheader padding of hundreds of &shy; came out as a column
+   of dashes (2026-11-15). */
+#define SOFT_HYPHEN 0xAD
+
 static void EmitTextRun(struct hax_state *st, const char *text, long len, int inPre)
 {
     long i;
@@ -983,13 +993,16 @@ static void EmitTextRun(struct hax_state *st, const char *text, long len, int in
     i = 0;
     while (i < len) {
         unsigned char c = (unsigned char) text[i];
-        if (is_collapsible_space(c)) {
+        if (c == SOFT_HYPHEN) {
+            ++i;
+        } else if (is_collapsible_space(c)) {
             while (i < len && is_collapsible_space((unsigned char) text[i])) ++i;
             if (!EndsInWhitespace(st)) st->spacePending = 1;
         } else {
             /* batch a run of non-space bytes into one insert call */
             long start = i;
-            while (i < len && !is_collapsible_space((unsigned char) text[i])) ++i;
+            while (i < len && !is_collapsible_space((unsigned char) text[i])
+                   && (unsigned char) text[i] != SOFT_HYPHEN) ++i;
             FlushPendingSpace(st);
             text_AlwaysInsertCharacters(st->dest, st->pos, (char *) text + start, i - start);
             st->pos += (i - start);
@@ -1746,7 +1759,7 @@ static int TableIsTrivialWrapper(const struct htmlnode *tablenode, const struct 
         tr = rows.items[0];
         for (td = tr->children; td; td = td->next) {
             if (!htmlpart_IsElement(td)) continue;
-            if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+            if (!NodeIsCell(td)) continue;
             if (foundCell) { foundCell = NULL; break; } /* more than one real cell */
             foundCell = td;
         }
@@ -1826,7 +1839,7 @@ static int NodeIsVisuallyEmpty(const struct htmlnode *n)
             const struct htmlnode *td;
             for (td = tr->children; td; td = td->next) {
                 if (!htmlpart_IsElement(td)) continue;
-                if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+                if (!NodeIsCell(td)) continue;
                 if (!CellIsEmpty(td)) { empty = 0; break; }
             }
         }
@@ -1989,9 +2002,13 @@ struct tablegrid {
     long *colfixed;
 };
 
+/* A <td>/<th> that is drawn.  A display:none cell is no cell at all,
+   as in a browser: every table pass asks here, so all of them skip it
+   alike.  Kohl's hides its preview text in one (2026-11-15). */
 static int NodeIsCell(const struct htmlnode *td)
 {
-    return htmlpart_IsElement(td) && (strcmp(td->tag, "td") == 0 || strcmp(td->tag, "th") == 0);
+    return htmlpart_IsElement(td) && (strcmp(td->tag, "td") == 0 || strcmp(td->tag, "th") == 0)
+        && !NodeIsStyleHidden(td);
 }
 
 static long CellColspan(const struct htmlnode *td)
@@ -2963,7 +2980,7 @@ static int RowEffectiveBgColor(const struct htmlnode *tr, const struct htmlnode 
     const struct htmlnode *td;
     for (td = tr->children; td; td = td->next) {
         if (!htmlpart_IsElement(td)) continue;
-        if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+        if (!NodeIsCell(td)) continue;
         if (CellBgColorX11Cascaded(td, tr, tableNode, outbuf, outbufsz)) return 1;
     }
     return 0;
@@ -2998,7 +3015,7 @@ static int RowHasVisibleBorder(const struct htmlnode *tr)
     const struct htmlnode *td;
     for (td = tr->children; td; td = td->next) {
         if (!htmlpart_IsElement(td)) continue;
-        if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+        if (!NodeIsCell(td)) continue;
         if (NodeHasVisibleBorderEdge(td)) return 1;
     }
     return 0;
@@ -4308,7 +4325,7 @@ static int RowIsEntirelyBlank(const struct htmlnode *tr)
     int any = 0;
     for (td = tr->children; td; td = td->next) {
         if (!htmlpart_IsElement(td)) continue;
-        if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+        if (!NodeIsCell(td)) continue;
         any = 1;
         if (!CellIsEmpty(td)) return 0;
     }
@@ -4524,7 +4541,7 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
             int soleCellSeen = 0;
             for (td = tr->children; td; td = td->next) {
                 if (!htmlpart_IsElement(td)) continue;
-                if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+                if (!NodeIsCell(td)) continue;
                 if (GridIsSide(&grid, td)) continue;
                 if (soleCellSeen) { soleCell = NULL; break; } /* more than one real cell */
                 soleCell = td;
