@@ -958,9 +958,8 @@ it as malformed without sending anything. `-g` (`--globoff`) keeps
 `[ ]` and `{ }` in a URL literal rather than curl ranges. That
 encoding is correctness, not a security filter.
 
-Already in place: only `http` and `https` are fetched (`SchemeOk`),
-and `--proto`/`--proto-redir` hold redirects to them; at most 5
-redirects; per-fetch and per-message time budgets and a file-size cap;
+Already in place: only `http` and `https` are fetched (`SchemeOk`,
+checked at every redirect hop); at most 5 redirects; per-fetch and per-message time budgets and a file-size cap;
 no cookies or Referer sent; `ams.blockbeaconimages` skips likely
 tracking pixels before any request.
 
@@ -970,12 +969,19 @@ Not yet done, roughly in order of value:
    Economist's URLs carry the reader's segment, region and send date.
    Thunderbird blocks remote content by default and keeps a
    per-sender allow list. A policy decision, not yet made.
-2. **Private-network addresses.** A message can aim an image at
-   `localhost`, `192.168.x.x` or `169.254.169.254`, making the reader's
-   machine send a GET inside its own network (routers and local
-   services have been attacked this way). Loopback, private and
-   link-local addresses should be refused, after redirects too.
-3. **Credentials in URLs** (`user:pass@host`) should be refused.
+2. **Private-network addresses. IMPLEMENTED 2026-11-16**, wdc-confirmed
+   (no image regressions). A message can aim an image at `localhost`,
+   `192.168.x.x` or `169.254.169.254`, making the reader's machine send
+   a GET inside its own network (routers and local services have been
+   attacked this way). `VetUrl` resolves each host and refuses it if
+   any address is loopback, private, link-local, shared (CGNAT),
+   multicast or reserved, IPv4 or IPv6 (IPv4-mapped included). curl is
+   pinned to the checked address with `--resolve`, preferring IPv4, so
+   it can't re-resolve to a private one (DNS rebinding), and redirects
+   are followed by `httpimg.c` rather than curl's `-L`, so every hop is
+   checked, up to 5.
+3. **Credentials in URLs** (`user:pass@host`). **IMPLEMENTED
+   2026-11-16**: `VetUrl` refuses them.
 4. **Clicked links** (not audited): only `http`, `https` and `mailto`
    should be launched, and showing the real address on hover would
    expose a link whose text names one site and points at another.

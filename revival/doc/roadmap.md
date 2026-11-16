@@ -624,6 +624,14 @@ being front-loaded here.
         calling curl, and passes `-g` so `[ ]`/`{ }` stay literal.
         Security and privacy notes on remote fetching are in the
         design doc's Images section.
+      - Remote image fetches could reach the reader's own network
+        (localhost, routers, cloud metadata). **IMPLEMENTED 2026-11-16**,
+        wdc-confirmed: `httpimg.c` refuses loopback, private,
+        link-local, CGNAT, multicast and reserved addresses (IPv4 and
+        IPv6) after resolving each host, pins curl to the checked
+        address, follows redirects itself so each hop is checked, and
+        refuses `user:pass@` URLs. The remaining security items are
+        listed in the design doc.
       - **RESOLVED 2026-11-14**, wdc-confirmed: the circular editor's
         photo was missing because the vendored IJG v4 libjpeg (1992)
         can't decode progressive JPEGs. `jpeg.c` now uses Homebrew's
