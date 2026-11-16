@@ -679,7 +679,7 @@ being front-loaded here.
 
         four-sided CSS `border` on its table; only top and bottom
         borders are drawn so far.
-  16. Found during the item 15 work, not yet fixed:
+  16. Found during the item 15 work (all fixed as of 2026-11-15):
       - `gif.c`'s loader closes the `FILE*` its caller passed in, and
         the callers (`image.c`, `image__ReadOtherFormat`,
         `htmlatk.c`) close it again. If another `fopen` reuses the
@@ -692,6 +692,11 @@ being front-loaded here.
         mislabeled JPEG tried as a GIF first.
       - Exif orientation is ignored, so a phone photo stored sideways
         displays sideways.
+        **FIXED 2026-11-15**, wdc-confirmed (ez Import of a test file
+        tagged 6; no change in Economist, LinkedIn, bookrack):
+        `LoadJFIF` saves APP1, reads tag 0x0112 from IFD0 (either byte
+        order), and turns the pixels into place; 5-8 swap width and
+        height. Saved copies are upright with no Exif.
       - `imgtest`'s header suggests the class `imagev` for format
         auto-detection, but `imagev` is a view, not an image class,
         and it crashes (bus error). Nothing auto-detects image formats;

@@ -1129,6 +1129,10 @@ stream, after which the renderer closes it again. The JPEG loader had
 the same habit and lost it when it moved to libjpeg-turbo; the GIF
 loader now closes only files it opened itself.
 
+The JPEG loader also never read Exif orientation, which predates it:
+the 1992 decoder came before phone cameras recorded rotation instead
+of rotating pixels. A sideways-stored photo now turns upright on load.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all
