@@ -1143,6 +1143,15 @@ address on the next came back as the bare name with no host, which
 the caption showed as `Kohl's@???`. The lexer now treats a CR as
 whitespace.
 
+The same lexer had a second, older-style flaw. Its helpers for
+comments and quoted names copy what they read into `yytext`, which in
+the original `lex` was an array of its own. `flex`, which replaced lex
+long ago, makes `yytext` a pointer into its input buffer unless told
+otherwise. A sender written the old way, `jdoe@example.com (Jane
+Doe)`, ends in a comment; reading it ran to the end of the buffer,
+flex moved the buffer, and the name came back as a lone `(`. One line,
+`%array`, restores lex's behavior.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all

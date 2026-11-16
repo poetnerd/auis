@@ -637,10 +637,15 @@ being front-loaded here.
         success. CR is now whitespace. Affects every address parse of
         IMAP mail (`cui`, `imapsync`, `nns`, `eatmail`, `amsn.do`),
         not just captions. Original 1994 code.
-      - A sender in the old `addr (Name)` form gets an empty caption
-        name. `prettyn.c` has `if (*RealFrom = '(')`, an assignment,
-        but that alone doesn't explain an empty result. Original 1994
-        code.
+      - A sender in the old `addr (Name)` form got an empty caption
+        name. **FIXED 2026-11-15**, wdc-confirmed via `-recaption`:
+        the address lexer's helpers copy comments and quoted strings
+        into `yytext`, an array in lex but a pointer into the input
+        buffer in flex; a trailing comment ran input() to the end of
+        the buffer, which moved, and came back as `(`. `parsel.flex`
+        now declares `%array`. `prettyn.c`'s `if (*RealFrom = '(')`
+        is now `==`. `-recaption` also rebuilds captions whose sender
+        starts with `@`.
       - **RESOLVED 2026-11-14**, wdc-confirmed: serif `font-family`
         requests fell back to fontconfig's default face (Verdana).
         `htmlatk.c` kept only the first CSS family, usually a web font
