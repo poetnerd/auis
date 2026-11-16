@@ -55,6 +55,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <rm.ih>
 #include <valuev.ih>
 #include <text.ih>
+#include <textv.ih>
+#include <mark.ih>
+#include <txtvinfo.h>
 
 static int dolink(struct lsetview *self);
 static int initkids(struct lsetview *self, struct lset *ls);
@@ -160,6 +163,71 @@ static struct view * makeview(struct lsetview *self, struct lset *ls)
     }
     return NULL;
 }
+
+/* A view's natural one-line width, as a browser shrinks a box to fit
+   its content, or -1 when it can't be measured: not linked yet (see
+   lsetview__DesiredSize's view_GetIM guard) or not a kind known here.
+   A text view lays its first line out with no width limit
+   (textview_LineRedraw, as its own DesiredSize does for view_HeightSet)
+   plus its side margins; a line exactly that wide fits. A leaf adds its
+   padding and border; a side-by-side split adds its parts (a fixed one
+   by its pixel width), a stacked one takes the wider. */
+#define NATURAL_UNLIMITED 3000000	/* textv.c's UNLIMITED */
+static long NaturalWidth(struct view *v)
+{
+    if (v == NULL || view_GetIM(v) == NULL) return -1;
+    if (class_IsTypeByName(class_GetTypeName(v), "lsetview")) {
+	struct lsetview *lv = (struct lsetview *) v;
+	struct lset *ls = Data(lv);
+	long a, b, bw;
+	if (ls == NULL) return -1;
+	if (lv->mode == lsetview_IsSplit) {
+	    a = NaturalWidth(lv->header.lpair.obj[0]);
+	    b = NaturalWidth(lv->header.lpair.obj[1]);
+	    switch (ls->type) {
+		case lsetview_MakeHorzFixed: return (b < 0) ? -1 : ls->pct + b;
+		case lsetview_MakeHorzFixedRight: return (a < 0) ? -1 : a + ls->pct;
+		case lsetview_MakeHorz: return (a < 0 || b < 0) ? -1 : a + b;
+		default: return (a < 0 || b < 0) ? -1 : (a > b ? a : b);
+	    }
+	}
+	if (lv->child == NULL || (a = NaturalWidth(lv->child)) < 0) return -1;
+	bw = (ls->borderwidth > 0 && ls->bordercolor[0]) ? ls->borderwidth : 0;
+	return a + 2 * ls->padding + ls->padleft + ls->padright + 2 * bw;
+    }
+    if (class_IsTypeByName(class_GetTypeName(v), "textview")) {
+	struct textview *tv = (struct textview *) v;
+	struct text *t = (struct text *) view_GetDataObject(v);
+	struct formattinginfo info;
+	struct mark *tm;
+	long bx;
+	if (t == NULL) return -1;
+	bx = tv->hasApplicationLayer ? tv->bx : tv->ebx;
+	if (text_GetLength(t) == 0) return 2 * bx;
+	if ((tm = mark_New()) == NULL) return -1;
+	mark_SetPos(tm, 0);
+	textview_LineRedraw(tv, textview_GetHeight, tm, bx, 0, NATURAL_UNLIMITED,
+			    NATURAL_UNLIMITED, 0, NULL, NULL, &info);
+	mark_Destroy(tm);
+	return info.totalWidth + 2 * bx;
+    }
+    return -1;
+}
+
+/* The width an aligned leaf gives its child: contentwidth, or for a
+   shrink-to-fit leaf (lset.ch's shrinkwidth) the child's natural width
+   once it can be measured, contentwidth (htmlatk.c's estimate) until
+   then. */
+static long ContentWidth(struct lsetview *self)
+{
+    struct lset *ls = Data(self);
+    if (ls->shrinkwidth) {
+	long nw = NaturalWidth(self->child);
+	if (nw > 0) return nw;
+    }
+    return ls->contentwidth;
+}
+
 /* Shrinks *rr to where a leaf's content goes within the full
    rectangle its parent split gave it, per the leaf's halign and valign
    (lset.ch, added 2026-09-27 for htmlatk.c's table cells, roadmap.md
@@ -189,10 +257,13 @@ static void placechild(struct lsetview *self, struct rectangle *rr, boolean doEr
 	if (rr->width > pl + pr) { rr->left += pl; rr->width -= pl + pr; }
 	if (rr->height > pt + pb) { rr->top += pt; rr->height -= pt + pb; }
     }
-    if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && ls->contentwidth < rr->width) {
-	if (ls->halign == lset_HALIGN_CENTER) rr->left += (rr->width - ls->contentwidth) / 2;
-	else if (ls->halign == lset_HALIGN_RIGHT) rr->left += rr->width - ls->contentwidth;
-	rr->width = ls->contentwidth;
+    if (ls->halign != lset_HALIGN_NONE) {
+	long cw = ContentWidth(self);
+	if (cw > 0 && cw < rr->width) {
+	    if (ls->halign == lset_HALIGN_CENTER) rr->left += (rr->width - cw) / 2;
+	    else if (ls->halign == lset_HALIGN_RIGHT) rr->left += rr->width - cw;
+	    rr->width = cw;
+	}
     }
     if (ls->valign == lset_VALIGN_MIDDLE || ls->valign == lset_VALIGN_BOTTOM) {
 	view_DesiredSize(self->app, rr->width, rr->height, view_WidthSet, &dw, &dh);
@@ -695,9 +766,10 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
 	/* Ask the child about the space placechild() will actually give
 	   it: the width less padding on each side, then no more than the
 	   aligned contentwidth. */
+	long cw = (ls->halign != lset_HALIGN_NONE) ? ContentWidth(self) : 0;
 	if (padw > 0 && w > padw) w -= padw;
-	if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && ls->contentwidth < w)
-	    w = ls->contentwidth;
+	if (cw > 0 && cw < w)
+	    w = cw;
 	if (padh > 0 && h > padh) h -= padh;
 	result = view_DesiredSize(self->child, w, h, pass, dWidth, dHeight);
 	*dWidth += padw;
@@ -706,7 +778,7 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
 	   child's narrower width instead made text embedding the leaf
 	   give it only that much, with nothing to align within (The
 	   Economist's 166px icon block, 2026-09-28). */
-	if (ls->halign != lset_HALIGN_NONE && ls->contentwidth > 0 && *dWidth < width)
+	if (cw > 0 && *dWidth < width)
 	    *dWidth = width;
 	*dHeight += padh;
 	/* An HTML cell's height="N" (lset.ch's minheight) is a floor. */

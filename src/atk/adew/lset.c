@@ -414,6 +414,7 @@ self->toporigin = 0;
 self->radius = 0;
 self->borderwidth = 0;
 *self->bordercolor = '\0';
+self->shrinkwidth = 0;
 self->revision = 0;
 self->dobj = NULL;
 self->left = NULL;

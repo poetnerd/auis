@@ -207,6 +207,12 @@ data:
 	int radius;
 	int borderwidth;
 	char bordercolor[32];
+	/* When set, an aligned leaf's contentwidth is only a fallback: once
+	   its child is linked, lsetv.c measures the child's natural one-line
+	   width and uses that, a browser's shrink-to-fit. htmlatk.c sets it
+	   on button and label boxes, whose width it can only estimate before
+	   any font exists (2026-11-16). In memory only, not persisted. */
+	int shrinkwidth;
 	char dataname[32];
 	char viewname[32];
 	char refname[64];

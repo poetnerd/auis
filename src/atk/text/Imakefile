@@ -152,6 +152,7 @@ install.doc::
 		/bin/sh -c 'if test -r txtstvc.doc; then mv -f txtstvc.doc txtstvec.doc; fi; exit 0';
 
 InstallFile(txtstvec.h, ${INSTINCFLAGS}, ${DESTDIR}/include/atk)
+InstallFile(txtvinfo.h, ${INSTINCFLAGS}, ${DESTDIR}/include/atk)
 
 DependTarget()
 
