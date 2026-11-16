@@ -66,6 +66,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #include <andrewos.h>
 #include <class.h>
@@ -211,7 +215,7 @@ static int SchemeOk(const char *src)
    responsible for whatever partial bodyPath/headerPath content may
    exist (both are always unlinked by httpimg_ResolveImage() before it
    returns, success or not). */
-static boolean RunCurl(const char *src, int maxTimeSecs, const char *bodyPath, const char *headerPath)
+static boolean RunCurl(const char *src, int maxTimeSecs, const char *bodyPath, const char *headerPath, const char *resolveArg)
 {
     char maxTimeBuf[16];
     char connectTimeoutBuf[16];
@@ -233,9 +237,10 @@ static boolean RunCurl(const char *src, int maxTimeSecs, const char *bodyPath, c
     argv[argc++] = "curl";
     argv[argc++] = "-s";
     argv[argc++] = "-S";
-    argv[argc++] = "-L";
+    /* No -L: redirects are followed by httpimg_ResolveImage, which
+       checks each new host's addresses first (VetUrl). */
     argv[argc++] = "-g";	/* --globoff: [] and {} in a URL are literal, not curl ranges */
-    argv[argc++] = "--max-redirs";   argv[argc++] = "5";
+    argv[argc++] = "--resolve";      argv[argc++] = (char *) resolveArg;
     argv[argc++] = "--proto";        argv[argc++] = "=http,https";
     argv[argc++] = "--proto-redir";  argv[argc++] = "=http,https";
     argv[argc++] = "--connect-timeout"; argv[argc++] = connectTimeoutBuf;
@@ -366,6 +371,171 @@ static char *UrlForCurl(const char *src)
     return out;
 }
 
+/* ---- Private-network protection ----
+
+   A message can aim an image at localhost, a 192.168.x.x router or a
+   cloud metadata address and make the reader's machine send a GET
+   inside its own network.  Each URL's host is resolved here and
+   refused if any of its addresses is loopback, private, link-local,
+   shared (CGNAT), multicast or reserved; curl is then pinned to the
+   checked address with --resolve, so it can't look the name up again
+   and get a private answer (DNS rebinding).  Redirects are followed
+   here, not by curl, so every hop is checked the same way. */
+
+#define HTTPIMG_MAX_HOPS 5
+
+static int V4IsPrivate(unsigned long a)	/* host byte order */
+{
+    unsigned b0 = (unsigned) (a >> 24), b1 = (unsigned) ((a >> 16) & 0xFF);
+
+    return b0 == 0 || b0 == 10 || b0 == 127 || b0 >= 224	/* this net, private, loopback, multicast/reserved */
+        || (b0 == 100 && (b1 & 0xC0) == 64)			/* 100.64/10 shared (CGNAT) */
+        || (b0 == 169 && b1 == 254)				/* link-local, cloud metadata */
+        || (b0 == 172 && (b1 & 0xF0) == 16)			/* 172.16/12 */
+        || (b0 == 192 && b1 == 168)				/* 192.168/16 */
+        || (b0 == 192 && b1 == 0 && ((a >> 8) & 0xFF) == 0)	/* 192.0.0/24 */
+        || (b0 == 198 && (b1 & 0xFE) == 18);			/* 198.18/15 benchmarking */
+}
+
+static int AddrIsPrivate(const struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET)
+        return V4IsPrivate(ntohl(((const struct sockaddr_in *) sa)->sin_addr.s_addr));
+    if (sa->sa_family == AF_INET6) {
+        const unsigned char *b = ((const struct sockaddr_in6 *) sa)->sin6_addr.s6_addr;
+        static const unsigned char zero[16];
+        int i, mapped = 1;
+
+        for (i = 0; i < 10; ++i) if (b[i]) mapped = 0;
+        if (mapped && b[10] == 0xFF && b[11] == 0xFF)		/* ::ffff:a.b.c.d */
+            return V4IsPrivate(((unsigned long) b[12] << 24) | ((unsigned long) b[13] << 16)
+                               | ((unsigned long) b[14] << 8) | b[15]);
+        if (memcmp(b, zero, 15) == 0 && (b[15] == 0 || b[15] == 1)) return 1;	/* ::, ::1 */
+        return (b[0] & 0xFE) == 0xFC				/* fc00::/7 unique local */
+            || (b[0] == 0xFE && (b[1] & 0xC0) == 0x80)		/* fe80::/10 link-local */
+            || b[0] == 0xFF;					/* multicast */
+    }
+    return 1;	/* unknown family: refuse */
+}
+
+/* Checks url: http(s) only, no user:password@, and every address its
+   host resolves to public.  Fills resolveArg with curl's
+   "host:port:addr" pin for the first address.  Returns 0 if usable. */
+static int VetUrl(const char *url, char *resolveArg, size_t argsize)
+{
+    const char *p = strstr(url, "://"), *h, *e, *a;
+    char host[256], portbuf[8], addr[INET6_ADDRSTRLEN];
+    int port, refuse = 0;
+    struct addrinfo hints, *res = NULL, *ai;
+
+    if (!p || !SchemeOk(url)) return -1;
+    port = (strncasecmp(url, "https", 5) == 0) ? 443 : 80;
+    h = p + 3;
+    for (e = h; *e && *e != '/' && *e != '?' && *e != '#'; ++e)
+        if (*e == '@') return -1;	/* credentials in the URL */
+    if (*h == '[') {			/* [IPv6 literal] */
+        a = strchr(h, ']');
+        if (!a || a > e) return -1;
+        if ((size_t) (a - h - 1) >= sizeof(host)) return -1;
+        memcpy(host, h + 1, (size_t) (a - h - 1)); host[a - h - 1] = '\0';
+        a++;
+    } else {
+        for (a = h; a < e && *a != ':'; ++a) ;
+        if ((size_t) (a - h) >= sizeof(host) || a == h) return -1;
+        memcpy(host, h, (size_t) (a - h)); host[a - h] = '\0';
+    }
+    if (a < e && *a == ':') {
+        port = atoi(a + 1);
+        if (port <= 0 || port > 65535) return -1;
+    }
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    sprintf(portbuf, "%d", port);
+    if (getaddrinfo(host, portbuf, &hints, &res) != 0 || !res) return -1;
+    for (ai = res; ai; ai = ai->ai_next)
+        if (AddrIsPrivate(ai->ai_addr)) refuse = 1;
+    if (!refuse) {
+        /* Pin an IPv4 address when there is one: it works on networks
+           without IPv6, where an IPv6 pin would just fail. */
+        struct addrinfo *pick = res;
+        for (ai = res; ai; ai = ai->ai_next)
+            if (ai->ai_family == AF_INET) { pick = ai; break; }
+        if (pick->ai_family == AF_INET)
+            inet_ntop(AF_INET, &((struct sockaddr_in *) pick->ai_addr)->sin_addr, addr, sizeof(addr));
+        else
+            inet_ntop(AF_INET6, &((struct sockaddr_in6 *) pick->ai_addr)->sin6_addr, addr, sizeof(addr));
+        if (snprintf(resolveArg, argsize, (pick->ai_family == AF_INET6) ? "%s:%d:[%s]" : "%s:%d:%s",
+                     host, port, addr) >= (int) argsize)
+            refuse = 1;
+    }
+    freeaddrinfo(res);
+    return refuse ? -1 : 0;
+}
+
+/* Reads the response's status code and, for a redirect, its Location
+   (into loc).  Returns the status, or 0. */
+static int ReadRedirect(const char *headerPath, char *loc, size_t locsize)
+{
+    FILE *fp = fopen(headerPath, "r");
+    char line[2048];
+    int status = 0;
+
+    loc[0] = '\0';
+    if (!fp) return 0;
+    if (fgets(line, sizeof(line), fp) && strncmp(line, "HTTP/", 5) == 0) {
+        char *sp = strchr(line, ' ');
+        if (sp) status = atoi(sp + 1);
+    }
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncasecmp(line, "Location:", 9) == 0) {
+            char *v = line + 9, *end;
+            while (*v == ' ' || *v == '\t') ++v;
+            end = v + strlen(v);
+            while (end > v && (end[-1] == '\r' || end[-1] == '\n' || end[-1] == ' ')) --end;
+            *end = '\0';
+            strncpy(loc, v, locsize - 1);
+            loc[locsize - 1] = '\0';
+        }
+    }
+    fclose(fp);
+    return status;
+}
+
+/* Resolves a redirect's Location against the URL it came from. */
+static char *JoinUrl(const char *base, const char *loc)
+{
+    const char *sch = strstr(base, "://"), *pathstart, *slash;
+    char *out;
+    size_t n;
+
+    if (strstr(loc, "://")) return strdup(loc);
+    if (!sch) return NULL;
+    if (loc[0] == '/' && loc[1] == '/') {		/* //host/path */
+        n = (size_t) (sch - base) + 1;
+        out = malloc(n + strlen(loc) + 1);
+        if (out) { memcpy(out, base, n); strcpy(out + n, loc); }
+        return out;
+    }
+    pathstart = sch + 3;
+    while (*pathstart && *pathstart != '/' && *pathstart != '?' && *pathstart != '#') ++pathstart;
+    if (loc[0] == '/') {				/* /path */
+        n = (size_t) (pathstart - base);
+    } else {						/* relative to the base's directory */
+        for (slash = pathstart; *slash && *slash != '?' && *slash != '#'; ++slash) ;
+        while (slash > pathstart && slash[-1] != '/') --slash;
+        n = (size_t) (slash - base);
+        if (slash == pathstart) {			/* no path: add the root */
+            out = malloc(n + strlen(loc) + 2);
+            if (out) { memcpy(out, base, n); out[n] = '/'; strcpy(out + n + 1, loc); }
+            return out;
+        }
+    }
+    out = malloc(n + strlen(loc) + 1);
+    if (out) { memcpy(out, base, n); strcpy(out + n, loc); }
+    return out;
+}
+
 boolean httpimg_ResolveImage(void *rock, const char *src,
     unsigned char **bytesOut, long *lenOut, char **mimetypeOut)
 {
@@ -411,10 +581,31 @@ boolean httpimg_ResolveImage(void *rock, const char *src,
     if (headerFd < 0) { unlink(bodyPath); return FALSE; }
     close(headerFd);
 
+    curlOk = FALSE;
     {
-        char *url = UrlForCurl(src);
-        curlOk = url ? RunCurl(url, perFetchTime, bodyPath, headerPath) : FALSE;
-        free(url);
+        char *cur = strdup(src), resolveArg[600], loc[2048];
+        int hop;
+
+        for (hop = 0; cur && hop <= HTTPIMG_MAX_HOPS; ++hop) {
+            char *url, *next;
+            int status;
+
+            if (hop > 0 && time(NULL) >= budget->deadline) break;
+            if (VetUrl(cur, resolveArg, sizeof(resolveArg)) != 0) break;
+            url = UrlForCurl(cur);
+            if (!url || !RunCurl(url, perFetchTime, bodyPath, headerPath, resolveArg)) { free(url); break; }
+            free(url);
+            status = ReadRedirect(headerPath, loc, sizeof(loc));
+            if ((status == 301 || status == 302 || status == 303 || status == 307 || status == 308) && loc[0]) {
+                next = JoinUrl(cur, loc);
+                free(cur);
+                cur = next;
+                continue;
+            }
+            curlOk = TRUE;
+            break;
+        }
+        free(cur);
     }
     if (curlOk) {
         contentType = ExtractContentType(headerPath);
