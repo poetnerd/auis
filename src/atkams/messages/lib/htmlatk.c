@@ -233,7 +233,7 @@ static void nodevec_free(struct nodevec *v) { free((void *) v->items); v->items 
  * per-run allocation" note.
  * ==================================================================== */
 
-static struct style *BoldSt, *ItalicSt, *UnderlineSt, *FixedSt, *LinkTemplateSt;
+static struct style *BoldSt, *ItalicSt, *UnderlineSt, *FixedSt, *LinkTemplateSt, *QuoteSt;
 static int StylesInited = 0;
 
 static void InitStyles(void)
@@ -266,6 +266,15 @@ static void InitStyles(void)
         style_SetName(LinkTemplateSt, "htmlatk-link");
         style_AddUnderline(LinkTemplateSt);
         style_AddAttribute(LinkTemplateSt, "color", "blue");
+    }
+    /* <blockquote>: a quarter inch more left margin than its context
+       (style_LeftMargin is relative), so each nested level of a quoted
+       reply steps in, as Thunderbird's do.  Thunderbird also draws a
+       bar beside each level; ATK text has no margin rule to draw one. */
+    QuoteSt = style_New();
+    if (QuoteSt) {
+        style_SetName(QuoteSt, "htmlatk-quote");
+        style_SetNewLeftMargin(QuoteSt, style_LeftMargin, (long) 16384, style_Inches);
     }
     StylesInited = 1;
 }
@@ -5564,6 +5573,7 @@ static int PushFormattingMarks(struct hax_state *st, const struct htmlnode *n)
     if (strcmp(t, "i") == 0 || strcmp(t, "em") == 0) { count += marks_push(st, ItalicSt); }
     if (strcmp(t, "u") == 0) { count += marks_push(st, UnderlineSt); }
     if (strcmp(t, "tt") == 0 || strcmp(t, "code") == 0) { count += marks_push(st, FixedSt); }
+    if (strcmp(t, "blockquote") == 0) { count += marks_push(st, QuoteSt); }
 
     if (strcmp(t, "font") == 0) {
         const char *color = htmlpart_GetAttr(n, "color");
