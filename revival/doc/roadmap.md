@@ -1055,8 +1055,7 @@ being front-loaded here.
         every table pass asks it; soft hyphens are dropped in
         `EmitTextRun` and `mimepart_Utf8ToLatin1`.
 
-  19. Amazon (shipment notices, compared against Thunderbird 2026-11-16;
-      no fixture saved yet, the messages are newer than the local mirror):
+  19. Amazon (shipment notices, compared against Thunderbird 2026-11-16):
       - Black bands beside the header and at section breaks.
         **RESOLVED 2026-11-16**, wdc-confirmed: colors given as CSS
         custom properties, `var(--body-bg)`, reached X as color names,
@@ -1072,14 +1071,53 @@ being front-loaded here.
         `$1599`, misleadingly. **RESOLVED 2026-11-16**, wdc-confirmed:
         `<sup>`/`<sub>` are allowlisted and get the standard template's
         superscript/subscript (raised 6pt / lowered 2pt, 2pt smaller).
-      - Still open:
-        - The progress tracker (check circles joined by a line above
-          Ordered / Shipped / Out for delivery / Delivered) is missing,
-          leaving a gap.
-        - The product row stacks the image above its text; Thunderbird
-          puts the image left and the text right, in a gray box.
-        - The Track package button is outlined, not filled yellow.
-        - The header links are serif, not bold sans.
+      - The rest of the layout. **RESOLVED 2026-11-16**, wdc-confirmed
+        against Thunderbird ("100% correct"; regression pass clean).
+        Fixture `amazon.html` (untracked, checkout root).
+        - Progress tracker missing. Its lines are little tables of 7,
+          4 and 7px rows, the 4px row styled `background:#0064F9`.
+          The CSS `background` shorthand was dropped by the style
+          filter; it now counts as `background-color` when it gives a
+          plain color (gradients and `url()` skipped, so a separate
+          fallback color stands). A cell holding a colored fixed-height
+          band no longer counts as empty (`RowIsColoredBand`). The
+          circles are an 18px image in a `<div>` with a background and
+          `border-radius`: an image alone in such an element is now
+          decoded onto its color and rounded by its radius
+          (`ImageBackdrop`), and one that can't be shown (the pending
+          steps' `pixel.gif` is a blocked beacon; `htmlprv` fetches
+          nothing) is drawn as that colored disk (`BackdropBox`). GIF
+          transparency is now honored (`gif_SetAlphaBackground`), and
+          palette images are rounded at all (the `image_Expand` bug,
+          below).
+        - Track package button: yellow now (the shorthand), and no
+          longer full width: a shrink-to-fit table whose one cell
+          holds a button link is measured from the link
+          (`SoleButtonLinkWidth`), and an aligned `lsetview` answers a
+          natural-width probe with its content width, not the probe's.
+        - Product row stacked: MJML's side-by-side columns are sibling
+          `display:inline-block` `<div>`s with percentage widths (the
+          equivalent table is Outlook-only, in conditional comments);
+          such a run now renders as one row (`TryRenderInlineBlockColumns`).
+        - Too much whitespace: MJML's spacer `<div style="height:12px">
+          &nbsp;</div>`s were full text lines; a `<div>` with a pixel
+          height and no visible content is now a gap of that height.
+          The tracker also stood 86px too tall: `lsetscrollview`
+          measured a full-width row with a minimum width at that
+          minimum width (labels wrapping in 24px columns) and reserved
+          scrollbar space under it; a `FillsWidth` row that fits is now
+          measured at the offered width, with no reserve.
+        - Divider above "Arriving Monday" missing: an empty
+          `<p style="border-top:…">` alone in a cell; a blank row whose
+          cell holds a bordered `<p>`/`<div>` is now a rule of that
+          color and thickness (`RowRuleBorder`).
+        - Banner and footer logo at the window's left edge: a
+          `display:block` image inside a flattened block with a column
+          is now embedded as a one-cell row, so it sits in the column
+          (`TryInsertBlockImageRow`).
+      - Still open: the product image's light gray box (a
+        `linear-gradient` background, skipped); the header links
+        render serif (Amazon misspells the property, `font-familiy`).
       Item 12's `<div>` question looks settled by this message and
       "Re: Apartment for Holly Folly": no paragraph spacing lost.
 

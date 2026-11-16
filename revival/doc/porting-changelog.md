@@ -2632,3 +2632,11 @@ gives it. `htmlatk.c` creates them by name with `class_NewObject`, so
 they are found through the `dlib/atk` index, not linked in. A tree
 built before this needs `make Makefile` and `make install` in
 `src/atkams/messages/lib`, or a full `make World`.
+
+### 2026-11-16: `gif_SetAlphaBackground`
+
+`gif.ch` gains a classprocedure, `SetAlphaBackground(long rgb)`,
+mirroring `png`'s: a GIF's transparent color is drawn in that color
+(default white). `htmlatk.c` calls it, so `gif.ih` must be
+reinstalled before `src/atkams/messages/lib` builds: `make install`
+in `src/atk/basics/common`, or a full `make World`.

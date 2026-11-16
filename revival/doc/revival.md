@@ -1180,6 +1180,25 @@ them to whatever width the window gives, and a row of image-only
 cells is split by the images' own widths, as a browser does. The
 picture came together on the first live try.
 
+Bringing an Amazon shipment notice up to Thunderbird turned up two
+genuine bugs below the HTML layer. The GIF decoder, on reading a
+GIF with a local colormap, copied the global colormap a second time
+instead, so such GIFs have drawn in the wrong colors since the code
+arrived; it also skipped the extension that marks a transparent
+color, which is now drawn as the background behind the image, as
+PNG transparency already was. And rounding an image's corners, added
+the day before for LinkedIn's avatars, silently did nothing to
+palette images: `image_Expand` converts an image to true color in
+place and returns it, and the new code took that return for failure.
+Two layout bugs were the renderer's own. A full-width table row
+with a minimum width was measured at that minimum width, which
+wrapped Amazon's tracker labels into 24-pixel columns and left 86
+pixels of blank space; a one-line trace of every size query, run
+once live, pointed straight at it. And a box sized to fit its
+content asked the content's width by offering it effectively
+unlimited room, which an aligned cell answered by echoing back, so
+the Track package button filled the page.
+
 ## Word size issues
 
 The largest, most systemic category of defect came from a single

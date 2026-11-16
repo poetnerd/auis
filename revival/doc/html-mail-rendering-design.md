@@ -841,6 +841,44 @@ and wraps directly: `environment_WrapStyle` puts a later span inside
 an earlier one over exactly the same text, and a cell holding only
 its image under a table `font-size` would otherwise keep that size.
 
+MJML, which builds Amazon's mail and much other marketing mail, has
+two habits the table builder never saw. Side-by-side columns are
+sibling `<div>`s with `display:inline-block` and percentage widths;
+the equivalent table exists only inside Outlook's conditional
+comments, which the parser drops. A block whose content is two or
+more such columns totalling at most 100% renders as one row weighted
+by the percentages (`TryRenderInlineBlockColumns`), each column
+walked into its own text as a cell is. And every gap is a
+`<div style="height:12px">&nbsp;</div>`; a `<div>` with a pixel
+height and no visible content is a filler of exactly that height
+(`SpacerDivHeight`), not a blank line.
+
+Borders on blocks other than tables and cells are still not drawn in
+general, but an empty bordered `<p>` or `<div>` is a divider and
+nothing else, so a blank row whose cell holds one becomes a rule of
+the border's color and thickness (`RowRuleBorder`). It is handled
+there rather than by counting the block as content, because the same
+markup draws Amazon's tracker bars and total line inside colored
+fixed-height rows, which the spacer path already draws right.
+
+A `display:block` image inside a flattened wrapper that sets a
+column (a `max-width` or side padding) is embedded as a one-cell row
+(`TryInsertBlockImageRow`), since only rows carry the column
+(`ApplyAmbient`); inserted into the flow it sat at the window's left
+edge. A block image is a box on a line of its own anyway.
+
+`lsetscrollview` measures a fixed-width ("tableau") row at its
+natural width, so it doesn't grow with the window, and reserves
+scrollbar space. A row that widens with the window (`FillsWidth`, a
+centered column leaf) and fits is instead measured at the width it
+is offered, with no reserve: Amazon's tracker gets a minimum width
+from its 18px circle cells, and measured at that width its labels
+wrapped into 24px columns. Natural-width probes (`NaturalWidth` lays
+text out at an unlimited width) are answered by an aligned
+`lsetview` leaf with its content width; echoing the offer, as it does
+for real layout, made a shrink-to-fit box around one infinitely
+wide.
+
 ## Images: the `image` inset, capability-checked
 
 `image__ReadOtherFormat` (`src/atk/basics/common/image.c:2314`) checks
@@ -945,6 +983,22 @@ as in a browser: `NodeIsCell` asks `NodeIsStyleHidden`, and every
 table pass (column counting, the occupancy grid, row building) uses
 `NodeIsCell`, so all of them skip it alike. Soft hyphens are dropped
 rather than drawn, since this renderer never breaks a word at one.
+
+An element with a background this renderer can't paint (a `<div>`,
+not a cell) whose only content is one image shrinks to that image in
+a browser, so its background is exactly what the image's transparent
+pixels show, and its `border-radius` rounds the image. The image is
+decoded onto that color and rounded by that radius
+(`ImageBackdrop`); one that can't be shown at all (a blocked beacon,
+a failed fetch, `htmlprv`'s no-network case) is drawn as its
+declared box in that color, rounded (`BackdropBox`), not as alt
+text. Amazon's tracker steps are exactly this: a white checkmark PNG
+on a blue disk, and a transparent `pixel.gif` on a gray one. GIF
+transparency is blended like PNG alpha, onto the color set by
+`gif_SetAlphaBackground`. The CSS `background` shorthand counts as
+`background-color` when it gives a plain color; a gradient or
+`url()` value is skipped whole, so the separate fallback color
+senders give for clients without gradients stands.
 
 ### Fetching remote images: security and privacy (2026-11-16)
 
