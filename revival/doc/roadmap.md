@@ -616,6 +616,14 @@ being front-loaded here.
         so textview still sees a tall view when paging.
       - Text sitting directly in a colored `<div>` (not in a table
         cell) stays on white, for the same reason as button links.
+      - The Insider's sponsor image ("SUPPORTED BY cisco", alt text
+        "desktop") showed as `[image: desktop]`. **RESOLVED
+        2026-11-16**, wdc-confirmed: its URL has literal spaces in the
+        query string, and curl refused it as malformed (exit 3).
+        `httpimg.c` now percent-encodes what a URL can't hold before
+        calling curl, and passes `-g` so `[ ]`/`{ }` stay literal.
+        Security and privacy notes on remote fetching are in the
+        design doc's Images section.
       - **RESOLVED 2026-11-14**, wdc-confirmed: the circular editor's
         photo was missing because the vendored IJG v4 libjpeg (1992)
         can't decode progressive JPEGs. `jpeg.c` now uses Homebrew's

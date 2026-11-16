@@ -946,6 +946,45 @@ table pass (column counting, the occupancy grid, row building) uses
 `NodeIsCell`, so all of them skip it alike. Soft hyphens are dropped
 rather than drawn, since this renderer never breaks a word at one.
 
+### Fetching remote images: security and privacy (2026-11-16)
+
+`httpimg.c` fetches remote images by running `curl` from an argument
+list (no shell, `--` before the URL), so a URL can't inject options or
+commands. Before handing a URL over it percent-encodes what a URL
+can't hold (space, control and non-ASCII bytes, `"<>\^`{|}`), leaving
+existing `%XX` escapes alone, as a browser does: The Economist's
+sponsor image had literal spaces in its query string, and curl refused
+it as malformed without sending anything. `-g` (`--globoff`) keeps
+`[ ]` and `{ }` in a URL literal rather than curl ranges. That
+encoding is correctness, not a security filter.
+
+Already in place: only `http` and `https` are fetched (`SchemeOk`),
+and `--proto`/`--proto-redir` hold redirects to them; at most 5
+redirects; per-fetch and per-message time budgets and a file-size cap;
+no cookies or Referer sent; `ams.blockbeaconimages` skips likely
+tracking pixels before any request.
+
+Not yet done, roughly in order of value:
+1. **Whether to load remote images by default.** Every fetch tells the
+   sender the message was opened, when, and from what address; the
+   Economist's URLs carry the reader's segment, region and send date.
+   Thunderbird blocks remote content by default and keeps a
+   per-sender allow list. A policy decision, not yet made.
+2. **Private-network addresses.** A message can aim an image at
+   `localhost`, `192.168.x.x` or `169.254.169.254`, making the reader's
+   machine send a GET inside its own network (routers and local
+   services have been attacked this way). Loopback, private and
+   link-local addresses should be refused, after redirects too.
+3. **Credentials in URLs** (`user:pass@host`) should be refused.
+4. **Clicked links** (not audited): only `http`, `https` and `mailto`
+   should be launched, and showing the real address on hover would
+   expose a link whose text names one site and points at another.
+5. **Image bombs** (not audited): the size cap limits the download,
+   but a small PNG or GIF can declare enormous dimensions; decoders
+   should refuse those before allocating.
+6. **Look-alike domains:** show internationalised names in their
+   `xn--` form on hover, once item 4 exists.
+
 ## Fallback strategy (now explicit, per renderer)
 
 Two levels, both explicit:
