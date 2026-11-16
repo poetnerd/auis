@@ -1986,8 +1986,9 @@ static char *expand_home(const char *path, char *buf, size_t buflen)
 
 /* A caption is built once, when a message is filed, and stored in the
    folder's snapshot.  Captions filed before RFC 2047 decoding hold raw
-   =?...?= text, and those filed before the CRLF address fix end in
-   "@???".  This rebuilds just those, with the same pipeline
+   =?...?= text, those filed before the CRLF address fix end in
+   "@???", and those whose sender gave its name as a trailing comment
+   have none.  This rebuilds just those, with the same pipeline
    AppendFileToMSDirWithId uses, and rewrites only the caption: date,
    attributes and id are copied from the old snapshot.  It reads only
    the local mirror, so it runs without logging in, and the journal is
@@ -2001,9 +2002,14 @@ extern int BuildReplyField(struct MS_Message *Msg);
 extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
 extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
 
+/* Stale: raw encoded-words, a lost host ("@???"), or an empty sender
+   name, which a trailing "addr (Name)" comment gave before the lexer's
+   %array fix (the sender column then starts with '@', after a tab or
+   after a cut-off subject's ".."). */
 static int needs_recaption(const char *caption)
 {
-    return strstr(caption, "=?") != NULL || strstr(caption, "@???") != NULL;
+    return strstr(caption, "=?") != NULL || strstr(caption, "@???") != NULL
+        || strstr(caption, "\t@") != NULL || strstr(caption, "..@") != NULL;
 }
 
 /* Builds a fresh caption for the message file path into cap
