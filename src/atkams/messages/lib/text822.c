@@ -544,44 +544,55 @@ restart:
 	    }
 	} else if (!InsideRecursion || DisplayAllHeaders) {
 	    /* Normal case -- put important ones in front, others in back */
+	    /* Shown with RFC 2047 encoded-words decoded.  Only the
+	       display copy: AuxHeadText above is sendmessage's editable
+	       header, which must stay encoded for sending. */
+	    char *ShowBuf = LineBuf, *decoded = NULL;
+	    int showlen = linelen;
+
+	    if (strstr(LineBuf, "=?") && (decoded = mimepart_DecodeHeader(LineBuf, linelen)) != NULL) {
+		ShowBuf = decoded;
+		showlen = strlen(decoded);
+	    }
 	    if (HighlightThisOne || DisplayAllHeaders) {
 		++didbig;
-		text822_AlwaysInsertCharacters(d, ShowPos, LineBuf, linelen);
+		text822_AlwaysInsertCharacters(d, ShowPos, ShowBuf, showlen);
 		if (DisplayAllHeaders) {
 		    et = environment_InsertStyle(((struct text *)d)->rootEnvironment, ShowPos-1, TinyStyle, 1);
-		    environment_SetLength(et, linelen);
+		    environment_SetLength(et, showlen);
 		    environment_SetStyle(et, FALSE, FALSE);
 		} else if (ColonOffset) {
 		    et = environment_InsertStyle(((struct text *)d)->rootEnvironment, ShowPos, BoldStyle, 1);
 		    environment_SetLength(et, ColonOffset);
 		}
-		ShowPos += linelen;
+		ShowPos += showlen;
 	    } else {
 		if (printminors) {
 		    ++didsmall;
 		    if (usefn) {
-			fnote_AlwaysInsertCharacters(fn, fnlen, LineBuf, linelen);
+			fnote_AlwaysInsertCharacters(fn, fnlen, ShowBuf, showlen);
 			if (ColonOffset) {
 			    et = environment_InsertStyle(((struct text *)fn)->rootEnvironment, fnlen, BoldStyle, 1);
 			    environment_SetLength(et, ColonOffset);
 			}
-			fnlen += linelen;
+			fnlen += showlen;
 			/* The next line prevents a troff bug with enormous footnotes */
 			if (((didbig*14) + (didsmall*10)) > 600) usefn = FALSE;
 		    } else {
-			text822_AlwaysInsertCharacters(d, *IgnorePosition, LineBuf, linelen);
+			text822_AlwaysInsertCharacters(d, *IgnorePosition, ShowBuf, showlen);
 			et = environment_InsertStyle(((struct text *)d)->rootEnvironment, *IgnorePosition, TinyStyle, 1);
-			environment_SetLength(et, linelen);
+			environment_SetLength(et, showlen);
 			environment_SetStyle(et, FALSE, FALSE);
 			if (ColonOffset) {
 			    et = environment_InsertStyle(et, 0, BoldStyle, 1);
 			    environment_SetLength(et, ColonOffset);
 			}
-			*IgnorePosition += linelen;
-			ShowPos += linelen;
+			*IgnorePosition += showlen;
+			ShowPos += showlen;
 		    }
 		}
 	    }
+	    if (decoded) free(decoded);
 	}
     } /* All done with headers, ready for body */
     if (AuxHeadText) {
