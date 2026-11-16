@@ -1055,6 +1055,32 @@ being front-loaded here.
         every table pass asks it; soft hyphens are dropped in
         `EmitTextRun` and `mimepart_Utf8ToLatin1`.
 
+  19. Amazon (shipment notices, compared against Thunderbird 2026-11-16;
+      no fixture saved yet, the messages are newer than the local mirror):
+      - Black bands beside the header and at section breaks.
+        **RESOLVED 2026-11-16**, wdc-confirmed: colors given as CSS
+        custom properties, `var(--body-bg)`, reached X as color names,
+        which it couldn't parse ("xcmap: couldn't parse color name"),
+        leaving the cells black. `CssColorToX11` now uses a `var()`'s
+        fallback if it names one, else no color; other CSS functions
+        (`hsl()`, `color-mix()`) give no color.
+      - `?` around inserted values ("?1? DVD item", "Order # ?112-…").
+        **RESOLVED 2026-11-16**, wdc-confirmed: Unicode direction
+        controls (U+202A–U+202E, U+2066–U+2069, U+061C) are now
+        dropped as invisible in `mimepart_Utf8ToLatin1`.
+      - Still open:
+        - The progress tracker (check circles joined by a line above
+          Ordered / Shipped / Out for delivery / Delivered) is missing,
+          leaving a gap.
+        - `<sup>` isn't supported, so `$15<sup>99</sup>` reads as
+          `$1599`, misleadingly.
+        - The product row stacks the image above its text; Thunderbird
+          puts the image left and the text right, in a gray box.
+        - The Track package button is outlined, not filled yellow.
+        - The header links are serif, not bold sans.
+      Item 12's `<div>` question looks settled by this message and
+      "Re: Apartment for Holly Folly": no paragraph spacing lost.
+
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
   todo items: non-Latin scripts (need a real Unicode text model), SVG
