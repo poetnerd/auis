@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* WHITEPAGES_ENV */
 #include <parseadd.h>
 #include <stdlib.h>
+#include <mimepart.h>	/* mimepart_DecodeHeader */
 extern int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim);
 extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
 extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
@@ -114,9 +115,25 @@ int FindPrettiestName(struct MS_Message *msg, char *FromBuf, int lim)
     return(FindPrettiestFromString(MyFromBuf, FromBuf, lim));
 }
 
+/* Decodes RFC 2047 encoded-words in name into buf (size bytes) and
+   returns buf, or returns name unchanged if it has none.  Done here,
+   after address parsing and before ShrinkName, since shrinking first
+   cuts an encoded-word in half and leaves it undecodable. */
+static char *DecodeName(char *name, char *buf, int size)
+{
+    char *d;
+
+    if (!strstr(name, "=?") || (d = mimepart_DecodeHeader(name, (long) strlen(name))) == NULL)
+	return(name);
+    strncpy(buf, d, size - 1);
+    buf[size - 1] = '\0';
+    free(d);
+    return(buf);
+}
+
 int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim)
 {
-    char *RealFrom, *s, *oparen, *cparen;
+    char *RealFrom, *s, *oparen, *cparen, Decoded[1500];
     int dummy = 0, len;
     PARSED_ADDRESS *Addr, *ListHead;
 
@@ -126,6 +143,7 @@ int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim)
 	RealFrom = MyFromBuf;
 	oparen = strchr(RealFrom, '(');
 	if (oparen) RealFrom = ++oparen;
+	RealFrom = DecodeName(RealFrom, Decoded, sizeof(Decoded));
 	len = strlen(RealFrom);
 	if (len > BIGFROM) {
 	    RealFrom[BIGFROM] = '\0';
@@ -194,6 +212,7 @@ int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim)
     }
     debug(1, ("Choosing between %s and %s\n", s, RealFrom));
     if (strlen(RealFrom) > strlen(s)) s = RealFrom;
+    s = DecodeName(s, Decoded, sizeof(Decoded));
     debug(1, ("OK, I'm working with %s\n", s));
     ShrinkName(s, FromBuf, BIGFROM-1-MINHOST);
     strcat(FromBuf, "@");

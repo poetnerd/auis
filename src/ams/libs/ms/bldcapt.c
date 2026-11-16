@@ -52,6 +52,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* AFS_ENV */
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <mimepart.h>	/* mimepart_DecodeHeader */
 extern int AuthenticReSentHeader(struct MS_Message *msg);
 extern int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim);
 extern int FindPrettiestName(struct MS_Message *msg, char *FromBuf, int lim);
@@ -62,6 +63,21 @@ extern int SeemsToBeFromMe(struct MS_Message *Msg);
 extern int ShrinkName(char *longname, char *shortname, int limit);
 
 #define BIGSUBJECT 30
+
+/* Replaces buf's RFC 2047 encoded-words with their Latin-1 text, so a
+   caption shows what Thunderbird shows and its length limits count
+   visible characters.  Decoding never lengthens a header much past
+   its encoded form, but the result is still cut to fit size. */
+static void DecodeInPlace(char *buf, int size)
+{
+    char *d;
+
+    if (!strstr(buf, "=?") || (d = mimepart_DecodeHeader(buf, (long) strlen(buf))) == NULL)
+	return;
+    strncpy(buf, d, size - 1);
+    buf[size - 1] = '\0';
+    free(d);
+}
 #define BIGFROM 24  /* c.f. prettyn.c */
 #define BIGCAPTPASTDATE 65
 
@@ -121,13 +137,20 @@ int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Bo
     }
     subjlim = (Template->basictype == BASICTEMPLATE_NOFROM) ? BIGCAPTPASTDATE : BIGSUBJECT;
     if (Msg->ParsedStuff->HeadBody[HP_SUBJECT]) {
+	char Subj[1000];
+
 	limit = Msg->ParsedStuff->HeadBodyLen[HP_SUBJECT];
+	if (limit > sizeof(Subj) - 1) limit = sizeof(Subj) - 1;
+	strncpy(Subj, Msg->ParsedStuff->HeadBody[HP_SUBJECT], limit);
+	Subj[limit] = '\0';
+	DecodeInPlace(Subj, sizeof(Subj));
+	limit = strlen(Subj);
 	if (limit > subjlim) {
 	    limit = subjlim - 3;
-	    strncat(Buf, Msg->ParsedStuff->HeadBody[HP_SUBJECT], limit);
+	    strncat(Buf, Subj, limit);
 	    strcat(Buf, "..");
 	} else {
-	    strncat(Buf, Msg->ParsedStuff->HeadBody[HP_SUBJECT], limit);
+	    strncat(Buf, Subj, limit);
 	}
     }
     debug(16, ("Buf is %s\n", Buf));
@@ -164,6 +187,8 @@ int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Bo
 		}
 		strncpy(FromBuf, s, lim);
 		FromBuf[lim] = '\0';
+		DecodeInPlace(FromBuf, sizeof(FromBuf));
+		lim = strlen(FromBuf);
 		if (lim > BIGFROM - 3) lim = BIGFROM - 3;
 		FindPrettiestFromString(FromBuf, NewFromBuf, lim);
 		strcpy(FromBuf, NewFromBuf);
@@ -215,6 +240,7 @@ int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Bo
 		}
 	    }
 	}
+	DecodeInPlace(FromBuf, sizeof(FromBuf));
 	ShrinkName(FromBuf, NewFromBuf, UseArrows ? BIGFROM - 3 : BIGFROM);
 	if (UseArrows) strcat(Buf, "=> ");
 	strcat(Buf, NewFromBuf);
