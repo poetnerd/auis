@@ -679,12 +679,20 @@ being front-loaded here.
         `htmlatk.c`) close it again. If another `fopen` reuses the
         slot in between, the second close shuts the wrong file.
         `jpeg.c` had the same bug and is fixed.
+        **FIXED 2026-11-15**, wdc-confirmed (Economist, bookrack,
+        National Grid, LinkedIn): `gif__Load` closes only a file it
+        opened, as `LoadJFIF` does. htmlatk's
+        `fmemopen` path made this a real double free for every
+        mislabeled JPEG tried as a GIF first.
       - Exif orientation is ignored, so a phone photo stored sideways
         displays sideways.
       - `imgtest`'s header suggests the class `imagev` for format
         auto-detection, but `imagev` is a view, not an image class,
         and it crashes (bus error). Nothing auto-detects image formats;
         Import makes the user pick the type.
+        **FIXED 2026-11-15:** `imgtest` refuses a class that isn't an
+        `image` subclass (`class_IsTypeByName`), and its header no
+        longer suggests `imagev`.
       - bookrack's Book Reviews covers were clipped on the right.
         **RESOLVED 2026-11-15**, wdc-confirmed (bookrack, Economist,
         National Grid, LinkedIn). Each card is a `width=150` cover cell

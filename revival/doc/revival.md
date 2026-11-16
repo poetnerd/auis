@@ -1110,6 +1110,16 @@ and measures its text once it reaches the screen, with the same
 line-layout routine textview uses to draw. Every button fits its label
 snugly, in whatever font and size it is drawn.
 
+The GIF loader had always closed a file it was handed, and every
+caller then closed it again. It went unnoticed for thirty years
+because a second `fclose` of a stdio stream usually fails quietly. Mail
+made it a real double free: the renderer reads a fetched image from
+memory through `fmemopen`, and the senders that label JPEGs as GIFs
+send each one through the GIF loader first, which fails and closes the
+stream, after which the renderer closes it again. The JPEG loader had
+the same habit and lost it when it moved to libjpeg-turbo; the GIF
+loader now closes only files it opened itself.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all
