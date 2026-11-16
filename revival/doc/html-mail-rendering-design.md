@@ -940,6 +940,12 @@ table layout does. Kohl's hero is three double-resolution slices,
 332, 616 and 332 pixels, in a 640px table: they get 166, 308 and 166,
 each scales by one half, and they meet exactly.
 
+Hidden content reaches tables too. A `display:none` cell is no cell,
+as in a browser: `NodeIsCell` asks `NodeIsStyleHidden`, and every
+table pass (column counting, the occupancy grid, row building) uses
+`NodeIsCell`, so all of them skip it alike. Soft hyphens are dropped
+rather than drawn, since this renderer never breaks a word at one.
+
 ## Fallback strategy (now explicit, per renderer)
 
 Two levels, both explicit:

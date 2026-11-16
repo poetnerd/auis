@@ -993,9 +993,14 @@ being front-loaded here.
           Images section.
         - An image-only cell with no declared width weighs its images'
           natural width when the row is split, as a browser sizes it.
-      - A column of dashed lines fills the top-left of the message,
-        probably hidden preview text that should collapse. Not yet
-        investigated.
+      - A column of dashed lines filled the top-left of the message.
+        **RESOLVED 2026-11-15**, wdc-confirmed (no change in Economist,
+        bookrack, LinkedIn, National Grid): the preview text sits in a
+        `<td style="display: none;">`, which the table builder drew,
+        padded with hundreds of `&shy;`, which Latin-1 fonts draw as
+        hyphens. `NodeIsCell` now rejects a style-hidden cell, and
+        every table pass asks it; soft hyphens are dropped in
+        `EmitTextRun` and `mimepart_Utf8ToLatin1`.
 
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
