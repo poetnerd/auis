@@ -563,6 +563,16 @@ being front-loaded here.
       - `<blockquote>` gets a paragraph break but no indent, so
         quoted replies are flush left; Thunderbird indents each level
         and draws a bar.
+        **Indent RESOLVED 2026-11-15**, wdc-confirmed ("Re: Apartment
+        for Holly Folly", and a nested test page): `<blockquote>`
+        carries `htmlatk-quote`, a quarter inch of relative left margin
+        (`style_LeftMargin`, as ez's Quotation style), so each nested
+        level steps in. Still open: the bar. Core ATK already has a
+        change-bar style flag (`style_ChangeBar`, drawn by
+        `DrawChangeBar` in `drawtxtv.c`), but it draws one line at the
+        view's right edge; a quote-bar flag drawn just inside the
+        line's left margin would be a small core change (rebuild
+        `libtext`, relink `runapp`), one bar at the innermost level.
       - **RESOLVED 2026-10-25** (item 14): Gmail's narrow no-break
         space (U+202F, as in "12:25 PM") rendered as "?". The Unicode
         space characters now map to a plain space.
