@@ -276,6 +276,20 @@ static void PrintEffectiveColor(struct environment *e)
             printf(" bold");
             break;
         }
+    /* Summed script movement of enclosing styles (negative is up),
+       printed as script= when nonzero. */
+    {
+        long sum = 0;
+        for (e = e0; e; e = environment_GetParent(e)) {
+            enum style_ScriptMovement basis;
+            long op;
+            enum style_Unit unit;
+            if (e->type != environment_Style || !e->data.style) continue;
+            style_GetFontScript(e->data.style, &basis, &op, &unit);
+            if (basis == style_PreviousScriptMovement) sum += op;
+        }
+        if (sum) printf(" script=%ld", sum);
+    }
 }
 
 /* Dumps every environment_Style span (name + [start,start+length)) in

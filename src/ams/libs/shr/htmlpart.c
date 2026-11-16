@@ -386,6 +386,7 @@ static const struct tagrule_entry hp_tagrules[] = {
     { "a", TAGRULE_KEEP }, { "b", TAGRULE_KEEP }, { "strong", TAGRULE_KEEP },
     { "i", TAGRULE_KEEP }, { "em", TAGRULE_KEEP }, { "u", TAGRULE_KEEP },
     { "tt", TAGRULE_KEEP }, { "code", TAGRULE_KEEP }, { "pre", TAGRULE_KEEP },
+    { "sup", TAGRULE_KEEP }, { "sub", TAGRULE_KEEP },
     { "blockquote", TAGRULE_KEEP },
     { "h1", TAGRULE_KEEP }, { "h2", TAGRULE_KEEP }, { "h3", TAGRULE_KEEP },
     { "h4", TAGRULE_KEEP }, { "h5", TAGRULE_KEEP }, { "h6", TAGRULE_KEEP },

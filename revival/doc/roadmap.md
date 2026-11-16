@@ -1068,12 +1068,14 @@ being front-loaded here.
         **RESOLVED 2026-11-16**, wdc-confirmed: Unicode direction
         controls (U+202A–U+202E, U+2066–U+2069, U+061C) are now
         dropped as invisible in `mimepart_Utf8ToLatin1`.
+      - `<sup>` wasn't supported, so `$15<sup>99</sup>` read as
+        `$1599`, misleadingly. **RESOLVED 2026-11-16**, wdc-confirmed:
+        `<sup>`/`<sub>` are allowlisted and get the standard template's
+        superscript/subscript (raised 6pt / lowered 2pt, 2pt smaller).
       - Still open:
         - The progress tracker (check circles joined by a line above
           Ordered / Shipped / Out for delivery / Delivered) is missing,
           leaving a gap.
-        - `<sup>` isn't supported, so `$15<sup>99</sup>` reads as
-          `$1599`, misleadingly.
         - The product row stacks the image above its text; Thunderbird
           puts the image left and the text right, in a gray box.
         - The Track package button is outlined, not filled yellow.

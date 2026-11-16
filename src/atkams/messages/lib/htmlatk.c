@@ -234,6 +234,7 @@ static void nodevec_free(struct nodevec *v) { free((void *) v->items); v->items 
  * ==================================================================== */
 
 static struct style *BoldSt, *ItalicSt, *UnderlineSt, *FixedSt, *LinkTemplateSt, *QuoteSt;
+static struct style *SupSt, *SubSt;
 static int StylesInited = 0;
 
 static void InitStyles(void)
@@ -275,6 +276,21 @@ static void InitStyles(void)
     if (QuoteSt) {
         style_SetName(QuoteSt, "htmlatk-quote");
         style_SetNewLeftMargin(QuoteSt, style_LeftMargin, (long) 16384, style_Inches);
+    }
+    /* <sup>/<sub>: the standard template's superscript and subscript
+       (default.tpl), six points up or two down, two points smaller.
+       Amazon sets prices as <sup>$</sup>15<sup>99</sup>. */
+    SupSt = style_New();
+    if (SupSt) {
+        style_SetName(SupSt, "htmlatk-sup");
+        style_SetFontScript(SupSt, style_PreviousScriptMovement, -6, style_Points);
+        style_SetFontSize(SupSt, style_PreviousFontSize, -2);
+    }
+    SubSt = style_New();
+    if (SubSt) {
+        style_SetName(SubSt, "htmlatk-sub");
+        style_SetFontScript(SubSt, style_PreviousScriptMovement, 2, style_Points);
+        style_SetFontSize(SubSt, style_PreviousFontSize, -2);
     }
     StylesInited = 1;
 }
@@ -3960,7 +3976,7 @@ static struct lset *CenteredRowLeaf(struct lset *row, long width, struct hax_sta
    box of its own. */
 static long InlineTextLength(const struct htmlnode *n, int *space)
 {
-    static const char * const inl[] = { "a", "span", "b", "strong", "em", "i", "u", "font", "small", "big", NULL };
+    static const char * const inl[] = { "a", "span", "b", "strong", "em", "i", "u", "font", "small", "big", "sup", "sub", NULL };
     long len = 0, k;
     int i;
     for (; n; n = n->next) {
@@ -5605,6 +5621,8 @@ static int PushFormattingMarks(struct hax_state *st, const struct htmlnode *n)
     if (strcmp(t, "u") == 0) { count += marks_push(st, UnderlineSt); }
     if (strcmp(t, "tt") == 0 || strcmp(t, "code") == 0) { count += marks_push(st, FixedSt); }
     if (strcmp(t, "blockquote") == 0) { count += marks_push(st, QuoteSt); }
+    if (strcmp(t, "sup") == 0) { count += marks_push(st, SupSt); }
+    if (strcmp(t, "sub") == 0) { count += marks_push(st, SubSt); }
 
     if (strcmp(t, "font") == 0) {
         const char *color = htmlpart_GetAttr(n, "color");
