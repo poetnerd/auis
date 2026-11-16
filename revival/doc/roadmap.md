@@ -622,13 +622,21 @@ being front-loaded here.
         cut (wdc-confirmed, Bed Bath & Beyond), and
         `FindPrettiestFromString` (`prettyn.c`) decodes the sender's
         name after parsing, before it shortens it (tested directly on
-        a Kohl's header; not yet seen live). Still open: an
-        `imapsync --recaption` pass for captions already stored, which
-        must skip the write-back journal; reconstruct won't do, since
-        `SalvageOldSnapshot` restores any ASCII caption.
-      - Captions show `name@???` when the From header is folded onto a
-        second line with CRLF endings (common in IMAP mail): the
-        sender's host is lost. Original 1994 code.
+        a Kohl's header). Stored captions are rebuilt by `imapsync
+        -recaption -folders <list>` (wdc-confirmed 2026-11-15, Kohl's
+        caption now decoded): local only, no login, journal
+        suppressed; it rebuilds only captions containing `=?` or
+        ending `@???` and rewrites just the caption. Reconstruct won't
+        do, since `SalvageOldSnapshot` restores any ASCII caption.
+      - Captions showed `name@???` when the From header was folded onto
+        a second line with CRLF endings (common in IMAP mail).
+        **FIXED 2026-11-15**, wdc-confirmed via `-recaption`: the
+        address lexer (`parsel.flex`, and `parsel.lex` to match) had no
+        rule for CR, so the grammar's error recovery returned the
+        display name alone as the address, with no host, and reported
+        success. CR is now whitespace. Affects every address parse of
+        IMAP mail (`cui`, `imapsync`, `nns`, `eatmail`, `amsn.do`),
+        not just captions. Original 1994 code.
       - A sender in the old `addr (Name)` form gets an empty caption
         name. `prettyn.c` has `if (*RealFrom = '(')`, an assignment,
         but that alone doesn't explain an empty result. Original 1994

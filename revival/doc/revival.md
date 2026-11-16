@@ -1133,6 +1133,16 @@ The JPEG loader also never read Exif orientation, which predates it:
 the 1992 decoder came before phone cameras recorded rotation instead
 of rotating pixels. A sideways-stored photo now turns upright on load.
 
+The mail address parser had never seen a carriage return. Its lexer
+knew that a newline followed by a space continues a header, but CRLF
+mail, which is how IMAP stores everything, puts a CR before that
+newline. The CR was a bad token, and the grammar's error recovery
+returned what it had read so far as the whole address and reported
+success. A two-line `From:` such as `Kohl's` on one line and the
+address on the next came back as the bare name with no host, which
+the caption showed as `Kohl's@???`. The lexer now treats a CR as
+whitespace.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all
