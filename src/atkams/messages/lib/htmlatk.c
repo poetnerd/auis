@@ -376,6 +376,37 @@ static const char *CssColorToX11(const char *value, char *outbuf, size_t outbufs
         return outbuf;
     }
 
+    /* CSS custom properties: var(--name) has no value here, since there
+       is no cascade to look it up in, so it gives no color unless it
+       names a fallback, var(--name, fallback), which is used.  Passed
+       through, they reached X as color names and logged "couldn't
+       parse color name var(--body-bg)" (Amazon, 2026-11-16). */
+    if (strncmp(tmp, "var(", 4) == 0) {
+        const char *fb, *res;
+        char fbuf[64];
+        int depth = 0;
+        size_t k;
+
+        for (fb = tmp + 4; *fb; ++fb) {
+            if (*fb == '(') ++depth;
+            else if (*fb == ')') { if (depth-- == 0) break; }
+            else if (*fb == ',' && depth == 0) break;
+        }
+        if (*fb != ',') return NULL;
+        strncpy(fbuf, fb + 1, sizeof(fbuf) - 1);
+        fbuf[sizeof(fbuf) - 1] = '\0';
+        k = strlen(fbuf);
+        if (k > 0 && fbuf[k - 1] == ')') fbuf[--k] = '\0';	/* var()'s own close */
+        res = CssColorToX11(fbuf, outbuf, outbufsz);
+        if (!res || res == outbuf) return res;
+        if (strlen(res) >= outbufsz) return NULL;		/* res points into fbuf: copy it out */
+        strcpy(outbuf, res);
+        return outbuf;
+    }
+    /* Any other function (hsl(), color-mix(), ...) isn't a color name
+       X knows: no color, rather than a warning per use. */
+    if (strchr(tmp, '(')) return NULL;
+
     return value;
 }
 
