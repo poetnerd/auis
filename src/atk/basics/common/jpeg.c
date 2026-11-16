@@ -105,6 +105,71 @@ static void JpegErrorInit(struct jpegerr *err)
     err->pub.output_message = JpegOutputMessage;
 }
 
+/* Returns the Exif orientation (1-8) from a saved APP1 marker, or 1.
+   Phone cameras store the sensor's pixels as shot and record the
+   rotation needed to show them upright in tag 0x0112 of the first
+   image directory. */
+static int ExifOrientation(struct jpeg_decompress_struct *cinfo)
+{
+    jpeg_saved_marker_ptr m;
+
+    for (m = cinfo->marker_list; m != NULL; m = m->next) {
+	unsigned char *d = m->data;
+	unsigned long len = m->data_length, ifd, n, i;
+	int big;
+
+	if (m->marker != JPEG_APP0 + 1 || len < 14 ||
+	    memcmp(d, "Exif\0\0", 6) != 0)
+	    continue;
+	d += 6; len -= 6;		/* offsets count from the TIFF header */
+	if (d[0] == 'M' && d[1] == 'M') big = 1;
+	else if (d[0] == 'I' && d[1] == 'I') big = 0;
+	else continue;
+#define EX16(p) (big ? ((p)[0] << 8 | (p)[1]) : ((p)[1] << 8 | (p)[0]))
+#define EX32(p) (big ? ((unsigned long) EX16(p) << 16 | EX16((p) + 2)) \
+		     : ((unsigned long) EX16((p) + 2) << 16 | EX16(p)))
+	ifd = EX32(d + 4);
+	if (ifd > len - 2)
+	    continue;
+	n = EX16(d + ifd);
+	for (i = 0; i < n && ifd + 2 + 12 * (i + 1) <= len; i++) {
+	    unsigned char *e = d + ifd + 2 + 12 * i;
+
+	    if (EX16(e) == 0x0112 && EX16(e + 2) == 3) {
+		int o = EX16(e + 8);
+
+		return (o >= 1 && o <= 8) ? o : 1;
+	    }
+	}
+#undef EX16
+#undef EX32
+    }
+    return 1;
+}
+
+/* Copies a w x h image of ncomp-byte pixels from src to dst, applying
+   Exif orientation o.  For 5-8 dst is h wide and w tall. */
+static void Orient(unsigned char *src, unsigned char *dst, long w, long h,
+		   int ncomp, int o)
+{
+    long x, y, X, Y, ow = (o >= 5) ? h : w;
+
+    for (y = 0; y < h; y++)
+	for (x = 0; x < w; x++) {
+	    switch (o) {
+		case 2: X = w - 1 - x; Y = y; break;		/* mirror */
+		case 3: X = w - 1 - x; Y = h - 1 - y; break;	/* 180 */
+		case 4: X = x; Y = h - 1 - y; break;		/* flip */
+		case 5: X = y; Y = x; break;			/* transpose */
+		case 6: X = h - 1 - y; Y = x; break;		/* 90 cw */
+		case 7: X = h - 1 - y; Y = w - 1 - x; break;	/* transverse */
+		case 8: X = y; Y = w - 1 - x; break;		/* 90 ccw */
+		default: X = x; Y = y; break;
+	    }
+	    memcpy(dst + (Y * ow + X) * ncomp, src + (y * w + x) * ncomp, ncomp);
+	}
+}
+
 long jpeg__WriteNative(struct jpeg *jpeg, FILE *file, char *filename)
 {
     FILE *fp;
@@ -145,10 +210,11 @@ int LoadJFIF(struct jpeg *jpeg, char *fname, FILE *f)
     struct jpegerr jerr;
     FILE *volatile in = f;
     unsigned char *volatile row = NULL;
+    unsigned char *volatile pix = NULL;
     JSAMPROW rowp;
     byte *out;
     long w, h, x;
-    int i, ncomp;
+    int i, ncomp, pixlen, orient;
 
     if (in == NULL) {
 	if (fname == NULL || (in = fopen(fname, "r")) == NULL)
@@ -159,12 +225,15 @@ int LoadJFIF(struct jpeg *jpeg, char *fname, FILE *f)
     if (setjmp(jerr.jmp)) {
 	jpeg_destroy_decompress(&cinfo);
 	if (row) free(row);
+	if (pix) free(pix);
 	if (in != f) fclose(in);
 	return(-1);
     }
     jpeg_create_decompress(&cinfo);
     jpeg_stdio_src(&cinfo, in);
+    jpeg_save_markers(&cinfo, JPEG_APP0 + 1, 0xFFFF);
     jpeg_read_header(&cinfo, TRUE);
+    orient = ExifOrientation(&cinfo);
     switch (cinfo.jpeg_color_space) {
 	case JCS_GRAYSCALE:
 	    cinfo.out_color_space = JCS_GRAYSCALE;
@@ -183,11 +252,21 @@ int LoadJFIF(struct jpeg *jpeg, char *fname, FILE *f)
     w = cinfo.output_width;
     h = cinfo.output_height;
     ncomp = cinfo.output_components;
-    if (cinfo.out_color_space == JCS_GRAYSCALE)
-	jpeg_newGreyImage(jpeg, w, h, 8);
-    else
-	jpeg_newTrueImage(jpeg, w, h);
-    out = jpeg_Data(jpeg);
+    pixlen = (cinfo.out_color_space == JCS_GRAYSCALE) ? 1 : 3;
+    /* An oriented image is decoded into pix, then turned into place. */
+    if (orient != 1) {
+	pix = (unsigned char *) malloc(w * h * pixlen);
+	if (pix == NULL)
+	    longjmp(jerr.jmp, 1);
+	out = pix;
+    }
+    else {
+	if (pixlen == 1)
+	    jpeg_newGreyImage(jpeg, w, h, 8);
+	else
+	    jpeg_newTrueImage(jpeg, w, h);
+	out = jpeg_Data(jpeg);
+    }
     row = (unsigned char *) malloc(w * ncomp);
     if (row == NULL)
 	longjmp(jerr.jmp, 1);
@@ -220,6 +299,17 @@ int LoadJFIF(struct jpeg *jpeg, char *fname, FILE *f)
     free(row);
     if (in != f)
 	fclose(in);
+
+    if (pix) {
+	long ow = (orient >= 5) ? h : w, oh = (orient >= 5) ? w : h;
+
+	if (pixlen == 1)
+	    jpeg_newGreyImage(jpeg, ow, oh, 8);
+	else
+	    jpeg_newTrueImage(jpeg, ow, oh);
+	Orient(pix, jpeg_Data(jpeg), w, h, pixlen, orient);
+	free(pix);
+    }
 
     if (jpeg_Type(jpeg) == IGREYSCALE) {
 	jpeg_RGBUsed(jpeg) = jpeg_RGBSize(jpeg) = 256;
