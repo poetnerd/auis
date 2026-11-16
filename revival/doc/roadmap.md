@@ -837,9 +837,11 @@ being front-loaded here.
         bordered floated table lost its only line of text. Found with a
         float test page (`LPAIR_TRACE`, temporary).
 
-  17. LinkedIn (fixtures `linkedin-post.html`, untracked, from the
+  17. LinkedIn (fixtures `revival/tests/linkedin-post.html`, from the
       Nov 14 "Sam Brauer … posted" digest, and
-      `revival/tests/linkedin-debug.html`):
+      `revival/tests/linkedin-debug.html`; recipient name, address and
+      tracking links scrubbed, as in `revival/tests/economist.html` and
+      the raw message `revival/tests/LinkedIn`):
       - **RESOLVED 2026-11-14**, wdc-confirmed (LinkedIn, Economist,
         National Grid, bookrack): outlined buttons ("See post") drew
         as solid black. Their background is `rgba(0,0,0,0)`, and
