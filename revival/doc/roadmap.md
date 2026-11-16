@@ -1073,7 +1073,8 @@ being front-loaded here.
         superscript/subscript (raised 6pt / lowered 2pt, 2pt smaller).
       - The rest of the layout. **RESOLVED 2026-11-16**, wdc-confirmed
         against Thunderbird ("100% correct"; regression pass clean).
-        Fixture `amazon.html` (untracked, checkout root).
+        Fixture `revival/tests/amazon.html` (name, town, order number
+        and tracking links scrubbed).
         - Progress tracker missing. Its lines are little tables of 7,
           4 and 7px rows, the 4px row styled `background:#0064F9`.
           The CSS `background` shorthand was dropped by the style
