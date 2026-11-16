@@ -1,0 +1,682 @@
+Reply/forward subject and forwarding work, explored 2026-11-15 and set
+aside for a dedicated "forwarding in a modern MIME world" project (see
+revival/doc/roadmap.md).  All tested live except where noted.
+
+- mimepart.c/.h, mimeparttest.c: mimepart_DecodeHeaderLossless (NULL
+  when any character would become '?'), and mimepart_EncodeHeader
+  (Latin-1 -> =?ISO-8859-1?Q?...?= words, 75-char words, 76-col folds).
+  mimeparttest gains "lossless" and "encode" modes.
+- reply.c: Re:/Fwd: subjects decoded when lossless, else kept raw.
+  Set aside because lossy subjects (emoji, other scripts) still show
+  raw, which is confusing.
+- submsg.c: EncodeSubject encodes an 8-bit outgoing Subject on normal
+  sends (not resends).  Worth keeping on its own: today a Subject typed
+  with accents goes out as raw 8-bit.
+- text822.c: message/rfc822 parts rendered inline (1994 behavior)
+  instead of as "[attachment: ...]"; DISPLAY_KEY_HEADERS shows only
+  Date/From/To/Cc/Subject of an enclosed message; in a draft, the
+  enclosed message's HTML shown as plain text; plain-text mode prefers
+  text/plain alternatives.  Without this, forwarding sends a one-line
+  "[attachment: unnamed (message/rfc822, N bytes)]" in place of the
+  forwarded message (a regression from the revival's multipart/mixed
+  handling).
+- htmltext.c: no "(url)" suffix when a link's text is its own URL, or a
+  mailto: shown as the bare address.
+
+Apply from the checkout root with: patch -p0 < patches/forwarding-mime-wip.patch
+
+Index: src/ams/libs/hdrs/mimepart.h
+==================================================================
+--- src/ams/libs/hdrs/mimepart.h
++++ src/ams/libs/hdrs/mimepart.h
+@@ -237,6 +237,21 @@
+    dropped, as RFC 2047 requires; a malformed one is left as is.
+    Returns a malloc'd, NUL-terminated string (caller frees); NULL only
+    on allocation failure. */
+ char *mimepart_DecodeHeader(const char *in, long len);
+ 
++/* As mimepart_DecodeHeader, but returns NULL (keep the original) if
++   any character would become '?': emoji, other scripts, unknown
++   charsets.  Invisible characters dropped and curly quotes or dashes
++   made ASCII don't count as loss. */
++char *mimepart_DecodeHeaderLossless(const char *in, long len);
++
++/* Encodes a Latin-1 header value for sending: each word with 8-bit
++   bytes, or that looks like an encoded-word, becomes
++   =?ISO-8859-1?Q?...?= (75 characters at most each), other words stay
++   as they are, whitespace and folds collapse to single spaces, and
++   lines fold at 76 columns.  startcol is the column the value starts
++   at (the header name and ": ").  Returns a malloc'd string, NULL only
++   on allocation failure. */
++char *mimepart_EncodeHeader(const char *in, long len, long startcol);
++
+ #endif /* MIMEPART_H */
+
+Index: src/ams/libs/ms/reply.c
+==================================================================
+--- src/ams/libs/ms/reply.c
++++ src/ams/libs/ms/reply.c
+@@ -35,10 +35,12 @@
+ #include <stdio.h>
+ #include <ctype.h>
+ #include <ms.h>
+ #include <hdrparse.h>
+ #include <stdlib.h>
++#include <string.h>
++#include <mimepart.h>	/* mimepart_DecodeHeaderLossless */
+ extern int BuildReplyField(struct MS_Message *Msg);
+ extern int BuildWideReply(struct MS_Message *Msg, Boolean IncludeFrom);
+ extern int EmitHeader(struct MS_Message *Msg, int which, FILE *fp, char *head);
+ extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+ extern int GenTempName(char *Buf);
+@@ -124,22 +126,45 @@
+ 		FreeMessage(Msg, TRUE);
+ 		fclose(fp);
+ 		return(mserrcode);
+ 	    }
+ 	}
++	/* The reply's subject is the original's, RFC 2047 encoded-words
++	   decoded when nothing would be lost (an emoji or another script
++	   would become '?'; then the encoded text is kept, and still reads
++	   right at the other end).  An accented subject is re-encoded on
++	   sending (submsg.c, EncodeSubject). */
+ 	len = Msg->ParsedStuff->HeadBodyLen[HP_SUBJECT];
+-	Subject = malloc(10 + len);
+-	if (Subject == NULL) {
+-	    fclose(fp);
+-	    FreeMessage(Msg, TRUE);
+-	    AMS_RETURN_ERRCODE(ENOMEM, EIN_MALLOC, EVIA_NAMEREPLYFILE);
++	{
++	    char *raw = malloc(len + 1), *dec = NULL;
++
++	    if (raw == NULL) {
++		fclose(fp);
++		FreeMessage(Msg, TRUE);
++		AMS_RETURN_ERRCODE(ENOMEM, EIN_MALLOC, EVIA_NAMEREPLYFILE);
++	    }
++	    if (len > 0) strncpy(raw, Msg->ParsedStuff->HeadBody[HP_SUBJECT], len);
++	    raw[len > 0 ? len : 0] = '\0';
++	    if (strstr(raw, "=?") && (dec = mimepart_DecodeHeaderLossless(raw, (long) strlen(raw))) != NULL) {
++		free(raw);
++		raw = dec;
++	    }
++	    len = strlen(raw);
++	    Subject = malloc(10 + len);
++	    if (Subject == NULL) {
++		free(raw);
++		fclose(fp);
++		FreeMessage(Msg, TRUE);
++		AMS_RETURN_ERRCODE(ENOMEM, EIN_MALLOC, EVIA_NAMEREPLYFILE);
++	    }
++	    strcpy(Subject, ((code == AMS_REPLY_FORWARD) || (code == AMS_REPLY_FORWARD_FMT)) ? "Fwd: " : "Re: ");
++	    strcat(Subject, raw);
++	    free(raw);
+ 	}
+-	strcpy(Subject, ((code == AMS_REPLY_FORWARD) || (code == AMS_REPLY_FORWARD_FMT)) ? "Fwd: " : "Re: ");
+ 	if (len > 0) {
+ 	    char *NewSub;
+ 
+-	    strncat(Subject, Msg->ParsedStuff->HeadBody[HP_SUBJECT], len);
+ 	    NewSub = RewriteSubject(Subject);
+ 	    free(Subject);
+ 	    if (!NewSub) {
+ 		fclose(fp);
+ 		FreeMessage(Msg, TRUE);
+
+Index: src/ams/libs/ms/submsg.c
+==================================================================
+--- src/ams/libs/ms/submsg.c
++++ src/ams/libs/ms/submsg.c
+@@ -41,10 +41,11 @@
+ #include <mailconf.h>
+ #include <parseadd.h>
+ #include <mail.h>
+ #include <stdlib.h>
+ #include <sys/stat.h>
++#include <mimepart.h>	/* mimepart_EncodeHeader */
+ static int AddNamesToVector(char ***pVec, int *index, int *maxindex, char *namelist, int len);
+ static char    * newreceived(char *ClientVersion);
+ extern int AddHeader(struct MS_Message *Msg, char *Head);
+ extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+ extern int BuildAttributesField(struct MS_Message *msg);
+@@ -77,10 +78,46 @@
+ extern char     Me[], *MyPrettyAddress, *BCCto, home[], *NextAddress(char *add);
+ extern int      BCCFlag, IsLoggingMailStats, myvuid, errno, MS_DeliveryType;
+ 
+ static char     ThisHost[150] = "";
+ 
++
++/* Headers must be 7-bit (RFC 5322).  A Subject typed with accents, or
++   a reply's decoded subject (reply.c), is Latin-1, so its 8-bit words
++   go out as RFC 2047 encoded-words.  Other headers are left as they
++   are: encoding inside address phrases must respect address syntax. */
++static int EncodeSubject(struct MS_Message *Msg)
++{
++    char *subj, *enc, *head;
++    long len = Msg->ParsedStuff->HeadBodyLen[HP_SUBJECT], i;
++    int high = 0;
++
++    if (Msg->ParsedStuff->HeadBody[HP_SUBJECT] == NULL || len <= 0) return 0;
++    for (i = 0; i < len; ++i)
++        if ((unsigned char) Msg->ParsedStuff->HeadBody[HP_SUBJECT][i] >= 0x80) high = 1;
++    if (!high) return 0;
++    subj = malloc(len + 1);
++    if (subj == NULL) AMS_RETURN_ERRCODE(ENOMEM, EIN_MALLOC, EVIA_SUBMITMESSAGE);
++    strncpy(subj, Msg->ParsedStuff->HeadBody[HP_SUBJECT], len);
++    subj[len] = '\0';
++    enc = mimepart_EncodeHeader(subj, len, 9);	/* after "Subject: " */
++    free(subj);
++    if (enc == NULL) AMS_RETURN_ERRCODE(ENOMEM, EIN_MALLOC, EVIA_SUBMITMESSAGE);
++    head = malloc(strlen(enc) + 10);
++    if (head == NULL) {
++        free(enc);
++        AMS_RETURN_ERRCODE(ENOMEM, EIN_MALLOC, EVIA_SUBMITMESSAGE);
++    }
++    sprintf(head, "Subject: %s", enc);
++    free(enc);
++    if (DeleteHeader(Msg, HP_SUBJECT) || AddHeader(Msg, head)) {
++        free(head);
++        return mserrcode;
++    }
++    free(head);
++    return 0;
++}
+ 
+ char           *newmid()
+ {
+     static char     MidText[300];
+     char           *IdBuf, *s;
+@@ -326,10 +363,15 @@
+         sprintf(NewHeads, "%sMessage-ID: %s\nDate: %sFrom: %s",
+           newreceived(ClientProgram), newmid(), arpadate(), MyPrettyAddress);
+         if (Msg->ParsedStuff->HeadBody[HP_SUBJECT] == NULL) {   /* OK in resend */
+             FreeMessage(Msg, TRUE);
+             AMS_RETURN_ERRCODE(EMSNOSUBJ, EIN_PARAMCHECK, EVIA_SUBMITMESSAGE);
++        }
++        if (EncodeSubject(Msg)) {
++            int errsave = mserrcode;
++            FreeMessage(Msg, TRUE);
++            return errsave;
+         }
+     }
+     AddHeader(Msg, NewHeads);
+     if (DeliveryOptions & AMS_SEND_ISRESEND) {
+         badparse = AddNamesToVector(&SubmitVector, &which, &maxwhich, Msg->ParsedStuff->HeadBody[HP_RESENTTO], Msg->ParsedStuff->HeadBodyLen[HP_RESENTTO]);
+
+Index: src/ams/libs/shr/htmltext.c
+==================================================================
+--- src/ams/libs/shr/htmltext.c
++++ src/ams/libs/shr/htmltext.c
+@@ -252,16 +252,31 @@
+ {
+     ensure_para_break(b);
+     htbuf_puts(b, "----------------------------------------");
+     ensure_para_break(b);
+ }
++
++/* Whether the text just emitted (b's tail, trailing spaces aside)
++   already is s. */
++static int buffer_ends_with(const struct htbuf *b, const char *s)
++{
++    long n = (long) strlen(s), e = b->len;
++
++    while (e > 0 && b->data[e - 1] == ' ') --e;
++    return n > 0 && e >= n && strncmp(b->data + e - n, s, n) == 0;
++}
+ 
+ static void emit_href_suffix(struct htbuf *b, const struct htmlnode *n)
+ {
+     const char *href = htmlpart_GetAttr(n, "href");
+ 
+     if (!href || !href[0]) return;
++    /* A link whose text is its own address needs no "(address)":
++       "https://x (https://x)" read as markup, not a link
++       (2026-11-15).  Likewise a mailto: shown as the bare address. */
++    if (buffer_ends_with(b, href)) return;
++    if (strncasecmp(href, "mailto:", 7) == 0 && buffer_ends_with(b, href + 7)) return;
+     maybe_space(b);
+     htbuf_putc(b, '(');
+     htbuf_puts(b, href);
+     htbuf_putc(b, ')');
+ }
+
+Index: src/ams/libs/shr/mimepart.c
+==================================================================
+--- src/ams/libs/shr/mimepart.c
++++ src/ams/libs/shr/mimepart.c
+@@ -833,11 +833,11 @@
+    buffer never needs to grow for this. Deliberately narrow: this is
+    not a Unicode-support step, just an ASCII-fallback table for the
+    punctuation real-world templates lean on hardest -- see the design
+    doc's Open questions for why genuinely different scripts (Cyrillic,
+    Hebrew, Arabic, Bengali, CJK, ...) have no equivalent fix. */
+-static int emit_smart_punct(unsigned char *out, long o, long cp)
++static int emit_smart_punct(unsigned char *out, long o, long cp, int *lossy)
+ {
+     switch (cp) {
+     case 0x2018: /* LEFT SINGLE QUOTATION MARK */
+     case 0x2019: /* RIGHT SINGLE QUOTATION MARK */
+         out[o++] = '\'';
+@@ -874,17 +874,29 @@
+     case 0x200B: case 0x200C: case 0x200D: case 0x200E: case 0x200F:
+     case 0x2060: case 0xFEFF:
+         break;
+     default:
+         out[o++] = '?';
++        *lossy = 1;
+         break;
+     }
+     return (int) o;
+ }
+ 
++/* *lossy is set when a character has no Latin-1 or ASCII stand-in and
++   becomes '?' (invisible characters dropped, and curly quotes and
++   dashes made ASCII, don't count). */
++static unsigned char *utf8_to_latin1(const unsigned char *in, long inlen, long *outlenp, int *lossy);
++
+ unsigned char *mimepart_Utf8ToLatin1(const unsigned char *in, long inlen, long *outlenp)
+ {
++    int lossy = 0;
++    return utf8_to_latin1(in, inlen, outlenp, &lossy);
++}
++
++static unsigned char *utf8_to_latin1(const unsigned char *in, long inlen, long *outlenp, int *lossy)
++{
+     unsigned char *out = (unsigned char *) malloc(inlen + 1 > 0 ? inlen + 1 : 1);
+     long i = 0, o = 0;
+ 
+     if (!out) { if (outlenp) *outlenp = 0; return NULL; }
+     while (i < inlen) {
+@@ -892,23 +904,25 @@
+         if (c < 0x80) {
+             out[o++] = c; ++i;
+         } else if ((c & 0xE0) == 0xC0 && i + 1 < inlen && (in[i+1] & 0xC0) == 0x80) {
+             long cp = ((c & 0x1F) << 6) | (in[i+1] & 0x3F);
+             if (cp != 0x034F && cp != 0x00AD) /* COMBINING GRAPHEME JOINER, SOFT HYPHEN: invisible */
+-                out[o++] = (cp <= 0xFF) ? (unsigned char) cp : '?';
++                { if (cp <= 0xFF) out[o++] = (unsigned char) cp; else { out[o++] = '?'; *lossy = 1; } }
+             i += 2;
+         } else if ((c & 0xF0) == 0xE0 && i + 2 < inlen
+                    && (in[i+1] & 0xC0) == 0x80 && (in[i+2] & 0xC0) == 0x80) {
+             long cp = ((c & 0x0F) << 12) | ((in[i+1] & 0x3F) << 6) | (in[i+2] & 0x3F);
+-            o = emit_smart_punct(out, o, cp);
++            o = emit_smart_punct(out, o, cp, lossy);
+             i += 3;
+         } else if ((c & 0xF8) == 0xF0 && i + 3 < inlen
+                    && (in[i+1] & 0xC0) == 0x80 && (in[i+2] & 0xC0) == 0x80 && (in[i+3] & 0xC0) == 0x80) {
+             out[o++] = '?'; /* always > 0xFF */
++            *lossy = 1;
+             i += 4;
+         } else {
+             out[o++] = '?';
++            *lossy = 1;
+             ++i;
+         }
+     }
+     out[o] = '\0';
+     if (outlenp) *outlenp = o;
+@@ -917,18 +931,18 @@
+ 
+ /* ---- RFC 2047 encoded-words in headers ---- */
+ 
+ /* Appends len bytes in charset cs to out at *op, as Latin-1. */
+ static void emit_charset(char *out, long *op, const char *cs, long cslen,
+-                         const unsigned char *b, long len)
++                         const unsigned char *b, long len, int *lossy)
+ {
+     long i, o = *op;
+ 
+ #define CSIS(name) (cslen == (long) strlen(name) && strncasecmp(cs, name, cslen) == 0)
+     if (CSIS("utf-8") || CSIS("utf8")) {
+         long n;
+-        unsigned char *l = mimepart_Utf8ToLatin1(b, len, &n);
++        unsigned char *l = utf8_to_latin1(b, len, &n, lossy);
+         if (l) { memcpy(out + o, l, n); o += n; free(l); }
+     } else if (CSIS("iso-8859-1") || CSIS("latin1") || CSIS("us-ascii")) {
+         memcpy(out + o, b, len); o += len;
+     } else if (CSIS("windows-1252") || CSIS("cp1252")) {
+         for (i = 0; i < len; i++) {
+@@ -936,22 +950,45 @@
+             case 0x91: case 0x92: out[o++] = '\''; break;
+             case 0x93: case 0x94: out[o++] = '"'; break;
+             case 0x96: out[o++] = '-'; break;
+             case 0x97: out[o++] = '-'; out[o++] = '-'; break;
+             case 0x85: out[o++] = '.'; out[o++] = '.'; out[o++] = '.'; break;
+-            default: out[o++] = (b[i] >= 0x80 && b[i] < 0xA0) ? '?' : b[i]; break;
++            default:
++                if (b[i] >= 0x80 && b[i] < 0xA0) { out[o++] = '?'; *lossy = 1; }
++                else out[o++] = b[i];
++                break;
+             }
+         }
+     } else {
+-        for (i = 0; i < len; i++) out[o++] = (b[i] < 0x80) ? b[i] : '?';
++        for (i = 0; i < len; i++) {
++            if (b[i] < 0x80) out[o++] = b[i];
++            else { out[o++] = '?'; *lossy = 1; }
++        }
+     }
+ #undef CSIS
+     *op = o;
+ }
+ 
++static char *decode_header(const char *in, long len, int *lossy);
++
+ char *mimepart_DecodeHeader(const char *in, long len)
+ {
++    int lossy = 0;
++    return decode_header(in, len, &lossy);
++}
++
++char *mimepart_DecodeHeaderLossless(const char *in, long len)
++{
++    int lossy = 0;
++    char *d = decode_header(in, len, &lossy);
++
++    if (d && lossy) { free(d); d = NULL; }
++    return d;
++}
++
++static char *decode_header(const char *in, long len, int *lossy)
++{
+     /* Decoding never grows the text except Windows-1252's ellipsis
+        (one byte, at least three encoded) and em dash; 3x is ample. */
+     char *out = (char *) malloc(len * 3 + 1);
+     long i = 0, o = 0, afterword = -1;
+ 
+@@ -999,11 +1036,11 @@
+                     }
+                 }
+                 if (b && blen >= 0) {
+                     if (afterword >= 0)
+                         o = afterword;	/* only whitespace since the last word */
+-                    emit_charset(out, &o, in + cs, cslen, b, blen);
++                    emit_charset(out, &o, in + cs, cslen, b, blen, lossy);
+                     free(b);
+                     afterword = o;
+                     i = end + 2;
+                     continue;
+                 }
+@@ -1011,9 +1048,97 @@
+             }
+         }
+         if (!isspace((unsigned char) in[i]))
+             afterword = -1;
+         out[o++] = in[i++];
++    }
++    out[o] = '\0';
++    return out;
++}
++
++/* ---- RFC 2047 encoding, for outgoing headers ---- */
++
++/* Q-encoding keeps letters, digits and these literally (RFC 2047 5(3),
++   the safe set for any header); a space becomes '_'. */
++static int q_literal(unsigned char c)
++{
++    return (c < 0x80 && isalnum(c)) || c == '!' || c == '*' || c == '+' || c == '-' || c == '/';
++}
++
++#define EW_PREFIX "=?ISO-8859-1?Q?"
++#define EW_MAX 75		/* longest encoded-word (RFC 2047 2) */
++#define LINE_MAX_LEN 76
++
++/* Appends s to the growing output, folding first ("\n ") if the
++   current line would pass LINE_MAX_LEN.  sep is the separator before
++   s on the same line (" ", or "" at the start). */
++static void enc_append(char *out, long *op, long *linelen, const char *s, const char *sep)
++{
++    long n = (long) strlen(s), sn = (long) strlen(sep);
++
++    if (*linelen > 0 && *linelen + sn + n > LINE_MAX_LEN) {
++        memcpy(out + *op, "\n ", 2); *op += 2;
++        *linelen = 1;
++    } else if (sn) {
++        memcpy(out + *op, sep, sn); *op += sn;
++        *linelen += sn;
++    }
++    memcpy(out + *op, s, n); *op += n;
++    *linelen += n;
++}
++
++char *mimepart_EncodeHeader(const char *in, long len, long startcol)
++{
++    /* Each byte becomes at most 3 ("=XX"), plus encoded-word framing
++       and folds; 8x is ample. */
++    char *out = (char *) malloc(len * 8 + 64), word[EW_MAX + 1];
++    long i = 0, o = 0, linelen = startcol;
++    int first = 1, prevenc = 0;
++
++    if (!out) return NULL;
++    while (i < len) {
++        long ws, we, k;
++        int high = 0;
++
++        while (i < len && isspace((unsigned char) in[i])) ++i;	/* folds too */
++        if (i >= len) break;
++        ws = i;
++        while (i < len && !isspace((unsigned char) in[i])) {
++            if ((unsigned char) in[i] >= 0x80) high = 1;
++            ++i;
++        }
++        we = i;
++        if (!high && !(we - ws >= 2 && in[ws] == '=' && in[ws + 1] == '?')) {
++            long n = we - ws;
++            char *w = (char *) malloc(n + 1);
++            if (!w) break;
++            memcpy(w, in + ws, n); w[n] = '\0';
++            enc_append(out, &o, &linelen, w, first ? "" : " ");
++            free(w);
++            prevenc = 0;
++        } else {
++            /* One or more encoded-words.  A decoder drops whitespace
++               between adjacent encoded-words, so the space before this
++               word goes inside it, as '_'. */
++            long wl = 0;
++            strcpy(word, EW_PREFIX); wl = (long) strlen(word);
++            if (prevenc) word[wl++] = '_';
++            for (k = ws; k < we; ++k) {
++                unsigned char c = (unsigned char) in[k];
++                if (wl + 3 + 2 > EW_MAX) {	/* room for "=XX" and "?=" */
++                    word[wl++] = '?'; word[wl++] = '='; word[wl] = '\0';
++                    enc_append(out, &o, &linelen, word, first ? "" : " ");
++                    first = 0;
++                    strcpy(word, EW_PREFIX); wl = (long) strlen(word);
++                }
++                if (q_literal(c)) word[wl++] = (char) c;
++                else wl += sprintf(word + wl, "=%02X", c);
++            }
++            word[wl++] = '?'; word[wl++] = '='; word[wl] = '\0';
++            enc_append(out, &o, &linelen, word, first ? "" : " ");
++            prevenc = 1;
++        }
++        first = 0;
+     }
+     out[o] = '\0';
+     return out;
+ }
+
+Index: src/ams/libs/shr/mimeparttest.c
+==================================================================
+--- src/ams/libs/shr/mimeparttest.c
++++ src/ams/libs/shr/mimeparttest.c
+@@ -220,15 +220,35 @@
+     char *d = mimepart_DecodeHeader(value, (long) strlen(value));
+     printf("[%s]\n", d ? d : "(null)");
+     free(d);
+     return 0;
+ }
++
++/* Lossless decode of one header value: prints (null) if lossy. */
++static int do_lossless(const char *value)
++{
++    char *d = mimepart_DecodeHeaderLossless(value, (long) strlen(value));
++    printf("[%s]\n", d ? d : "(null)");
++    free(d);
++    return 0;
++}
++
++/* Encodes one Latin-1 value for a "Subject: " header, then decodes it
++   back, printing both. */
++static int do_encode(const char *value)
++{
++    char *e = mimepart_EncodeHeader(value, (long) strlen(value), 9);
++    char *d = e ? mimepart_DecodeHeader(e, (long) strlen(e)) : NULL;
++    printf("Subject: %s\n<- [%s]\n", e ? e : "(null)", d ? d : "(null)");
++    free(e); free(d);
++    return 0;
++}
+ 
+ int main(int argc, char **argv)
+ {
+     if (argc < 3) {
+-        fprintf(stderr, "usage: mimeparttest.test dump|select|decodepart|htmlstrip|charset|header ...\n");
++        fprintf(stderr, "usage: mimeparttest.test dump|select|decodepart|htmlstrip|charset|header|lossless|encode ...\n");
+         return 2;
+     }
+     if (strcmp(argv[1], "dump") == 0) {
+         return do_dump(argv[2]);
+     } else if (strcmp(argv[1], "select") == 0 && argc == 4) {
+@@ -238,10 +258,13 @@
+     } else if (strcmp(argv[1], "htmlstrip") == 0 && argc == 4) {
+         return do_htmlstrip(argv[2], argv[3]);
+     } else if (strcmp(argv[1], "charset") == 0 && argc == 4) {
+         return do_charset(argv[2], argv[3]);
+     } else if (strcmp(argv[1], "header") == 0) {
+-        return do_header(argv[2]);
++        return do_header(argv[2]);    } else if (strcmp(argv[1], "lossless") == 0) {
++        return do_lossless(argv[2]);
++    } else if (strcmp(argv[1], "encode") == 0) {
++        return do_encode(argv[2]);
+     }
+-    fprintf(stderr, "usage: mimeparttest.test dump|select|decodepart|htmlstrip|charset|header ...\n");
++    fprintf(stderr, "usage: mimeparttest.test dump|select|decodepart|htmlstrip|charset|header|lossless|encode ...\n");
+     return 2;
+ }
+
+Index: src/atkams/messages/lib/text822.c
+==================================================================
+--- src/atkams/messages/lib/text822.c
++++ src/atkams/messages/lib/text822.c
+@@ -377,16 +377,33 @@
+     if (!strcmp(t, "fixed")) return("typewriter");
+     if (!strcmp(t, "excerpt")) return("quotation");
+     /* Really ought to handle ISO-10646 and ISO-8859-X somehow */
+     return(t);
+ }
++
++/* DisplayAllHeaders values: 0, the usual choice of headers; 1, every
++   header (1994's choice for an enclosed message); DISPLAY_KEY_HEADERS,
++   only these, as Thunderbird shows an enclosed or forwarded message.
++   Modern mail carries dozens of Received/ARC/DKIM/spam headers, which
++   a forward showed in full (2026-11-15). */
++#define DISPLAY_KEY_HEADERS 2
++static int IsKeyHeader(const char *name)
++{
++    static const char *keys[] = { "date", "from", "to", "cc", "subject", NULL };
++    int i;
++
++    for (i = 0; keys[i]; ++i)
++	if (!amsutil_lc2strncmp((char *) keys[i], (char *) name, 1000)) return 1;
++    return 0;
++}
+ 
+ static boolean ReadMessage(struct text822 *d, FILE *fp, int Mode, char *ContentTypeOverride, int *len, boolean IsReallyTextObject, int *BodyStart, int *IgnorePosition, struct text *AuxHeadText, int InsideRecursion, int AlternativeNumber, int JunkAtEnd, int DisplayAllHeaders)
+ {
+     struct environment *et;
+     char LineBuf[10000], ScribeFormatVersion[100], *ColonLocation, c, ContentType[400], ContentEncoding[50], ContentDescription[200], Subject[200];
+     int HighlightThisOne, ShowPos, linelen, ColonOffset;
++    int KeySkip = 0;	/* DISPLAY_KEY_HEADERS: this header isn't shown */
+     boolean SawEndData;
+     int SVers, pos, fnlen, didbig, didsmall, ForceMet;
+     char fmttype[25], fmtvers[25], fmtresources[200], *sfmttype, *sfmtvers, *s, charsetbuf[100], *currentcharset;
+     char **MyHeadsArray;
+     static char *SendHeadsArray[] = {
+@@ -480,10 +497,11 @@
+ 		*ColonLocation = '\0';
+ 		ColonOffset = ColonLocation - LineBuf;
+ 	    } else {
+ 		ColonOffset = 0;
+ 	    }
++	    KeySkip = (DisplayAllHeaders == DISPLAY_KEY_HEADERS && !IsKeyHeader(LineBuf));
+ 	    if (!amsutil_lc2strncmp("content-type", LineBuf, sizeof(LineBuf))) {
+ 		if (!ColonLocation)
+ 		    strcpy(ContentType, "");
+ 		else {
+ 		    char *headerContent = (char *) malloc(strlen(ColonLocation+1) + 1);
+@@ -540,11 +558,11 @@
+ 	    if (HighlightThisOne) {
+ 
+ 		text_AlwaysInsertCharacters(AuxHeadText, hlen, LineBuf, linelen);
+ 		hlen += linelen;
+ 	    }
+-	} else if (!InsideRecursion || DisplayAllHeaders) {
++	} else if ((!InsideRecursion || DisplayAllHeaders) && !KeySkip) {
+ 	    /* Normal case -- put important ones in front, others in back */
+ 	    /* Shown with RFC 2047 encoded-words decoded.  Only the
+ 	       display copy: AuxHeadText above is sendmessage's editable
+ 	       header, which must stay encoded for sending. */
+ 	    char *ShowBuf = LineBuf, *decoded = NULL;
+@@ -555,11 +573,11 @@
+ 		showlen = strlen(decoded);
+ 	    }
+ 	    if (HighlightThisOne || DisplayAllHeaders) {
+ 		++didbig;
+ 		text822_AlwaysInsertCharacters(d, ShowPos, ShowBuf, showlen);
+-		if (DisplayAllHeaders) {
++		if (DisplayAllHeaders == 1) {
+ 		    et = environment_InsertStyle(((struct text *)d)->rootEnvironment, ShowPos-1, TinyStyle, 1);
+ 		    environment_SetLength(et, showlen);
+ 		    environment_SetStyle(et, FALSE, FALSE);
+ 		} else if (ColonOffset) {
+ 		    et = environment_InsertStyle(((struct text *)d)->rootEnvironment, ShowPos, BoldStyle, 1);
+@@ -985,11 +1003,15 @@
+ 	       buffer to hand mimepart_Parse as one multipart entity).
+ 	       "ams.preferplaintext" profile switch restores the old
+ 	       text/plain-first behavior. */
+ 	    struct mimepart *winner = NULL;
+ 	    int wi;
+-	    boolean preferPlain = environ_GetProfileSwitch("ams.preferplaintext", FALSE);
++	    /* Plain-text mode (MODE822_HTMLPLAINTEXT: a forward draft's
++	       enclosed message, or the user's choice) takes the sender's
++	       own text/plain rather than converting the HTML. */
++	    boolean preferPlain = environ_GetProfileSwitch("ams.preferplaintext", FALSE)
++		|| (Mode & MODE822_HTMLPLAINTEXT) != 0;
+ 	    char *firstType = preferPlain ? "text/plain" : "text/html";
+ 	    char *secondType = preferPlain ? "text/html" : "text/plain";
+ 	    for (wi = 0; wi < AltCount; ++wi) {
+ 		if (AltParts[wi] && !strcmp(AltParts[wi]->type, firstType)) { winner = AltParts[wi]; break; }
+ 	    }
+@@ -1111,10 +1133,31 @@
+ 	    }
+ 	    for (mi = 0; mi < MixedCount; ++mi) {
+ 		struct mimepart *p = MixedParts[mi];
+ 		char *fname;
+ 		if (!p || mi == textidx) continue;
++		/* An enclosed message is shown inline as a nested message
++		   with its headers, as 1994's text822 did for every
++		   message/rfc822 part (and as Thunderbird does).  A forward
++		   draft is exactly this (reply.c: a prefix part, then the
++		   original as message/rfc822), and listing it as an
++		   "[attachment: ...]" line made sendmessage send that line
++		   instead of the message (2026-11-15).  In a draft
++		   (AuxHeadText set) its HTML is shown as plain text, so the
++		   forward goes out as text rather than as layout insets. */
++		if (!strcmp(p->type, "message/rfc822") && p->body && p->bodylen > 0
++		    && ShowPos == text822_GetLength(d)) {
++		    FILE *mfp = fmemopen(p->body, (size_t) p->bodylen, "r");
++		    if (mfp) {
++			int mdum = 0;
++			int mmode = AuxHeadText ? (Mode | MODE822_HTMLPLAINTEXT) : Mode;
++			ReadMessage(d, mfp, mmode, NULL, len, IsReallyTextObject, &mdum, &mdum, NULL, 1, 0, JunkAtEnd, DISPLAY_KEY_HEADERS);
++			fclose(mfp);
++			ShowPos = text822_GetLength(d);
++			continue;
++		    }
++		}
+ 		fname = (char *) mimepart_GetDispParam(p, "filename");
+ 		if (!fname) fname = (char *) mimepart_GetParam(p, "name");
+ 		InsertAttachmentLine(d, &ShowPos, fname, p->type, p->bodylen);
+ 	    }
+ 	    for (mi = 0; mi < MixedCount; ++mi) {
+

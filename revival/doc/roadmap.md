@@ -646,6 +646,28 @@ being front-loaded here.
         now declares `%array`. `prettyn.c`'s `if (*RealFrom = '(')`
         is now `==`. `-recaption` also rebuilds captions whose sender
         starts with `@`.
+      - Reply and forward subjects, and forwarding itself, need a
+        project of their own: forwarding in a modern MIME world.
+        Explored 2026-11-15 and set aside at wdc's call; the work is
+        saved, with notes on each piece, in
+        `patches/forwarding-mime-wip.patch` (applies with `patch -p0`
+        from the checkout root). Current state:
+        - **Forwarding is broken.** `reply.c` builds a forward draft as
+          `multipart/mixed` with the original as `message/rfc822`, and
+          the revival's `multipart/mixed` handling in `text822.c` lists
+          that part as `[attachment: unnamed (message/rfc822, N
+          bytes)]`, which sendmessage then sends instead of the
+          message. The patch renders it inline with key headers only.
+        - Reply/forward subjects show raw `=?...?=`. Decoding only when
+          lossless (the patch) still leaves emoji and non-Latin
+          subjects raw, which is confusing; the real choice of what to
+          forward, and how, is the project's question.
+        - An outgoing Subject typed with accents goes out as raw 8-bit.
+          The patch's `EncodeSubject` (`submsg.c`) fixes that on its
+          own and could land separately.
+        - Resend keeps the whole original, headers and MIME intact,
+          adding only `ReSent-*` headers (`submsg.c`,
+          `AMS_SEND_ISRESEND`).
       - **RESOLVED 2026-11-14**, wdc-confirmed: serif `font-family`
         requests fell back to fontconfig's default face (Verdana).
         `htmlatk.c` kept only the first CSS family, usually a web font
