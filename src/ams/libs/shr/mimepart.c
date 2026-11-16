@@ -873,6 +873,11 @@ static int emit_smart_punct(unsigned char *out, long o, long cp)
        2026-09-28: two lines of "? ? ?" at the top of the body). */
     case 0x200B: case 0x200C: case 0x200D: case 0x200E: case 0x200F:
     case 0x2060: case 0xFEFF:
+    /* Bidirectional embeddings and isolates are invisible too: Amazon
+       wraps inserted values in U+2068/U+2069, which showed as "?1?
+       DVD item" and "Order # ?112-..." (2026-11-16). */
+    case 0x202A: case 0x202B: case 0x202C: case 0x202D: case 0x202E:
+    case 0x2066: case 0x2067: case 0x2068: case 0x2069:
         break;
     default:
         out[o++] = '?';
@@ -893,7 +898,7 @@ unsigned char *mimepart_Utf8ToLatin1(const unsigned char *in, long inlen, long *
             out[o++] = c; ++i;
         } else if ((c & 0xE0) == 0xC0 && i + 1 < inlen && (in[i+1] & 0xC0) == 0x80) {
             long cp = ((c & 0x1F) << 6) | (in[i+1] & 0x3F);
-            if (cp != 0x034F && cp != 0x00AD) /* COMBINING GRAPHEME JOINER, SOFT HYPHEN: invisible */
+            if (cp != 0x034F && cp != 0x00AD && cp != 0x061C) /* COMBINING GRAPHEME JOINER, SOFT HYPHEN, ARABIC LETTER MARK: invisible */
                 out[o++] = (cp <= 0xFF) ? (unsigned char) cp : '?';
             i += 2;
         } else if ((c & 0xF0) == 0xE0 && i + 2 < inlen
