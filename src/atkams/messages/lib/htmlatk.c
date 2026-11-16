@@ -77,6 +77,7 @@
 #include <dataobj.ih>
 #include <image.ih>
 #include <png.ih>
+#include <htmlimg.ih>
 #include <lset.ih>
 #include <lsetv.ih>
 #include <viewref.ih>
@@ -1344,8 +1345,11 @@ static void ScaleImageToDeclaredSize(struct dataobject **dobRef, const struct ht
     struct image *img = (struct image *) *dobRef;
     const char *wAttr = htmlpart_GetAttr(n, "width");
     const char *hAttr = htmlpart_GetAttr(n, "height");
-    long declaredW = wAttr ? strtol(wAttr, NULL, 10) : 0;
-    long declaredH = hAttr ? strtol(hAttr, NULL, 10) : 0;
+    /* ParseFixedPixelWidth, not strtol: strtol read width="100%" as
+       100 pixels, shrinking every full-width image to 100px (Kohl's,
+       2026-11-15).  Percentage widths are htmlimage's (ImagePercent). */
+    long declaredW = ParseFixedPixelWidth(wAttr);
+    long declaredH = ParseFixedPixelWidth(hAttr);
     long nativeW = image_Width(img);
     long nativeH = image_Height(img);
     long targetW, targetH, xzoom, yzoom;
@@ -1492,6 +1496,32 @@ static void RoundImageCorners(struct dataobject **dobRef, const struct htmlnode 
         }
 }
 
+static long CssPixelLength(const char *v);
+
+/* An <img>'s width as a percentage of its container (width="N%" or
+   CSS width: N%), or 0; *maxw gets its CSS max-width in pixels, or 0.
+   Such an image can't be sized here, since a cell's width isn't known
+   until layout: it becomes an htmlimage (htmlimg.ch), which
+   htmlimgview scales to fit the width it is given. */
+static long ImagePercent(const struct htmlnode *n, long *maxw)
+{
+    const char *wa = htmlpart_GetAttr(n, "width");
+    char *cw = htmlpart_GetStyleProp(n, "width"), *mw;
+    long pct = 0;
+    char *end;
+
+    if (cw && strchr(cw, '%')) pct = strtol(cw, &end, 10);
+    else if (!cw && wa && strchr(wa, '%')) pct = strtol(wa, &end, 10);
+    free(cw);
+    if (pct <= 0 || pct > 100) return 0;
+    *maxw = 0;
+    if ((mw = htmlpart_GetStyleProp(n, "max-width")) != NULL) {
+        *maxw = CssPixelLength(mw);
+        free(mw);
+    }
+    return pct;
+}
+
 static struct dataobject *ResolveImageDataObject(struct hax_state *st, const struct htmlnode *n,
                                                    boolean *outBeaconBlocked, char **outPlaceholderHint)
 {
@@ -1544,8 +1574,18 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
                `image` subclass -- image_SetNoBorder is only valid on
                the classes that actually have that field. */
             if (strcmp(dobClass, "raster") != 0) {
-                ScaleImageToDeclaredSize(&dob, n);
+                long maxw = 0, pct = ImagePercent(n, &maxw);
+                struct htmlimage *hi;
+
+                if (!pct) ScaleImageToDeclaredSize(&dob, n);
                 RoundImageCorners(&dob, n, st);
+                if (pct && (hi = (struct htmlimage *) class_NewObject("htmlimage")) != NULL) {
+                    image_Duplicate((struct image *) dob, (struct image *) hi);
+                    htmlimage_SetPercent(hi, pct);
+                    htmlimage_SetMaxWidth(hi, maxw);
+                    dataobject_Destroy(dob);
+                    dob = (struct dataobject *) hi;
+                }
                 image_SetNoBorder((struct image *) dob, TRUE);
             }
             free(bytes);
@@ -4526,7 +4566,15 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                     fixedpx = 1;
                 if (leaf) {
                     wlvec_push(&cells, leaf, weight, fixedpx);
-                    if (cells.count > 0) cells.items[cells.count - 1].px = CellDeclaredPixelWidth(td);
+                    /* A cell of images alone, with no declared width,
+                       weighs its images' natural width, as a browser
+                       sizes it: Kohl's hero is three such slices in a
+                       row, which an even split rescaled differently. */
+                    if (cells.count > 0) {
+                        long px = CellDeclaredPixelWidth(td);
+                        if (px <= 0 && (px = LsetFixedContentWidth(leaf)) < 0) px = 0;
+                        cells.items[cells.count - 1].px = px;
+                    }
                     rowWeight += weight; ++realCells;
                 }
                 col += weight;
