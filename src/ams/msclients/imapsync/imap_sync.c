@@ -84,6 +84,7 @@
 #include <netrc.h>
 #include <imap_prot.h>
 #include <ams.h>		/* AMS_IDSIZE, AMS_DATESIZE, mserrcode/AMS_ERR* macros */
+#include <ms.h>			/* struct MS_Message, for -recaption */
 
 struct sync_state;	/* file-scope tag, defined below -- forward declared
 			   here so the prototypes below share it rather than
@@ -1979,10 +1980,118 @@ static char *expand_home(const char *path, char *buf, size_t buflen)
     return buf;
 }
 
+/* ---------------------------------------------------------------- */
+/* -recaption: rebuild stored captions                              */
+/* ---------------------------------------------------------------- */
+
+/* A caption is built once, when a message is filed, and stored in the
+   folder's snapshot.  Captions filed before RFC 2047 decoding hold raw
+   =?...?= text, and those filed before the CRLF address fix end in
+   "@???".  This rebuilds just those, with the same pipeline
+   AppendFileToMSDirWithId uses, and rewrites only the caption: date,
+   attributes and id are copied from the old snapshot.  It reads only
+   the local mirror, so it runs without logging in, and the journal is
+   already suppressed, so nothing is queued for the server.
+   Reconstruct can't do this: SalvageOldSnapshot (recon.c) restores
+   any old caption that is plain ASCII. */
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int CheckAuthUid(struct MS_Message *NewMessage);
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+
+static int needs_recaption(const char *caption)
+{
+    return strstr(caption, "=?") != NULL || strstr(caption, "@???") != NULL;
+}
+
+/* Builds a fresh caption for the message file path into cap
+   (AMS_CAPTIONSIZE bytes).  Returns 0 on success. */
+static int fresh_caption(char *path, char *cap)
+{
+    struct MS_Message *Msg;
+    struct MS_CaptionTemplate tmpl;
+    int rc;
+
+    Msg = (struct MS_Message *) malloc(sizeof(struct MS_Message));
+    if (Msg == NULL) return -1;
+    memset(Msg, 0, sizeof(struct MS_Message));
+    Msg->OpenFD = -1;
+    memset(&tmpl, 0, sizeof(tmpl));
+    tmpl.basictype = BASICTEMPLATE_NORMAL;
+    tmpl.datetype = DATETYPE_FROMHEADER;
+    rc = ReadRawFile(path, Msg, FALSE)
+        || ParseMessageFromRawBody(Msg)
+        || CheckAuthUid(Msg)
+        || BuildReplyField(Msg)
+        || BuildCaption(Msg, &tmpl, TRUE);
+    if (rc == 0) {
+        strncpy(cap, AMS_CAPTION(Msg->Snapshot), AMS_CAPTIONSIZE - 1);
+        cap[AMS_CAPTIONSIZE - 1] = '\0';
+    }
+    FreeMessage(Msg, TRUE);
+    return rc;
+}
+
+/* Recaptions one folder, named as on the server with '/' separators. */
+static int recaption_folder(const char *root, const char *foldername, int *anyerror)
+{
+    char localpath[MAXPATHLEN + 1], path[MAXPATHLEN + 1];
+    char oldsnap[AMS_SNAPSHOTSIZE], newsnap[AMS_SNAPSHOTSIZE], cap[AMS_CAPTIONSIZE];
+    DIR *d;
+    struct dirent *ent;
+    long checked = 0, stale = 0, rebuilt = 0, errors = 0, rc;
+
+    snprintf(localpath, sizeof(localpath), "%s/.MESSAGES/%s", root, foldername);
+    d = opendir(localpath);
+    if (d == NULL) {
+        fprintf(stderr, "imapsync: recaption: no local folder %s: %s\n", localpath, strerror(errno));
+        *anyerror = 1;
+        return 1;
+    }
+    while ((ent = readdir(d)) != NULL) {
+        char *id = ent->d_name + 1;
+
+        if (ent->d_name[0] != '+') continue;
+        ++checked;
+        if ((rc = MS_GetSnapshot(localpath, id, oldsnap)) != 0) {
+            fprintf(stderr, "imapsync: recaption: no snapshot for %s in %s: ", id, foldername);
+            report_mserr("MS_GetSnapshot", rc);
+            ++errors;
+            continue;
+        }
+        if (!needs_recaption(AMS_CAPTION(oldsnap))) continue;
+        ++stale;
+        snprintf(path, sizeof(path), "%s/%s", localpath, ent->d_name);
+        if (fresh_caption(path, cap) != 0) {
+            fprintf(stderr, "imapsync: recaption: could not rebuild caption for %s in %s\n", id, foldername);
+            ++errors;
+            continue;
+        }
+        if (strcmp(cap, AMS_CAPTION(oldsnap)) == 0) continue;
+        memcpy(newsnap, oldsnap, AMS_SNAPSHOTSIZE);
+        strcpy(AMS_CAPTION(newsnap), cap);
+        if ((rc = MS_AlterSnapshot(localpath, id, newsnap, ASS_REPLACE_ATT_CAPT)) != 0) {
+            fprintf(stderr, "imapsync: recaption: could not store caption for %s in %s: ", id, foldername);
+            report_mserr("MS_AlterSnapshot", rc);
+            ++errors;
+            continue;
+        }
+        ++rebuilt;
+        vlog("recaption %s: %s", id, cap);
+    }
+    closedir(d);
+    printf("imapsync: recaption %s: %ld messages, %ld stale captions, %ld rebuilt, %ld errors\n",
+           foldername, checked, stale, rebuilt, errors);
+    if (errors) *anyerror = 1;
+    return errors ? 1 : 0;
+}
+
 static void usage(const char *prog)
 {
     fprintf(stderr, "usage: %s [-root <dir>] [-folders <comma,list>] [-v] [-full-check] "
-                    "[-force-purges]\n", prog);
+                    "[-force-purges] [-recaption]\n", prog);
 }
 
 int main(int argc, char **argv)
@@ -1999,6 +2108,7 @@ int main(int argc, char **argv)
     int anyerror = 0;
     int full_check = 0;
     int force_purges = 0;
+    int recaption = 0;
     int i;
     char *foldercopy, *tok, *save;
 
@@ -2013,6 +2123,8 @@ int main(int argc, char **argv)
             full_check = 1;
         } else if (strcmp(argv[i], "-force-purges") == 0) {
             force_purges = 1;
+        } else if (strcmp(argv[i], "-recaption") == 0) {
+            recaption = 1;
         } else {
             usage(argv[0]);
             return 2;
@@ -2048,6 +2160,22 @@ int main(int argc, char **argv)
         return 1;
     }
     MSJournal_Suppress(1);	/* this process's own mirror writes never journal */
+
+    if (recaption) {	/* local only: no login */
+        foldercopy = malloc(strlen(folderlist) + 1);
+        if (foldercopy == NULL) {
+            fprintf(stderr, "imapsync: out of memory\n");
+            return 1;
+        }
+        strcpy(foldercopy, folderlist);
+        save = NULL;
+        for (tok = strtok_r(foldercopy, ",", &save); tok != NULL; tok = strtok_r(NULL, ",", &save)) {
+            while (*tok == ' ') ++tok;
+            if (*tok != '\0') recaption_folder(rootbuf, tok, &anyerror);
+        }
+        free(foldercopy);
+        return anyerror ? 1 : 0;
+    }
 
     nrc = netrc_Lookup(netrcpath, DEFAULT_NETRC_MACHINE, login, sizeof(login), passwd, sizeof(passwd));
     if (nrc != NETRC_OK) {
