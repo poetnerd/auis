@@ -216,12 +216,12 @@ static boolean RunCurl(const char *src, int maxTimeSecs, const char *bodyPath, c
     char maxTimeBuf[16];
     char connectTimeoutBuf[16];
     char maxFilesizeBuf[24];
-    /* 24 argv entries (see the fixed sequence built below) plus one
-       for the required NULL terminator -- argv[24] = NULL, not
-       argv[23], so this must be sized 25, not 24 (an off-by-one here
-       previously wrote one pointer past the array's end and silently
-       corrupted an adjacent stack buffer). */
-    char *argv[25];
+    /* 25 argv entries (the fixed sequence built below) plus the NULL
+       terminator.  Sized with headroom and checked below: an exact fit
+       has overflowed twice, once when the array was first sized and
+       again when -g was added (2026-11-16), both times corrupting an
+       adjacent stack buffer and breaking every image fetch. */
+    char *argv[32];
     int argc = 0;
     pid_t pid;
     int status;
@@ -234,6 +234,7 @@ static boolean RunCurl(const char *src, int maxTimeSecs, const char *bodyPath, c
     argv[argc++] = "-s";
     argv[argc++] = "-S";
     argv[argc++] = "-L";
+    argv[argc++] = "-g";	/* --globoff: [] and {} in a URL are literal, not curl ranges */
     argv[argc++] = "--max-redirs";   argv[argc++] = "5";
     argv[argc++] = "--proto";        argv[argc++] = "=http,https";
     argv[argc++] = "--proto-redir";  argv[argc++] = "=http,https";
@@ -245,6 +246,7 @@ static boolean RunCurl(const char *src, int maxTimeSecs, const char *bodyPath, c
     argv[argc++] = "-o";             argv[argc++] = (char *) bodyPath;
     argv[argc++] = "--";             /* everything after this is positional, never a flag */
     argv[argc++] = (char *) src;
+    if (argc >= (int) (sizeof(argv) / sizeof(argv[0]))) return FALSE;	/* never, but never silently */
     argv[argc] = NULL;
 
     pid = fork();
@@ -340,6 +342,30 @@ static long ReadFileCapped(const char *bodyPath, unsigned char **outBuf)
     return (long) st.st_size;
 }
 
+/* Returns a malloc'd copy of src with the characters a URL can't hold
+   percent-encoded, as a browser does before fetching: space, control
+   and non-ASCII bytes, and "<>\\^`{|}.  Existing %XX escapes are left
+   alone.  The Economist's sponsor image had literal spaces in its query
+   string, and curl refused it as malformed (exit 3) without sending
+   anything (2026-11-16). */
+static char *UrlForCurl(const char *src)
+{
+    static const char hex[] = "0123456789ABCDEF";
+    char *out = malloc(strlen(src) * 3 + 1), *o;
+    const unsigned char *p;
+
+    if (!out) return NULL;
+    for (p = (const unsigned char *) src, o = out; *p; ++p) {
+        if (*p <= ' ' || *p >= 0x7F || strchr("\"<>\\^`{|}", *p)) {
+            *o++ = '%'; *o++ = hex[*p >> 4]; *o++ = hex[*p & 0xF];
+        } else {
+            *o++ = (char) *p;
+        }
+    }
+    *o = '\0';
+    return out;
+}
+
 boolean httpimg_ResolveImage(void *rock, const char *src,
     unsigned char **bytesOut, long *lenOut, char **mimetypeOut)
 {
@@ -385,7 +411,11 @@ boolean httpimg_ResolveImage(void *rock, const char *src,
     if (headerFd < 0) { unlink(bodyPath); return FALSE; }
     close(headerFd);
 
-    curlOk = RunCurl(src, perFetchTime, bodyPath, headerPath);
+    {
+        char *url = UrlForCurl(src);
+        curlOk = url ? RunCurl(url, perFetchTime, bodyPath, headerPath) : FALSE;
+        free(url);
+    }
     if (curlOk) {
         contentType = ExtractContentType(headerPath);
         if (contentType && strncmp(contentType, "image/", 6) == 0) {
