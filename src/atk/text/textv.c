@@ -2365,7 +2365,12 @@ long textview__MoveForward(struct textview *self, long pos, long units, enum tex
                 self->pixelsComingOffTop = 0;
             }
             else {
-                self->pixelsComingOffTop += units - i;
+                /* units - i is already the distance from this line's top
+                   (see newOffTop above); adding it to the seeded
+                   pixelsComingOffTop counted the already-scrolled part
+                   twice, so paging inside a tall line that is not the
+                   last skipped content on every press after the first. */
+                self->pixelsComingOffTop = units - i;
                 break;
             }
         }
