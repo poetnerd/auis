@@ -147,6 +147,19 @@ enum view_DSattributes lsetscrollview__DesiredSize(struct lsetscrollview *self, 
     naturalWidth = (dob) ? ((struct lset *) dob)->minwidth : 0;
     if (naturalWidth <= 0) naturalWidth = width;
     else naturalWidth += lsetscrollcontent_MINWIDTH_SAFETY_PAD;
+    /* A row that widens with the window (FillsWidth) and fits is laid
+       out at the offered width and never scrolls: its height is its
+       content's at that width, with no scrollbar reserve.  Measured at
+       its minimum width with the reserve, Amazon's order tracker, a
+       full-width row whose 18px circles give it a minimum width,
+       wrapped its labels into a 24px column and stood 86px too tall
+       (2026-11-16). */
+    if (lsetscrollcontent_FillsWidth((struct lset *) dob) && width >= naturalWidth) {
+        view_DesiredSize(content, width, height, pass, &dw, &dh);
+        *dWidth = width;
+        *dHeight = dh;
+        return view_Fixed;
+    }
     view_DesiredSize(content, naturalWidth, height, pass, &dw, &dh);
     /* CORRECTION (2026-09-23, found live-testing): this used to key
        barheight/borderpad off (lset->minwidth > width) -- but `width`

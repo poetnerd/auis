@@ -743,6 +743,10 @@ void lsetview__GetOrigin(struct lsetview *self, long width, long height, long *o
    lsetview_IsSplit) are untouched, falling through to super_DesiredSize
    (lpair's existing, already-correct percentage-split behavior)
    exactly as before this change. */
+/* Offers this wide are natural-width probes, not real space (see
+   NaturalWidth's NATURAL_UNLIMITED; htmlimgv.c draws the same line). */
+#define NATURAL_PROBE_MIN 100000
+
 enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
     enum view_DSattributes result;
@@ -778,8 +782,14 @@ enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, 
 	   child's narrower width instead made text embedding the leaf
 	   give it only that much, with nothing to align within (The
 	   Economist's 166px icon block, 2026-09-28). */
+	/* Except to a natural-width probe (NaturalWidth lays text out at
+	   an unlimited width, NATURAL_UNLIMITED): there the leaf's width
+	   is its content's plus padding.  Echoing the probe's width made
+	   a shrink-to-fit box around one -- Amazon's Track package
+	   button, a rounded cell holding a link button -- measure
+	   millions of pixels wide and span its column (2026-11-16). */
 	if (cw > 0 && *dWidth < width)
-	    *dWidth = width;
+	    *dWidth = (width >= NATURAL_PROBE_MIN) ? cw + padw : width;
 	*dHeight += padh;
 	/* An HTML cell's height="N" (lset.ch's minheight) is a floor. */
 	if (ls->minheight > *dHeight) *dHeight = ls->minheight;

@@ -216,6 +216,10 @@ enum view_DSattributes lsetscrollcontent__DesiredSize(struct lsetscrollcontent *
     }
     naturalWidth = EffectiveNaturalWidth(self);
     if (naturalWidth <= 0) naturalWidth = width;
+    /* laid out at the offered width when wider (place_inner), so
+       measured there (see lsetscrollview__DesiredSize) */
+    if (lsetscrollcontent_FillsWidth((struct lset *) lsetscrollcontent_GetDataObject(self)) && width > naturalWidth)
+        naturalWidth = width;
     view_DesiredSize((struct view *) self->inner, naturalWidth, height, view_NoSet, &dw, &dh);
     *dWidth = width;
     *dHeight = dh;
