@@ -1,5 +1,5 @@
 /* imgtest -- standalone decode-only regression driver for the `image`
-   inset's importer classes (imagev/tif/faces/pbm/...). Loads a file
+   inset's importer classes (gif/jpeg/png/tif/pbm/...). Loads a file
    through the real image_Load()/image_Duplicate()/image_Compress()
    sequence used by imagev.c's Import_Cmd, entirely off-screen (no
    X11), and reports the result as "KEY: value" lines so a test
@@ -11,7 +11,10 @@
 
    Usage: imgtest classname filename [outfile]
      classname is the image subclass to instantiate directly, e.g.
-     "imagev" (auto-detects format from file header) or "tif".
+     "jpeg" or "tif".  Nothing detects the format from the file: the
+     class must match it, as with Import, which makes the user pick.
+     A class that is not an image (such as the view "imagev") is
+     refused; it used to crash with a bus error.
      With outfile, the loaded image is also written there through the
      class's own WriteNative (a "jpeg" writes a JPEG), so its pixels
      can be compared with another decoder's.
@@ -76,6 +79,11 @@ int main(int argc, char **argv)
 	proctable_StaticEntry;
 	dataobject_StaticEntry;
 
+	if (!class_IsTypeByName(argv[1], "image")) {
+		fprintf(stderr, "imgtest: %s is not an image class\n", argv[1]);
+		printf("NEWOBJECT-RC: 1\n");
+		return 1;
+	}
 	img = (struct image *) class_NewObject(argv[1]);
 	if (!img) {
 		printf("NEWOBJECT-RC: 1\n");
