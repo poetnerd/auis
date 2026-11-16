@@ -403,6 +403,12 @@ being front-loaded here.
      underlying character-count-based positioning model's residual
      imprecision, present even with that fixed, only mitigated by the
      table strategy's "peeling" heuristic, not fixed at the root.
+     A second double count, in `MoveForward`'s branch for a tall
+     line that is *not* the last, made `<space>` skip whole blocks
+     (the Economist's "Vote in the poll") on every press after the
+     first inside a tall table row. **FIXED 2026-11-15**,
+     wdc-confirmed: `pixelsComingOffTop = units - i`, as in the
+     last-line branch. Original 1994 code.
   4. Three National Grid header-row cosmetic issues, not yet
      investigated: a link sits too high above its divider bar, that
      link uses the wrong font/weight, and the divider bar is top-

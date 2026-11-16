@@ -895,6 +895,15 @@ showed" bug. Fixed by dropping the erroneous re-add
 forward now advances linearly too (18 requests to cap, matching
 backward's 19). Committed 2026-09-13.
 
+That fix's claim that the re-add was harmless outside the last line
+was wrong. The branch for any other line taller than the remaining
+distance had the same `+=`, and it is original 1994 code. Hand-typed
+documents rarely have a line taller than the window, so it never
+showed. HTML mail does: in the Economist, every `<space>` after the
+first inside a tall table row jumped a screen plus everything already
+scrolled into the row, and the "Vote in the poll" block was usually
+among what went by unseen. Fixed 2026-11-15 the same way.
+
 **Book Rack's review cards and page margin (2026-09-27) — also this
 project's own code, and misdiagnosed for several sessions.** In
 bookrack.html, each Book Reviews card's text was crushed to a word or
