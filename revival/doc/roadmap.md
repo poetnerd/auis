@@ -617,9 +617,22 @@ being front-loaded here.
         **Header block FIXED 2026-11-15**, wdc-confirmed:
         `mimepart_DecodeHeader` (`mimepart.c`, tested by
         `mimeparttest header`), used by text822 for the displayed
-        header lines. Still open: the caption list (`bldcapt.c`, in the
-        message server), where stored captions also need a rebuild
-        path for mail already in a folder.
+        header lines. **Captions FIXED 2026-11-15** for newly filed
+        mail: `bldcapt.c` decodes the subject before its 30-character
+        cut (wdc-confirmed, Bed Bath & Beyond), and
+        `FindPrettiestFromString` (`prettyn.c`) decodes the sender's
+        name after parsing, before it shortens it (tested directly on
+        a Kohl's header; not yet seen live). Still open: an
+        `imapsync --recaption` pass for captions already stored, which
+        must skip the write-back journal; reconstruct won't do, since
+        `SalvageOldSnapshot` restores any ASCII caption.
+      - Captions show `name@???` when the From header is folded onto a
+        second line with CRLF endings (common in IMAP mail): the
+        sender's host is lost. Original 1994 code.
+      - A sender in the old `addr (Name)` form gets an empty caption
+        name. `prettyn.c` has `if (*RealFrom = '(')`, an assignment,
+        but that alone doesn't explain an empty result. Original 1994
+        code.
       - **RESOLVED 2026-11-14**, wdc-confirmed: serif `font-family`
         requests fell back to fontconfig's default face (Verdana).
         `htmlatk.c` kept only the first CSS family, usually a web font
