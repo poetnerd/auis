@@ -174,6 +174,16 @@ static int  gifin_l_pixel_bits;        /* bits per pixel, local colormap */
 static int  gifin_l_ncolors;           /* number of colors, local colormap */
 static BYTE gifin_l_cmap[3][256];      /* local colormap */
 static BYTE gifin_interlace_flag;      /* interlace image format flag */
+static int  gifin_transparent;         /* transparent color index, -1 if none */
+
+static unsigned char AlphaBg[3] = {255, 255, 255};
+
+void gif__SetAlphaBackground(struct classheader *classID, long rgb)
+{
+    AlphaBg[0] = (rgb >> 16) & 0xff;
+    AlphaBg[1] = (rgb >> 8) & 0xff;
+    AlphaBg[2] = rgb & 0xff;
+}
 
 extern int WriteGIF(FILE *fp, byte *pic, int w, int h, byte *rmap, byte *gmap, byte *bmap, int numcols, int colorstyle);
 
@@ -191,6 +201,7 @@ static int gifin_open_file(FILE *s)
   /* remember that we've got this file open */
   file_open = 1;
   ins       = s;
+  gifin_transparent = -1;
 
   /* check GIF signature */
   if (fread(buf, 1, GIF_SIG_LEN, ins) != GIF_SIG_LEN)
@@ -454,15 +465,20 @@ static int gifin_load_cmap(BYTE cmap[3][256], int ncolors)
 
 static int gifin_skip_extension()
 {
+  int label, first = 1;
 
   /* get the extension function byte */
-  fgetc(ins);
+  label = fgetc(ins);
 
-  /* skip any remaining raster data */
+  /* skip any remaining raster data, noting a graphic control
+     extension's transparent color: flags, delay (2), index */
   do
   {
     if (gifin_read_data_block() != GIFIN_SUCCESS)
       return GIFIN_ERR_EOF;
+    if (first && label == 0xf9 && buf_cnt >= 4 && (buf[0] & 1))
+      gifin_transparent = buf[3];
+    first = 0;
   }
   while (buf_cnt > 0);
 
@@ -571,23 +587,31 @@ int gif__Load(struct gif *gif, char *fullname, FILE *fp)
   gif_newRGBImage(gif, gifin_img_width, gifin_img_height, (gifin_l_cmap_flag ?
 							 gifin_l_pixel_bits :
 							 gifin_g_pixel_bits));
-  for (x = 0; x < gifin_g_ncolors; x++) {
+  for (x = 0; x < gifin_g_ncolors && x < gif_RGBSize(gif); x++) {
     gif_RedPixel(gif, x) = gifin_g_cmap[GIF_RED][x] << 8;
     gif_GreenPixel(gif, x) = gifin_g_cmap[GIF_GRN][x] << 8;
     gif_BluePixel(gif, x) = gifin_g_cmap[GIF_BLU][x] << 8;
   }
-  gif_RGBUsed(gif) = gifin_g_ncolors;
+  gif_RGBUsed(gif) = (gifin_g_ncolors < gif_RGBSize(gif)) ? gifin_g_ncolors : gif_RGBSize(gif);
 
   /* if image has a local colormap, override global colormap
    */
 
   if (gifin_l_cmap_flag) {
-    for (x = 0; x < gif_RGBSize(gif); x++) {
-      gif_RedPixel(gif, x) = gifin_g_cmap[GIF_RED][x] << 8;
-      gif_GreenPixel(gif, x) = gifin_g_cmap[GIF_GRN][x] << 8;
-      gif_BluePixel(gif, x) = gifin_g_cmap[GIF_BLU][x] << 8;
+    for (x = 0; x < gifin_l_ncolors; x++) {
+      gif_RedPixel(gif, x) = gifin_l_cmap[GIF_RED][x] << 8;
+      gif_GreenPixel(gif, x) = gifin_l_cmap[GIF_GRN][x] << 8;
+      gif_BluePixel(gif, x) = gifin_l_cmap[GIF_BLU][x] << 8;
     }
     gif_RGBUsed(gif) = gifin_l_ncolors;
+  }
+
+  /* images have no alpha plane: draw the transparent color as the
+     background it would show */
+  if (gifin_transparent >= 0 && gifin_transparent < gif_RGBUsed(gif)) {
+    gif_RedPixel(gif, gifin_transparent) = AlphaBg[0] << 8;
+    gif_GreenPixel(gif, gifin_transparent) = AlphaBg[1] << 8;
+    gif_BluePixel(gif, gifin_transparent) = AlphaBg[2] << 8;
   }
 
   /* interlaced image -- futz with the vertical trace.  i wish i knew what

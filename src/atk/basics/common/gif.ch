@@ -26,6 +26,10 @@
 * $
 */
 
+/* A transparent color (GIF89a's graphic control extension) is drawn
+   in the color set by SetAlphaBackground (default white), as png's
+   alpha is. */
+
 class gif : image {
   overrides:
     Read( FILE *file, long id ) returns long;
@@ -34,4 +38,5 @@ class gif : image {
     Load( char *fullname, FILE *fp ) returns int;
   classprocedures:
     Ident( char *fullname ) returns int;
+    SetAlphaBackground( long rgb );
 };
