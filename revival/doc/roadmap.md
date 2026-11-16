@@ -977,6 +977,26 @@ being front-loaded here.
         10); neither the table's size nor its cell padding reaches the
         heading's cell.
 
+  18. Kohl's (a promotional message in `Revival/WritebackTest`):
+      - The hero picture is a mosaic: a row of three image-only cells
+        with no declared widths, each `<img width="100%">`, the slices
+        at double resolution (`_2x`). It came out as mismatched 100px
+        strips. **RESOLVED 2026-11-15**, wdc-confirmed (Kohl's; no
+        change in Economist, bookrack, LinkedIn, National Grid):
+        - `ScaleImageToDeclaredSize` read `width="100%"` with `strtol`
+          as 100 pixels, shrinking every full-width image to 100px;
+          it now uses `ParseFixedPixelWidth`.
+        - A percentage-width image becomes an `htmlimage` (`htmlimg.ch`),
+          drawn by `htmlimgview` (`htmlimgv.ch`, an `imagev` subclass)
+          at that percentage of the width layout gives it, resampled
+          by area averaging to the exact size. See the design doc's
+          Images section.
+        - An image-only cell with no declared width weighs its images'
+          natural width when the row is split, as a browser sizes it.
+      - A column of dashed lines fills the top-left of the message,
+        probably hidden preview text that should collapse. Not yet
+        investigated.
+
   Structural gaps, not bugs to fix — logged in the design doc's "Open
   questions" rather than here since they're undecided direction, not
   todo items: non-Latin scripts (need a real Unicode text model), SVG

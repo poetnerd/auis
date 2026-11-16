@@ -917,6 +917,29 @@ called `Zoom()` on a plain truecolor image until this renderer did. See
 `revival.md`'s "Old bugs never found till now" for the full writeup of
 all three.
 
+**Percentage widths are sized at layout time (2026-11-15).** An image
+declared `width="100%"` (or CSS `width: N%`) means "as wide as my
+container", and the renderer can't know a cell's width while it builds
+the layout: it knows declared widths and CSS `max-width`, not what a
+proportional split will give each cell. So such an image keeps its
+natural pixels in an `htmlimage` (an `image` subclass carrying the
+percentage and any `max-width`), whose view, `htmlimgview`, answers
+DesiredSize with that percentage of the width offered and resamples
+the pixels to exactly that width when it draws. Resampling averages
+the source pixels each output pixel covers: `image_Zoom` is
+nearest-neighbour at a whole percentage, which breaks up lettering in
+a double-resolution image and can leave a pixel of seam between
+slices. Offers above 8192 pixels are layout probes for a natural
+width, and get the image's own. The alternative, tracking available
+width through nested tables at build time and zooming then, would
+not follow window resizes and needed special cases at every level.
+
+A row of image-only cells with no declared widths is split by the
+images' natural widths (`LsetFixedContentWidth`), as a browser's
+table layout does. Kohl's hero is three double-resolution slices,
+332, 616 and 332 pixels, in a 640px table: they get 166, 308 and 166,
+each scales by one half, and they meet exactly.
+
 ## Fallback strategy (now explicit, per renderer)
 
 Two levels, both explicit:

@@ -2622,3 +2622,13 @@ reads it to measure a shrink-to-fit box's content with
 `textview_LineRedraw`. A tree built before this needs `make Makefile`
 and `make install` in `src/atk/text`, or a full `make World`, for adew
 to compile.
+
+### 2026-11-15: `htmlimg.do` and `htmlimgv.do`
+
+`src/atkams/messages/lib` builds two new dynamic classes: `htmlimage`
+(`htmlimg.ch`), an `image` carrying a percentage width, and its view
+`htmlimgview` (`htmlimgv.ch`), which scales it to the width layout
+gives it. `htmlatk.c` creates them by name with `class_NewObject`, so
+they are found through the `dlib/atk` index, not linked in. A tree
+built before this needs `make Makefile` and `make install` in
+`src/atkams/messages/lib`, or a full `make World`.

@@ -1159,6 +1159,18 @@ active, since Xlib then follows the new map on its own. A no-op
 `xmodmap` command that clears and restores the Lock modifier
 reproduces the hang every time on the old code.
 
+Kohl's builds its hero picture from three slices in a row of table
+cells, each `<img width="100%">`, and the renderer drew them as
+mismatched 100px strips. The image scaling added in August read the
+width with `strtol`, which stops at the `%`, so every full-width
+image in every message had been shrunk to 100 pixels. Fixing that
+alone wasn't enough: the slices are double resolution, and
+"100% of my cell" can't be answered while the layout is being built.
+Such images now carry their percentage to a small view that scales
+them to whatever width the window gives, and a row of image-only
+cells is split by the images' own widths, as a browser does. The
+picture came together on the first live try.
+
 ## Word size issues
 
 The largest, most systemic category of defect came from a single
