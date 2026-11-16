@@ -546,6 +546,9 @@ static void tellAboutImage(char *name)
 	 (gifin_l_cmap_flag ? gifin_l_ncolors : gifin_g_ncolors));
 }
 
+/* Reads a GIF from fp, or from fullname if fp is NULL.  Closes only a
+   file it opened itself: the old version also closed the caller's fp,
+   which every caller then closed again (same bug as jpeg.c's LoadJFIF). */
 int gif__Load(struct gif *gif, char *fullname, FILE *fp)
 { 
   FILE *f;
@@ -561,7 +564,7 @@ int gif__Load(struct gif *gif, char *fullname, FILE *fp)
   if ((gifin_open_file(f) != GIFIN_SUCCESS) || /* read GIF header */
       (gifin_open_image() != GIFIN_SUCCESS)) {  /* read image header */
     gifin_close_file();
-    fclose(f);
+    if (f != fp) fclose(f);
     fprintf(stderr, "Couldn't read GIF image.\n");
     return(-1);
   }
@@ -635,7 +638,7 @@ int gif__Load(struct gif *gif, char *fullname, FILE *fp)
       }
   }
   gifin_close_file();
-  fclose(f);
+  if (f != fp) fclose(f);
   return(0);
 }
 
