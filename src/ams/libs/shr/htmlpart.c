@@ -625,6 +625,49 @@ static const char * const hp_style_props[HP_NSTYLEPROPS] = {
     "width", "height"
 };
 
+/* The color a CSS background shorthand value gives, as a new string,
+   or NULL: a #hex or rgb()/rgba() token, or a value that is one bare
+   word (a color name).  Values with an image or a gradient give NULL
+   and are skipped entirely, so the background-color a sender gives
+   beside them as the fallback for clients without gradients
+   stands -- Amazon's header is background-color:#0264F7 then
+   background:linear-gradient(...).  Amazon draws its order tracker's
+   lines as cells styled background:#0064F9 (2026-11-16). */
+static char *background_color(const char *v, const char *end)
+{
+    const char *p, *t = NULL, *te = NULL;
+    char *c;
+    int words = 0;
+
+    for (p = v; p < end; ++p)
+        if (*p == '(' && !(p - v >= 3 && strncasecmp(p - 3, "rgb", 3) == 0)
+            && !(p - v >= 4 && strncasecmp(p - 4, "rgba", 4) == 0))
+            return NULL;	/* url(), linear-gradient(), ... */
+    for (p = v; p < end; ) {
+        const char *s;
+        while (p < end && isspace((unsigned char) *p)) ++p;
+        if (p >= end) break;
+        s = p;
+        if (strncasecmp(p, "rgb", 3) == 0) {
+            while (p < end && *p != ')') ++p;
+            if (p < end) ++p;
+        } else {
+            while (p < end && !isspace((unsigned char) *p)) ++p;
+        }
+        ++words;
+        if (!t && (*s == '#' || strncasecmp(s, "rgb", 3) == 0)) { t = s; te = p; }
+        if (words == 1 && !t && isalpha((unsigned char) *s)) { t = s; te = p; }
+    }
+    if (!t || (words > 1 && isalpha((unsigned char) *t) && strncasecmp(t, "rgb", 3) != 0)
+        || (te - t == 4 && strncasecmp(t, "none", 4) == 0))
+        return NULL;
+    c = (char *) malloc(te - t + 1);
+    if (!c) return NULL;
+    memcpy(c, t, te - t);
+    c[te - t] = '\0';
+    return c;
+}
+
 static char *filter_style(const char *raw)
 {
     char *vals[HP_NSTYLEPROPS];
@@ -665,6 +708,17 @@ static char *filter_style(const char *raw)
                 }
             }
 
+            /* The background shorthand counts as background-color when
+               it gives a color (see background_color). */
+            if (proplen == 10 && strncasecmp(propstart, "background", 10) == 0) {
+                char *c = background_color(valstart, valend);
+                if (c) {
+                    free(vals[1]);
+                    vals[1] = c;
+                }
+                if (*p == ';') ++p;
+                continue;
+            }
             for (i = 0; i < HP_NSTYLEPROPS; ++i) {
                 if ((long) strlen(hp_style_props[i]) == proplen
                     && strncasecmp(hp_style_props[i], propstart, (size_t) proplen) == 0) {

@@ -77,6 +77,7 @@
 #include <dataobj.ih>
 #include <image.ih>
 #include <png.ih>
+#include <gif.ih>
 #include <htmlimg.ih>
 #include <lset.ih>
 #include <lsetv.ih>
@@ -728,6 +729,10 @@ struct hax_state {
        paint (HasUnpaintedBg); inside any of them, text colors are
        checked against paintedBg (PushFormattingMarks). */
     int unpaintedDepth;
+    /* An element with a background this renderer can't paint whose
+       only content is one <img> (SoleImageChild), set at its PRE: the
+       image is decoded onto that background instead (ImageBackdrop). */
+    const struct htmlnode *backdrop;
     /* No <!DOCTYPE>: a table resets inherited font size, weight,
        style and alignment (InheritsIntoCell). */
     int quirks;
@@ -1502,40 +1507,73 @@ static int ColorRGB(const char *c, int *r, int *g, int *b);
 /* PNG transparency is blended onto one color at decode time, since
    images have no alpha plane: use the background painted behind
    this image. */
-static void SetImageAlphaBg(struct hax_state *st)
+static void SetImageAlphaBg(struct hax_state *st, const char *bg)
 {
     int r, g, b;
-    if (!ColorRGB(st->paintedBg, &r, &g, &b)) r = g = b = 255;
-    png_SetAlphaBackground(((long) r << 16) | (g << 8) | b);
+    long rgb;
+    if (!ColorRGB(bg ? bg : st->paintedBg, &r, &g, &b)) r = g = b = 255;
+    rgb = ((long) r << 16) | (g << 8) | b;
+    png_SetAlphaBackground(rgb);
+    gif_SetAlphaBackground(rgb);
+}
+
+static int TextIsAllSpace(const struct htmlnode *t);
+
+/* The <img> that is n's only content (whitespace aside), or NULL. */
+static const struct htmlnode *SoleImageChild(const struct htmlnode *n)
+{
+    const struct htmlnode *c, *img = NULL;
+    for (c = n->children; c; c = c->next) {
+        if (htmlpart_IsText(c) && TextIsAllSpace(c)) continue;
+        if (img || !htmlpart_IsElement(c) || strcmp(c->tag, "img") != 0) return NULL;
+        img = c;
+    }
+    return img;
+}
+
+/* The element whose background shows behind image n, if it is one
+   this renderer can't paint (not a table cell) and n is all it holds:
+   the box shrinks to the image, so the background is exactly what the
+   image's transparent pixels show, and that element's border-radius
+   rounds it.  Amazon's order tracker draws each step as an 18px image
+   in a <div> with a background and border-radius 18px: a white
+   checkmark on a blue disk, or a transparent pixel on a gray one
+   (2026-11-16). */
+static int HasUnpaintedBg(const struct htmlnode *n);
+static int NodeOwnBgColorX11(const struct htmlnode *td, char *outbuf, size_t outbufsz);
+static const struct htmlnode *ImageBackdrop(struct hax_state *st, const struct htmlnode *n, char *bg, size_t bgsz)
+{
+    const struct htmlnode *b = st->backdrop;
+    if (!b || SoleImageChild(b) != n || !NodeOwnBgColorX11(b, bg, bgsz)) return NULL;
+    return b;
 }
 
 /* CSS border-radius on an image (LinkedIn's round avatars, the
    Economist's editor photo). Images have no alpha plane, so the pixels
    outside the curve are blended into the color painted behind the
    image now, as PNG transparency is (SetImageAlphaBg), antialiased by
-   4x4 supersampling like lsetv.c's rounded cells. Works on a true-color
-   copy (image_Expand) of a palette or bitmap image, swapped in as
-   ScaleImageToDeclaredSize swaps in its zoomed one. */
+   4x4 supersampling like lsetv.c's rounded cells. A palette or bitmap
+   image is first made true-color by image_Expand, which converts the
+   image in place and returns it: this took that return for failure and
+   left every palette image square (Amazon's checkmark PNG,
+   2026-11-16). */
 static long CssBorderRadius(const struct htmlnode *n);
 #define IMGRR_SUB 4
 static void RoundImageCorners(struct dataobject **dobRef, const struct htmlnode *n, struct hax_state *st)
 {
     struct image *img = (struct image *) *dobRef;
+    char bgbuf[32];
+    const struct htmlnode *bd = ImageBackdrop(st, n, bgbuf, sizeof(bgbuf));
     long r = CssBorderRadius(n), w, h, i, j, x, y, k, sx, sy, cov;
     long ncov = IMGRR_SUB * IMGRR_SUB;
     int br, bgr, bb;
     double dx, dy;
     unsigned char *p;
 
+    if (r <= 0 && bd) r = CssBorderRadius(bd);
     if (r <= 0) return;
-    if (!TRUEP(img)) {
-        struct image *t = image_Expand(img);
-        if (!t || t == img) return;
-        dataobject_Destroy(*dobRef);
-        *dobRef = (struct dataobject *) t;
-        img = t;
-    }
-    if (image_Pixlen(img) != 3) return;
+    if (!TRUEP(img)) image_Expand(img);
+    if (!TRUEP(img) || image_Pixlen(img) != 3) return;
     w = image_Width(img);
     h = image_Height(img);
     if (r > w / 2) r = w / 2;
@@ -1619,7 +1657,10 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
         *outPlaceholderHint = mimetype ? strdup(mimetype) : NULL;
         dobClass = ImageClassForMimetype(mimetype);
         dob = (struct dataobject *) class_NewObject((char *) dobClass);
-        SetImageAlphaBg(st);
+        {
+            char bgbuf[32];
+            SetImageAlphaBg(st, ImageBackdrop(st, n, bgbuf, sizeof(bgbuf)) ? bgbuf : NULL);
+        }
         savedErr = SuppressStderrBegin(); /* speculative: a labeled-decode failure here is expected/routine now, see SuppressStderrBegin's own comment */
         ok = dob && TryReadImageInto(dob, mimetype, bytes, len);
         SuppressStderrEnd(savedErr);
@@ -1636,6 +1677,7 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
             }
         }
         png_SetAlphaBackground(0xFFFFFFL);
+        gif_SetAlphaBackground(0xFFFFFFL);
 
         if (ok) {
             /* "raster" (ImageClassForMimetype's fallback for anything
@@ -1677,11 +1719,110 @@ static struct dataobject *ResolveImageDataObject(struct hax_state *st, const str
    fine image, e.g. real JPEG bytes served as "image/gif") and why
    this is a fallback attempted only after the declared type already
    failed, not a first-choice replacement for it. */
+/* For an image that can't be shown (blocked as a beacon, not
+   fetched, undecodable) inside a backdrop element (ImageBackdrop):
+   its declared box in the backdrop's color, rounded like it, which is
+   what a browser shows behind a transparent image.  Amazon's pending
+   tracker steps are a transparent pixel.gif, which LooksLikeBeacon
+   blocks, on a gray disk; htmlprv fetches nothing, so its completed
+   steps came out as alt text wrapped down an 18px cell (2026-11-16).
+   NULL without a backdrop or a declared pixel size. */
+static struct dataobject *BackdropBox(struct hax_state *st, const struct htmlnode *n)
+{
+    char bg[32];
+    char *cw, *ch;
+    long w, h, i;
+    int r, g, b;
+    struct image *img;
+    struct dataobject *dob;
+    unsigned char *p;
+
+    if (!ImageBackdrop(st, n, bg, sizeof(bg)) || !ColorRGB(bg, &r, &g, &b)) return NULL;
+    cw = htmlpart_GetStyleProp(n, "width");
+    ch = htmlpart_GetStyleProp(n, "height");
+    w = ParseFixedPixelWidth(cw ? cw : htmlpart_GetAttr(n, "width"));
+    h = ParseFixedPixelWidth(ch ? ch : htmlpart_GetAttr(n, "height"));
+    free(cw);
+    free(ch);
+    if (w <= 0 || h <= 0 || w > 2000 || h > 2000) return NULL;
+    img = image_New();
+    if (!img) return NULL;
+    image_newTrueImage(img, w, h);
+    for (i = 0, p = image_Data(img); i < w * h; ++i) {
+        *p++ = (unsigned char) r;
+        *p++ = (unsigned char) g;
+        *p++ = (unsigned char) b;
+    }
+    dob = (struct dataobject *) img;
+    RoundImageCorners(&dob, n, st);
+    image_SetNoBorder((struct image *) dob, TRUE);
+    return dob;
+}
+
+/* Whether an enclosing flattened block narrows or pads the column
+   (hax_state's ambient), which only rows get (ApplyAmbient). */
+static int AmbientHasColumn(const struct hax_state *st)
+{
+    int i;
+    for (i = 0; i < st->ambientDepth; ++i)
+        if (st->ambient[i].maxwidth > 0 || st->ambient[i].padleft > 0 || st->ambient[i].padright > 0)
+            return 1;
+    return 0;
+}
+
+static void InsertRowView(struct hax_state *st, struct lset *row);
+
+/* A display:block image inside a flattened block with a column:
+   embedded as a one-cell row, so it sits in the column as the rows
+   around it do.  Inserted into the flow it sat at the window's left
+   edge, outside the centered column: Amazon's 568px banner and its
+   footer logo (2026-11-16).  The styles open around it (its link)
+   are carried into the cell, as TryRenderFloatImageBlock does.
+   Returns FALSE, inserting nothing, if this doesn't apply. */
+static int TryInsertBlockImageRow(struct hax_state *st, const struct htmlnode *n, struct dataobject *dob)
+{
+    char *d = htmlpart_GetStyleProp(n, "display");
+    int block = d && strcasecmp(d, "block") == 0;
+    struct text *it;
+    struct lset *leaf;
+    struct style *leftSt;
+    long k;
+
+    free(d);
+    if (!block || !AmbientHasColumn(st)) return FALSE;
+    it = (struct text *) class_NewObject("text");
+    leaf = (struct lset *) class_NewObject("lset");
+    if (!it || !leaf) return FALSE;
+    leftSt = JustificationStyleFor(style_LeftJustified);
+    if (leftSt) text_SetGlobalStyle(it, leftSt);
+    text_AlwaysAddView(it, 0, dataobject_ViewName(dob), dob);
+    for (k = 0; k < st->markcount; ++k)
+        environment_WrapStyle(it->rootEnvironment, 0, 1, st->marks[k].style);
+    text_SetReadOnly(it, TRUE);
+    leaf->dobj = (struct dataobject *) it;
+    strcpy(leaf->dataname, "text");
+    strcpy(leaf->viewname, "htmllinkview");
+    leaf->valign = lset_VALIGN_TOP;
+    EnsureLineBreak(st);
+    FlushPendingSpace(st);
+    InsertRowView(st, leaf);
+    return TRUE;
+}
+
 static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
 {
     boolean beaconBlocked;
     char *placeholderHint;
     struct dataobject *dob = ResolveImageDataObject(st, n, &beaconBlocked, &placeholderHint);
+
+    if (!dob && (dob = BackdropBox(st, n)) != NULL) {
+        free(placeholderHint);
+        placeholderHint = NULL;
+    }
+    if (dob && TryInsertBlockImageRow(st, n, dob)) {
+        free(placeholderHint);
+        return;
+    }
 
     if (dob) {
         FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
@@ -1874,6 +2015,65 @@ static int TableIsTrivialWrapper(const struct htmlnode *tablenode, const struct 
    recursion elsewhere in this file (see htmlatk.h's own note on why
    that's safe). */
 static int CellIsEmpty(const struct htmlnode *cellnode);
+static int NodeOwnBgColorX11(const struct htmlnode *td, char *outbuf, size_t outbufsz);
+static int NodeMinHeight(const struct htmlnode *n);
+
+/* Whether a row with no content is still a visible band: it has a
+   pixel height and a background color of its own (the row's or a
+   cell's).  Such a row is kept as a filler of that height and color
+   (see the blank-row loop in BuildLsetGrid), so the table it sits in
+   isn't empty.  Amazon draws its order tracker's connecting lines as
+   little tables of 7, 4 and 7px rows, the 4px row colored
+   (2026-11-16); counted as empty, the cell holding each was never
+   rendered. */
+static int RowIsColoredBand(const struct htmlnode *tr)
+{
+    const struct htmlnode *td;
+    char buf[32];
+    int h = NodeMinHeight(tr), colored = NodeOwnBgColorX11(tr, buf, sizeof(buf));
+
+    for (td = tr->children; td; td = td->next) {
+        int ch;
+        if (!htmlpart_IsElement(td) || !NodeIsCell(td)) continue;
+        if ((ch = NodeMinHeight(td)) > h) h = ch;
+        if (NodeOwnBgColorX11(td, buf, sizeof(buf))) colored = 1;
+    }
+    return h > 0 && colored;
+}
+
+static long CssBorderSide(const struct htmlnode *n, const char *prop, char *color, size_t sz);
+
+/* Whether a <p> or <div> draws a top or bottom border, which is
+   something to see even with no content: a divider (see the walk and
+   RowRuleBorder). */
+static int BlockHasRuleBorder(const struct htmlnode *n)
+{
+    char c[32];
+    if (!htmlpart_IsElement(n) || (strcmp(n->tag, "p") != 0 && strcmp(n->tag, "div") != 0)) return 0;
+    return CssBorderSide(n, "border-top", c, sizeof(c)) > 0
+        || CssBorderSide(n, "border-bottom", c, sizeof(c)) > 0;
+}
+
+/* A blank row's divider: the thickness of the top (else bottom)
+   border of a bordered <p>/<div> that is a cell's content, color in
+   *color; 0 if none.  Amazon's between its tracker and the shipment
+   details is a cell holding only <p style="border-top:solid 1px
+   #BBBFBF">, and the blank row was dropped (2026-11-16). */
+static long RowRuleBorder(const struct htmlnode *tr, char *color, size_t sz)
+{
+    const struct htmlnode *td, *c;
+    long px;
+    for (td = tr->children; td; td = td->next) {
+        if (!htmlpart_IsElement(td) || !NodeIsCell(td)) continue;
+        for (c = td->children; c; c = c->next) {
+            if (!BlockHasRuleBorder(c)) continue;
+            if ((px = CssBorderSide(c, "border-top", color, sz)) > 0) return px;
+            if ((px = CssBorderSide(c, "border-bottom", color, sz)) > 0) return px;
+        }
+    }
+    return 0;
+}
+
 static int NodeIsVisuallyEmpty(const struct htmlnode *n)
 {
     const struct htmlnode *c;
@@ -1893,6 +2093,7 @@ static int NodeIsVisuallyEmpty(const struct htmlnode *n)
         for (r = 0; r < rows.count && empty; ++r) {
             const struct htmlnode *tr = rows.items[r];
             const struct htmlnode *td;
+            if (RowIsColoredBand(tr)) { empty = 0; break; }
             for (td = tr->children; td; td = td->next) {
                 if (!htmlpart_IsElement(td)) continue;
                 if (!NodeIsCell(td)) continue;
@@ -4007,6 +4208,37 @@ static long InlineTextLength(const struct htmlnode *n, int *space)
    should be measured once it can be (lset.ch's shrinkwidth); a
    declared width is kept (LinkedIn's 390px button). */
 #define LABEL_MAXCHARS 60
+
+/* The estimated width of the button-styled link (LinkIsButton) that
+   is a cell's only content, as RenderLinkButton sizes its box: label,
+   padding and side borders; else 0.  Amazon's Track package button is
+   a shrink-to-fit table whose one cell, yellow and rounded, holds such
+   a link; unmeasured, the table spanned the column, which showed once
+   the cell's background:#FFD916 was painted (2026-11-16). */
+static long SoleButtonLinkWidth(const struct htmlnode *cell)
+{
+    const struct htmlnode *c, *a = NULL;
+    long len, fontpx = 14, pad[4];
+    int space = 1;
+    char color[32], *fs;
+
+    for (c = cell->children; c; c = c->next) {
+        if (htmlpart_IsText(c) && TextIsAllSpace(c)) continue;
+        if (a || !htmlpart_IsElement(c) || strcmp(c->tag, "a") != 0 || !LinkIsButton(c)) return 0;
+        a = c;
+    }
+    if (!a) return 0;
+    len = InlineTextLength(a->children, &space);
+    if (len > 0 && space) --len;
+    if (len <= 0 || len > LABEL_MAXCHARS) return 0;
+    fs = htmlpart_GetStyleProp(a, "font-size");
+    if (fs) { long px = CssPixelLength(fs); if (px > 0) fontpx = px; free(fs); }
+    CellCssPadding(a, pad);
+    return LabelTextWidth(a->children, len, fontpx, CssIsBold(a)) + pad[1] + pad[3]
+        + CssBorderSide(a, "border-left", color, sizeof(color))
+        + CssBorderSide(a, "border-right", color, sizeof(color));
+}
+
 static long TableLabelWidth(const struct htmlnode *tablenode, int *estimated)
 {
     struct nodevec rows;
@@ -4024,6 +4256,11 @@ static long TableLabelWidth(const struct htmlnode *tablenode, int *estimated)
     nodevec_free(&rows);
     if (cells != 1) return 0;
     w = CellDeclaredPixelWidth(cell);
+    if (w <= 0 && (w = SoleButtonLinkWidth(cell)) > 0) {
+        CellCssPadding(cell, pad);
+        w += pad[1] + pad[3];
+        *estimated = 1;
+    }
     if (w <= 0) {
         len = InlineTextLength(cell->children, &space);
         if (len > 0 && space) --len;	/* a trailing space */
@@ -4545,6 +4782,18 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
                     lsetvec_push(outRows, sp);
                 }
                 continue;
+            }
+            {
+                char rc[32];
+                long rpx = RowRuleBorder(tr, rc, sizeof(rc));
+                struct lset *sp;
+                if (rpx > 0 && (sp = MakeFillerLeaf(st)) != NULL) {
+                    sp->fixedheight = rpx;
+                    strncpy(sp->bgcolor, rc, sizeof(sp->bgcolor) - 1);
+                    sp->bgcolor[sizeof(sp->bgcolor) - 1] = '\0';
+                    lsetvec_push(outRows, sp);
+                    continue;
+                }
             }
             if (r == 0 || !RowIsEntirelyBlank(rows.items[r - 1])) {
                 char prevBuf[32], nextBuf[32];
@@ -5460,6 +5709,34 @@ static int IsTinySpacerDiv(const struct htmlnode *n)
     return tiny;
 }
 
+/* The pixel height of a <div> that is only vertical space: a CSS
+   height in pixels and no content but spaces, no-break spaces or one
+   <br>; else 0.  MJML separates everything with these -- Amazon's
+   <div style="height:12px;line-height:12px">&nbsp;</div> -- and each
+   was a full blank text line (2026-11-16). */
+static long SpacerDivHeight(const struct htmlnode *n)
+{
+    const struct htmlnode *c;
+    char *hv;
+    long h, i;
+    int brs = 0;
+    for (c = n->children; c; c = c->next) {
+        if (htmlpart_IsText(c)) {
+            for (i = 0; i < c->textlen; ++i) {
+                unsigned char ch = (unsigned char) c->text[i];
+                if (!is_collapsible_space(ch)) return 0;	/* includes no-break space */
+            }
+        } else if (htmlpart_IsElement(c) && strcmp(c->tag, "br") == 0 && !c->children && !brs) {
+            ++brs;
+        } else return 0;
+    }
+    hv = htmlpart_GetStyleProp(n, "height");
+    if (!hv) return 0;
+    h = ParseFixedPixelWidth(hv);
+    free(hv);
+    return (h > 0 && h <= 200) ? h : 0;
+}
+
 static int tag_is_suppressed(const char *t)
 {
     return strcmp(t, "head") == 0 || strcmp(t, "title") == 0;
@@ -5843,6 +6120,88 @@ static int TryRenderFloatImageBlock(struct hax_state *st, const struct htmlnode 
     return TRUE;
 }
 
+/* A column's width as a percentage, if n is an inline-block with a
+   CSS width in percent (display:inline-block; width:25%), else 0. */
+static long InlineBlockPercent(const struct htmlnode *n)
+{
+    char *d, *w;
+    long pct = 0;
+    if (!htmlpart_IsElement(n) || strcmp(n->tag, "div") != 0) return 0;
+    d = htmlpart_GetStyleProp(n, "display");
+    w = htmlpart_GetStyleProp(n, "width");
+    if (d && strcasecmp(d, "inline-block") == 0 && w && strchr(w, '%'))
+        pct = strtol(w, NULL, 10);
+    free(d);
+    free(w);
+    return (pct > 0 && pct <= 100) ? pct : 0;
+}
+
+/* Side-by-side columns: a block whose content is two or more
+   inline-block <div>s with percentage widths totalling at most 100%,
+   which a browser lays out in one row.  MJML builds every multi-column
+   section this way, with an equivalent table only inside Outlook's
+   conditional comments (which the parser drops): Amazon's product row
+   is a 25% image column beside a 75% description column, and each
+   stacked on its own line (2026-11-16).  Rendered as one row of
+   columns weighted by their percentages, each column's content walked
+   into its own text as a cell's is.  Returns FALSE, with nothing
+   inserted, if blk isn't that shape. */
+#define IBCOL_MAX 8
+static int TryRenderInlineBlockColumns(struct hax_state *st, const struct htmlnode *blk)
+{
+    const struct htmlnode *c, *cols[IBCOL_MAX];
+    struct wleaf cells[IBCOL_MAX];
+    long pct[IBCOL_MAX], total = 0;
+    int n = 0, i;
+    struct lset *row;
+
+    for (c = blk->children; c; c = c->next) {
+        if (htmlpart_IsText(c) && TextIsAllSpace(c)) continue;
+        if (n >= IBCOL_MAX || (pct[n] = InlineBlockPercent(c)) == 0) return FALSE;
+        if (NodeIsStyleHidden(c)) return FALSE;
+        total += pct[n];
+        cols[n++] = c;
+    }
+    if (n < 2 || total > 100) return FALSE;
+
+    for (i = 0; i < n; ++i) {
+        struct text *ct = (struct text *) class_NewObject("text");
+        struct lset *leaf = (struct lset *) class_NewObject("lset");
+        struct style *leftSt = JustificationStyleFor(style_LeftJustified);
+        long len = 0, k;
+
+        if (!ct || !leaf) { st->hardfail = 1; return FALSE; }
+        if (leftSt) text_SetGlobalStyle(ct, leftSt);
+        SetNextRenderContext(st, NULL, 0);
+        if (!htmlatk_RenderAmbient(ct, 0, cols[i]->children, NULL, NULL, cols[i],
+                                   st->resolver, st->resolverRock, &len, TRUE))
+            st->hardfail = 1;
+        /* as in TryRenderFloatImageBlock: the styles open around the
+           block belong to st->dest's flow */
+        len = text_GetLength(ct);
+        if (len > 0)
+            for (k = 0; k < st->markcount; ++k)
+                environment_WrapStyle(ct->rootEnvironment, 0, len, st->marks[k].style);
+        text_SetReadOnly(ct, TRUE);
+        leaf->dobj = (struct dataobject *) ct;
+        strcpy(leaf->dataname, "text");
+        strcpy(leaf->viewname, "htmllinkview");
+        leaf->minwidth = TextMaxEmbeddedLsetMinwidth(ct);
+        leaf->valign = lset_VALIGN_TOP;
+        cells[i].leaf = leaf;
+        cells[i].weight = pct[i];
+        cells[i].fixedpx = 0;
+        cells[i].px = 0;
+    }
+    row = BuildLsetChain(cells, n, lsetview_MakeHorz, lsetview_MakeHorzFixed, st);
+    if (!row) return FALSE;
+    EnsureLineBreak(st);
+    FlushPendingSpace(st);
+    InsertRowView(st, row);
+    EnsureLineBreak(st);
+    return TRUE;
+}
+
 /* The public entry point wraps this with no ambient nodes. They exist
    for BuildLsetCell: a <table>, <tr> or <td> node is consumed by the
    table-building machinery and never walked here, so its own style
@@ -5885,6 +6244,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
     st.nested = nested;
     st.ambientDepth = 0;
     st.unpaintedDepth = 0;
+    st.backdrop = NULL;
     strcpy(st.paintedBg, "#ffffff");
     if (nested && NextRenderPaintedBg[0]) strcpy(st.paintedBg, NextRenderPaintedBg);
     NextRenderPaintedBg[0] = '\0';
@@ -6080,6 +6440,27 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 EnsureLineBreak(&st);
                 continue;
             }
+            if (strcmp(n->tag, "div") == 0 && TryRenderInlineBlockColumns(&st, n)) {
+                continue;
+            }
+            /* An empty <p> or <div> drawn only for its border: a
+               divider, as rule rows (a browser's border-top or
+               -bottom line), not a paragraph break.  Amazon's between
+               the tracker and the shipment details is <p style=
+               "border-top:solid 1px #BBBFBF;margin:0px auto"></p>,
+               which vanished, leaving only space (2026-11-16). */
+            if (BlockHasRuleBorder(n) && CellIsEmpty(n)) {	/* CellIsEmpty: its content */
+                char ct[32], cb[32];
+                long top = CssBorderSide(n, "border-top", ct, sizeof(ct));
+                long bot = CssBorderSide(n, "border-bottom", cb, sizeof(cb));
+                if (top > 0 || bot > 0) {
+                    EnsureLineBreak(&st);
+                    if (top > 0) InsertRuleRow(&st, ct, top);
+                    if (bot > 0) InsertRuleRow(&st, cb, bot);
+                    EnsureLineBreak(&st);
+                    continue;
+                }
+            }
             if (strcmp(n->tag, "p") == 0 || strcmp(n->tag, "div") == 0) {
                 int right;
                 const struct htmlnode *fimg = LeadingFloatImage(n, &right);
@@ -6122,6 +6503,14 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 struct hax_ambient a;
                 EnsureLineBreak(&st);
                 if (IsTinySpacerDiv(n)) continue;	/* no children, no close */
+                {
+                    long sh = SpacerDivHeight(n);
+                    if (sh > 0) {
+                        InsertRuleRow(&st, "", sh);
+                        EnsureLineBreak(&st);
+                        continue;
+                    }
+                }
                 /* Popped at the div's POST event. */
                 if (DivAmbient(n, &a) && st.ambientDepth < HAX_AMBIENT_MAX)
                     st.ambient[st.ambientDepth++] = a;
@@ -6167,6 +6556,7 @@ static boolean htmlatk_RenderAmbient(struct text *dest, long pos, const struct h
                 } else {
                     opened = PushFormattingMarks(&st, n);
                 }
+                if (HasUnpaintedBg(n) && SoleImageChild(n)) st.backdrop = n;
                 ws_push(&ws, n, 1, opened);
             }
             if (n->children) ws_push_siblings(&ws, n->children);
