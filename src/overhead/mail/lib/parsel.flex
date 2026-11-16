@@ -109,6 +109,8 @@ DHACK			(({WORD}\.+)|(\.+{WORD})|(\.\.+))
 
 {LWSP}+			;
 
+\r			;	/* CRLF mail (IMAP): a CR is just whitespace */
+
 \(			{
 			  register ADDRESS_COMMENT *c;
 			  char *s;
@@ -259,6 +261,7 @@ static bool EatComment()
 				if (c == 0) return FALSE;
 				*cbuffer++ = c;
 				break;
+	    case '\r':		break;	/* CRLF fold: drop the CR */
 	    case '\n':		c = input();
 				if (!LWSP_char(c)) return FALSE;
 				do { c = input(); } while (LWSP_char(c));
@@ -299,6 +302,7 @@ static bool GetString()
 			if (c == 0) return FALSE;
 			*next++ = c;
 			break;
+	    case '\r':		break;	/* CRLF fold: drop the CR */
 	    case '\n':	c = input();
 			if (!LWSP_char(c)) return FALSE;
 			do { c = input(); } while (LWSP_char(c));
@@ -339,6 +343,7 @@ static bool GetDomainLit()
 				if (c == 0) return FALSE;
 				*next++ = c;
 				break;
+	    case '\r':		break;	/* CRLF fold: drop the CR */
 	    case '\n':		c = input();
 				if (!LWSP_char(c)) return FALSE;
 				do { c = input(); } while (LWSP_char(c));
