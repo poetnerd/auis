@@ -893,7 +893,7 @@ unsigned char *mimepart_Utf8ToLatin1(const unsigned char *in, long inlen, long *
             out[o++] = c; ++i;
         } else if ((c & 0xE0) == 0xC0 && i + 1 < inlen && (in[i+1] & 0xC0) == 0x80) {
             long cp = ((c & 0x1F) << 6) | (in[i+1] & 0x3F);
-            if (cp != 0x034F) /* COMBINING GRAPHEME JOINER: zero-width */
+            if (cp != 0x034F && cp != 0x00AD) /* COMBINING GRAPHEME JOINER, SOFT HYPHEN: invisible */
                 out[o++] = (cp <= 0xFF) ? (unsigned char) cp : '?';
             i += 2;
         } else if ((c & 0xF0) == 0xE0 && i + 2 < inlen
