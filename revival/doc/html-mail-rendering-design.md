@@ -1198,6 +1198,12 @@ already once did.
    boundary:** this fixes Western marketing-copy punctuation only —
    it does not, and cannot, help with the much bigger gap of
    genuinely non-Latin scripts (see Open questions below).
+   Encoded headers (RFC 2047) reuse the same path:
+   `mimepart_DecodeHeader` undoes the Q or B form, then hands UTF-8
+   to `mimepart_Utf8ToLatin1`, so a subject's curly quotes come out
+   as the body's do. text822 decodes only the displayed copy of each
+   header line. The parsed copy and sendmessage's reply/forward
+   headers stay encoded, since outgoing headers must be 7-bit.
 2. **Link clicks** — fixed 2026-09-16. `htmlatk_HandleLinkHit()`
    (`htmlatk.c`) is a shared `Hit()`-override body used by both
    `t822view` (the message body) and a new `htmllinkview` class

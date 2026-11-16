@@ -614,6 +614,12 @@ being front-loaded here.
         round images below).
       - Encoded Subject lines (RFC 2047) aren't decoded; no decoder
         exists anywhere in the tree.
+        **Header block FIXED 2026-11-15**, wdc-confirmed:
+        `mimepart_DecodeHeader` (`mimepart.c`, tested by
+        `mimeparttest header`), used by text822 for the displayed
+        header lines. Still open: the caption list (`bldcapt.c`, in the
+        message server), where stored captions also need a rebuild
+        path for mail already in a folder.
       - **RESOLVED 2026-11-14**, wdc-confirmed: serif `font-family`
         requests fell back to fontconfig's default face (Verdana).
         `htmlatk.c` kept only the first CSS family, usually a web font
