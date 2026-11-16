@@ -96,6 +96,13 @@ static int my_YY_input(buf, max_size)
 #undef unput
 %}
 
+/* yytext as a char array, as lex had it: EatComment, GetString and
+   GetDomainLit copy what they read into yytext, which in flex's default
+   (%pointer) is the input buffer itself.  When input() reached the end
+   of that buffer, as it does for a trailing "addr (Name)" comment, the
+   buffer moved and the comment came back as just "(" (2026-11-15). */
+%array
+
 LWSP			[ \t]
 ATOMCHARS		[!#-\'\*\+\-/-9=\?A-Z\^-~]
 WORD			{ATOMCHARS}+

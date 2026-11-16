@@ -183,7 +183,7 @@ int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim)
 		char *s;
 
 		RealFrom = This->Text;
-		if (*RealFrom = '(') {
+		if (*RealFrom == '(') {
 		    ++RealFrom;
 		    s = strrchr(RealFrom, ')');
 		    if (s) *s = '\0';
