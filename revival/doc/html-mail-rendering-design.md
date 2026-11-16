@@ -773,6 +773,17 @@ each cell renders in its own walk, so every ambient is inside the
 cell). A rounded or colored leaf narrowed this way is wrapped
 (`CenteredRowLeaf`) so its background and corners narrow with it.
 
+A label's box is measured at layout, not estimated (2026-11-16). The
+box is flagged `shrinkwidth` (`lset.ch`) unless its width was
+declared; lsetv.c's `NaturalWidth` walks its content once linked: a
+text view's first line laid out at unlimited width
+(`textview_LineRedraw`, as textview's own `view_HeightSet` sizing
+does) plus its side margins, a leaf's padding and border, a split's
+parts. `ContentWidth` uses that in `placechild` and `DesiredSize`;
+before the content is linked (the lazy-linking rule) and in the dump
+tool, which has no display, the estimate below stands in.
+`txtvinfo.h` is installed so lsetv.c can read `LineRedraw`'s result.
+
 `LabelTextWidth` is the larger of two estimates: 55% of the font size
 per character, and Helvetica's AFM advance widths (regular or bold,
 by `font-weight` 600 and up or `<b>`/`<strong>`) at the size actually
@@ -782,10 +793,9 @@ estimate alone wrapped some label: 55% wraps wide letters (LinkedIn's
 bold "Read more", the Economist's "Watch now"), and the metrics at
 the CSS size wrap a 17px or 14px label by the rounding. Characters
 outside ASCII count a full em; a label holding an image gets only the
-55%. All of this guesses at what the text view will draw. The real
-fix is to measure at layout time instead: a shrink-to-fit leaf whose
-lsetview asks its text view for the one-line natural width (see
-roadmap.md).
+55%. All of this guessed at what the text view would draw, which is
+why it gave way to measurement; it now only fills the gap before a
+box can be measured.
 
 `font-weight` maps to bold at 600 and up, regular below, and that is
 a decision, not a gap (2026-11-16). ATK fonts have only regular and

@@ -2612,3 +2612,13 @@ On Linux the same library is the distribution's `libjpeg-turbo`
 package (`libjpeg-dev` on Debian/Ubuntu, which installs libjpeg-turbo;
 `libjpeg-turbo-devel` on Fedora). Its headers and API are identical, so only a platform
 `system.mcr` needs `JPEGINCLUDES`/`JPEGLIB`.
+
+### 2026-11-16: `txtvinfo.h` installed
+
+`src/atk/text/Imakefile` now installs `txtvinfo.h` (textview's
+line-layout result, `struct formattinginfo`) into `include/atk`,
+alongside `txtstvec.h`, which it includes. `src/atk/adew/lsetv.c`
+reads it to measure a shrink-to-fit box's content with
+`textview_LineRedraw`. A tree built before this needs `make Makefile`
+and `make install` in `src/atk/text`, or a full `make World`, for adew
+to compile.

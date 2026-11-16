@@ -802,20 +802,19 @@ being front-loaded here.
         flattened `align="middle"` cell was placed by the outer cell,
         so LinkedIn's blue buttons sat left. A flattened cell's
         explicit `align`/`text-align` now places them (`ContentSide`).
-      - Label widths estimated, not measured (open; the real fix is
-        next). Shrink-to-fit labels and button links are sized at
-        build time, before any font exists: the larger of 55% of the
-        font size a character and Helvetica's AFM widths at the size
-        drawn (font sizes are whole points: 17px draws at 13pt, about
-        17.3px) plus 4px slack (`LabelTextWidth`). That fixed LinkedIn's
-        "Read more" and the Economist's "Watch now" wrapping
-        (2026-11-16, wdc-confirmed), but each step tuned one guess
-        against another. The real fix: mark the label's leaf
-        shrink-to-fit and have lsetview ask its text view for the one-
-        line natural width at layout time, as a browser does (an
-        lsetview change in `adew`, perhaps a natural-width query on
-        textview). That replaces the estimate, the Helvetica table and
-        the slack, for any font.
+      - Label widths measured at layout: **RESOLVED 2026-11-16**,
+        wdc-confirmed (both LinkedIns "even and snug", the Economist's
+        buttons, first draw clean; the piano inset in "Mail for your
+        ears" unaffected). Button and label boxes whose width
+        `htmlatk.c` can only estimate are flagged `shrinkwidth`
+        (`lset.ch`); once linked, lsetview measures their content's
+        natural one-line width with textview's own `LineRedraw` at
+        unlimited width, plus padding and border, and uses that. A
+        declared width (LinkedIn's 390px button) is kept. The build-time
+        estimate (`LabelTextWidth`: 55% a character or Helvetica's AFM
+        widths at the drawn point size, plus slack) is now only the
+        fallback before linking and in the dump tool, and can be
+        simplified. Each step of tuning it had wrapped some other label.
       - CSS `height` and spacer rows: **RESOLVED 2026-11-16**,
         wdc-confirmed (LinkedIn, bookrack; Economist and National Grid
         unchanged). The parser keeps CSS `height`; a cell's, row's or

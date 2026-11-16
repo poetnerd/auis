@@ -1104,6 +1104,12 @@ one-point font on their lines for exactly this in September, but
 images never had. With images treated the same way, the covers, the buy
 buttons and LinkedIn's long-misplaced logo all moved into place.
 
+The button-width estimates were then retired. The layout is still
+built before any font exists, but lset now marks a box as shrink-to-fit
+and measures its text once it reaches the screen, with the same
+line-layout routine textview uses to draw. Every button fits its label
+snugly, in whatever font and size it is drawn.
+
 One hang turned out to be a new library meeting old code. Every so
 often, every open ATK window froze at the same moment, idle, with the
 X server and its `xterm` still fine. The stuck processes were all
