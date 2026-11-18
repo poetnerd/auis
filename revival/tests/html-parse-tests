@@ -14,10 +14,11 @@ Entirely offline. Two kinds of fixtures:
   - Synthetic HTML this suite writes itself into a fresh temp
     directory on each run (allowlist/attribute/style/entity/wrapper
     cases, and the deep-nesting regression case -- never real mail).
-  - The real mail corpus committed at revival/tests/html-fixtures/
-    (read-only here; this suite never writes into that directory),
-    used for the malformed-markup and full-corpus-smoke cases per the
-    project's HTML-mail-rendering design doc.
+  - The committed fixture corpus at revival/tests/html-synth/
+    (read-only here; this suite never writes into that directory):
+    synthetic mail bodies, each reproducing the structure of a real
+    message (see html-synth/README.md), used for the malformed-markup
+    and full-corpus-smoke cases.
 
 No network use.
 
@@ -55,11 +56,11 @@ Cases:
   8. entity_decoding -- named (amp/lt/gt/quot, plus Latin-1 accented/
      currency names), numeric decimal and hex entities decode
      correctly; an unrecognized entity name passes through verbatim.
-  9. malformed_table_tags_real_fixtures -- fixtures 07 and 08 in
-     revival/tests/html-fixtures (real mail with mismatched
-     <table>/</table> counts, one imbalance direction each) parse
-     without crashing and produce a non-collapsed tree.
-  10. real_corpus_smoke -- all 16 real fixtures parse cleanly (no
+  9. malformed_table_tags_real_fixtures -- fixtures s07 and s08 in
+     revival/tests/html-synth (mismatched <table>/</table> counts,
+     one imbalance direction each) parse without crashing and
+     produce a non-collapsed tree.
+  10. real_corpus_smoke -- all 16 corpus fixtures parse cleanly (no
       crash, no nonzero exit, no exception) in one pass.
 """
 
@@ -73,7 +74,7 @@ REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file
 SHRLIB = os.path.join(REPO_ROOT, "src", "ams", "libs", "shr")
 HDRS = os.path.join(REPO_ROOT, "src", "ams", "libs", "hdrs")
 DRIVER = os.path.join(SHRLIB, "htmlparttest.test")
-FIXTURE_DIR = os.path.join(REPO_ROOT, "revival", "tests", "html-fixtures")
+FIXTURE_DIR = os.path.join(REPO_ROOT, "revival", "tests", "html-synth")
 
 PASS = []
 FAIL = []
@@ -279,9 +280,11 @@ def case_style_filtering(tmpdir):
     r, kv = run(["firstattr", fx, "p", "style"])
     got = kv.get("VALUE", [None])[0]
     # last color wins (blue, not red); canonical fixed order (color
-    # before font-weight, not source order); font-family and the
-    # -webkit- property are dropped entirely
-    ok = kv.get("FOUND") == ["1"] and got == "color:blue;font-weight:bold"
+    # before font-weight before font-family, not source order); the
+    # -webkit- property is dropped entirely. font-family has been
+    # allowlisted since The Economist's fonts (htmlatk.c cleans the
+    # value itself, ParseCssFontFamilyList)
+    ok = kv.get("FOUND") == ["1"] and got == "color:blue;font-weight:bold;font-family:evil"
     result(name, ok, f"got={got!r}\n" + r.stdout + r.stderr)
 
     name2 = "style-property-filtering-absent-properties-via-getstyleprop"
@@ -365,8 +368,8 @@ def case_entity_decoding(tmpdir):
 
 def case_malformed_real_fixtures():
     for fname, minimum_tables in (
-        ("07-bakadesuyo-mismatched-table-tags.html", 5),
-        ("08-fidelity-mismatched-table-plus-font.html", 5),
+        ("s07-table-extra-open.html", 5),
+        ("s08-table-extra-close-font.html", 5),
     ):
         name = f"malformed-table-tags-real-fixture-{fname}"
         path = os.path.join(FIXTURE_DIR, fname)
@@ -430,7 +433,7 @@ def main():
         case_attribute_allowlist(tmpdir)
         case_entity_decoding(tmpdir)
 
-        note(f"--- real fixtures from {FIXTURE_DIR} (read-only) ---")
+        note(f"--- corpus fixtures from {FIXTURE_DIR} (read-only) ---")
         case_malformed_real_fixtures()
         case_real_corpus_smoke()
     finally:

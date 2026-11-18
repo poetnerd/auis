@@ -590,7 +590,7 @@ for the full writeup.
 
 **Degradation, not failure:** email templates nest tables deeply for
 Outlook-compatibility hacks — the fixture corpus's real max is 28
-levels (see `revival/tests/html-fixtures/README.md`), and that's
+levels (see `revival/tests/html-synth/README.md`), and that's
 rendered correctly, not flattened. Degradation to sequential
 paragraph text is still the right response to a genuine parse
 failure partway through a table (a malformed/unclosed structure the
@@ -1407,7 +1407,7 @@ already once did.
   Latin-1 text model, not a bug to chase.
 - SVG/WEBP support — PNG (see Images above) is done, but the fixture
   corpus also turned up SVG and WEBP images
-  (`revival/tests/html-fixtures/README.md`), which weren't on this
+  (`revival/tests/html-synth/README.md`), which weren't on this
   doc's radar originally. SVG in particular is a much bigger lift than
   PNG (a vector format, not a bitmap codec) and probably isn't worth
   it; WEBP is closer to PNG/JPEG in shape.

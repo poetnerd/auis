@@ -184,7 +184,7 @@ struct htmlnode {
    dropped document. Never returns NULL due to malformed markup alone
    -- mismatched/unclosed tags degrade gracefully (see the design
    doc's "Sanitization" section and fixtures 07/08 in
-   revival/tests/html-fixtures): an unmatched close tag is ignored, a
+   revival/tests/html-synth): an unmatched close tag is ignored, a
    never-closed open tag is implicitly closed at end of input, with
    whatever content it accumulated by then. Returns NULL only on
    allocation failure or a genuinely empty/all-dropped input. */

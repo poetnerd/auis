@@ -14,20 +14,20 @@ Usage:
 Entirely offline. Two kinds of fixtures, same split as html-parse-
 tests: synthetic HTML this suite writes itself into a fresh temp
 directory on each run (table/list/link/image/whitespace/nesting
-cases), and the real mail corpus committed at
-revival/tests/html-fixtures/ (read-only here; this suite never writes
-into that directory), used for the full-corpus-smoke case and a couple
-of fixture-specific readability spot checks.
+cases), and the committed fixture corpus at revival/tests/html-synth/
+(synthetic mail bodies, each reproducing a real message's structure;
+read-only here), used for the full-corpus-smoke case and a couple of
+fixture-specific readability spot checks.
 
 No network use.
 
 Cases:
 
-  1. real_corpus_smoke -- all 16 real fixtures render to non-empty,
+  1. real_corpus_smoke -- all 16 corpus fixtures render to non-empty,
      non-crashing plain text in one pass, with no literal '<tag>'
      markup surviving into the output (a coarse but effective check
      that nothing leaked through unrendered).
-  2. fixture_spot_checks -- two real fixtures checked for specific
+  2. fixture_spot_checks -- two corpus fixtures checked for specific
      expected substrings in their rendered output (a link's URL
      appearing in "(url)" form, an image alt placeholder, a mailto
      link) -- not full golden-file comparison, but stronger than
@@ -82,7 +82,7 @@ REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file
 SHRLIB = os.path.join(REPO_ROOT, "src", "ams", "libs", "shr")
 HDRS = os.path.join(REPO_ROOT, "src", "ams", "libs", "hdrs")
 DRIVER = os.path.join(SHRLIB, "htmltexttest.test")
-FIXTURE_DIR = os.path.join(REPO_ROOT, "revival", "tests", "html-fixtures")
+FIXTURE_DIR = os.path.join(REPO_ROOT, "revival", "tests", "html-synth")
 
 PASS = []
 FAIL = []
@@ -224,7 +224,7 @@ def case_real_corpus_smoke():
         # of the elements htmlpart.h's allowlist keeps (a real '<' in
         # rendered mail body prose is vanishingly unlikely to be
         # followed immediately by one of these exact tag names).
-        # Deliberately excludes "<a href" -- fixtures 06/11/14 share a
+        # Deliberately excludes "<a href" -- fixtures s06/s11/s14 share a
         # mailing-list footer that *quotes* "<a href=...>" as literal
         # instructional text (entity-escaped in the source, correctly
         # entity-decoded back to literal text by this renderer, same
@@ -242,20 +242,20 @@ def case_real_corpus_smoke():
 
 
 def case_fixture_spot_checks():
-    # fixture 14: a real link should render as "text (url)" and a
+    # s14: a real link should render as "text (url)" and a
     # mailto: unsubscribe link should show as "(mailto:...)"
-    name = "fixture-spot-check-14-links-and-mailto"
-    path = os.path.join(FIXTURE_DIR, "14-simple-baseline-no-table-no-style.html")
+    name = "fixture-spot-check-s14-links-and-mailto"
+    path = os.path.join(FIXTURE_DIR, "s14-plain-prose-links.html")
     rc, kv, text, framing_ok = run_totext(path)
     ok = (rc == 0 and framing_ok and text is not None
-          and "https://news.harvard.edu/gazette/story/2023/12/researchers-create-first-logical-quantum-processor/" in text
-          and "(mailto:xbbn+unsubscribe@googlegroups.com)" in text)
+          and "https://news.example.edu/2023/12/researchers-build-a-logical-quantum-processor/" in text
+          and "(mailto:readers+unsubscribe@groups.example.org)" in text)
     result(name, ok, (text or "")[:400])
 
-    # fixture 10: at least one image alt placeholder should survive
-    # (the Economist logo) rendered as "[image: ...]", not dropped
-    name2 = "fixture-spot-check-10-image-alt-placeholder"
-    path2 = os.path.join(FIXTURE_DIR, "10-economist-no-doctype-border0-table.html")
+    # s10: at least one image alt placeholder should survive (the
+    # masthead logo) rendered as "[image: ...]", not dropped
+    name2 = "fixture-spot-check-s10-image-alt-placeholder"
+    path2 = os.path.join(FIXTURE_DIR, "s10-no-doctype-border0-alt.html")
     rc2, kv2, text2, framing_ok2 = run_totext(path2)
     ok2 = (rc2 == 0 and framing_ok2 and text2 is not None
            and "[image:" in text2)
@@ -427,7 +427,7 @@ def main():
 
     tmpdir = tempfile.mkdtemp(prefix="html-totext-tests-")
     try:
-        note(f"--- real fixtures from {FIXTURE_DIR} (read-only) ---")
+        note(f"--- corpus fixtures from {FIXTURE_DIR} (read-only) ---")
         case_real_corpus_smoke()
         case_fixture_spot_checks()
 

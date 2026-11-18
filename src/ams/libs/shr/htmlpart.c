@@ -223,7 +223,7 @@ static const struct hp_entity hp_entities[] = {
    just approximate. Confirmed live in real mail (National Grid,
    found 2026-08-16): &zwnj; used as "hidden preheader" anti-clipping
    padding (a wall of them in a color:#ffffff div, controlling the
-   inbox preview snippet -- see revival/tests/html-fixtures/README.md
+   inbox preview snippet -- see revival/tests/html-synth/README.md
    for the same trick found independently in the fixture corpus) was
    rendering as literal "&zwnj;" text instead of vanishing. zwj/lrm/
    rlm are the same character class (invisible joining/direction

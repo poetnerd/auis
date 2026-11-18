@@ -2832,7 +2832,7 @@ static struct lset *MakeFillerLeaf(struct hax_state *st)
    falls through to lpair's original, still-broken fallback (echo the
    asked-for height, capped at 256px) regardless of that fix. Real
    marketing email is full of near-invisible spacer/padding rows
-   (confirmed throughout revival/tests/html-fixtures/), so this gap hit
+   (confirmed throughout revival/tests/html-synth/), so this gap hit
    constantly and compounded into exactly the reported symptom: large
    blank areas that are still real, clickable, selectable view
    rectangles (an oversized region under a leaf with no real content to

@@ -24,7 +24,7 @@
 		and handed to htmlpart_Parse() as raw bytes -- this
 		driver does not know about MIME or RFC822 headers at
 		all; fixtures here are raw (or already MIME/QP/base64-
-		decoded, as revival/tests/html-fixtures already are)
+		decoded, as revival/tests/html-synth already are)
 		HTML bytes, nothing more.
 
 		All subcommands other than "dump" walk the parsed tree

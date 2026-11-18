@@ -1793,7 +1793,7 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    working parser to benchmark against real ... input, not before" --
    see that doc's Open Questions). There is now a working parser and
    renderer to benchmark: timing htmlatktest.test's "dump" mode against
-   every fixture in revival/tests/html-fixtures/, including the two
+   every fixture in revival/tests/html-synth/, including the two
    deepest-nesting cases (01: 28 levels/127KB, 16: 23 levels/46KB) and
    the two largest bodies (02: 213KB, 03: 220KB), the slowest observed
    wall-clock time for htmlpart_Parse()+htmlatk_Render() combined was

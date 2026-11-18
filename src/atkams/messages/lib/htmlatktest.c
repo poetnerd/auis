@@ -67,7 +67,7 @@
 		the real image-embedding path (Gate 3/4) without needing an
 		actual MIME envelope, since the real fixture corpus was
 		harvested as bare HTML bodies with no attached image bytes
-		to resolve against (see revival/tests/html-fixtures/
+		to resolve against (see revival/tests/html-synth/
 		README.md and htmlatk.h's resolver note).
 
 	    htmlatktest.test linkat <fixturefile> <pos>

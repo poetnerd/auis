@@ -1,0 +1,292 @@
+#!/usr/bin/env python3
+"""Writes the synthetic HTML mail fixtures in this directory.
+
+Each fixture isolates the structural property one of the original
+real-mail fixtures (revival/tests/html-fixtures, harvested 2026-08-14
+and withdrawn 2026-11-17 because most were private mail) was chosen
+for. All content is invented; every name and domain is fictional or
+an RFC 2606 example domain. Deterministic: rerunning rewrites the
+same bytes. See README.md for what each fixture exercises.
+
+    revival/tests/html-synth/make-fixtures      # rewrite in place
+"""
+import os
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+FIXTURES = {}
+
+
+def fixture(name):
+    def wrap(fn):
+        FIXTURES[name] = fn
+        return fn
+    return wrap
+
+
+DOCTYPE = ('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" '
+           '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n')
+
+LIST_FOOTER = (
+    '<p>--<br>You received this message because you are subscribed to the '
+    'Example Readers group.<br>To unsubscribe from this group and stop '
+    'receiving emails from it, send an email to '
+    '<a href="mailto:readers+unsubscribe@groups.example.org">'
+    'readers+unsubscribe@groups.example.org</a>.<br>To link to the group '
+    'from a web page, use &lt;a href=&quot;https://readers.example.org&quot;'
+    '&gt;https://readers.example.org&lt;/a&gt;</p>\n')
+
+SENTENCES = [
+    "The committee met on Tuesday to review the spring schedule.",
+    "Several members asked whether the venue could seat more people.",
+    "A revised agenda will be circulated before the next meeting.",
+    "Tickets for the autumn series go on sale at the end of the month.",
+    "Volunteers are still needed for the information table.",
+    "The newsletter archive is available on the society's website.",
+    "Please check your account settings if you have moved recently.",
+    "Refunds are processed within five to seven business days.",
+]
+
+
+def prose(n, start=0):
+    return " ".join(SENTENCES[(start + i) % len(SENTENCES)] for i in range(n))
+
+
+def nested_tables(depth, inner, img_every=0):
+    """depth well-formed nested border=0 layout tables around inner."""
+    out = inner
+    for level in range(depth, 0, -1):
+        img = ""
+        if img_every and level % img_every == 0:
+            img = ('<img src="https://images.example.com/spacer-%d.gif" '
+                   'width="20" height="4" alt="">' % level)
+        out = ('<table border="0" cellpadding="0" cellspacing="0" width="100%%">'
+               '<tr><td style="padding:2px">%s%s</td></tr></table>\n'
+               % (img, out))
+    return out
+
+
+@fixture("s01-deep-table-nesting-28.html")
+def s01():
+    inner = ('<p style="font-family:Arial,sans-serif;font-size:14px">'
+             'Your order has shipped and will arrive on Thursday.</p>'
+             '<img src="https://images.example.com/product-123.jpg" '
+             'width="120" height="120" alt="Blue ceramic mug">')
+    return (DOCTYPE + '<html><head><title>Shipped</title></head><body>\n'
+            '<img src="https://track.example.net/open.gif?u=abc" width="1" '
+            'height="1" alt="">\n'
+            + nested_tables(28, inner, img_every=7)
+            + '</body></html>\n')
+
+
+@fixture("s02-large-heavy-tables-font.html")
+def s02():
+    rows = []
+    for i in range(370):
+        rows.append(
+            '<table border="0" cellpadding="6" cellspacing="0" width="100%%" '
+            'style="border-bottom:1px solid #dddddd">'
+            '<tr><td width="30%%" style="vertical-align:top">'
+            '<font face="Georgia" size="3" color="#333333"><b>Gallery %d</b></font>'
+            '<br><font size="2">%d Example Street, Springfield</font></td>'
+            '<td style="font-family:Helvetica,Arial,sans-serif;font-size:13px;'
+            'color:#444444">%s</td></tr></table>\n'
+            % (i + 1, 10 + i, prose(3, i)))
+    return (DOCTYPE + '<html><head><title>Weekly listings</title></head>'
+            '<body style="margin:0">\n<table border="0" width="640" align="center">'
+            '<tr><td><h1 style="font-family:Georgia">This Week in Galleries</h1>\n'
+            + "".join(rows) + '</td></tr></table></body></html>\n')
+
+
+@fixture("s03-large-body-receipt.html")
+def s03():
+    out = [DOCTYPE, '<html><head><title>Receipt</title></head><body>\n',
+           '<img src="https://images.example.com/logo.png" width="150" '
+           'height="40" alt="Example Investor">\n']
+    for t in range(21):
+        inner = ('<table border="0" cellpadding="4" width="100%%">'
+                 '<tr><td><b>Section %d</b></td><td align="right">$%d.00</td></tr>'
+                 '</table>' % (t + 1, 10 * (t + 1)))
+        out.append(nested_tables(8, inner) if t == 0 else inner + "\n")
+    for p in range(760):
+        out.append('<p style="font-size:11px;color:#666666">%s</p>\n'
+                   % prose(4, p))
+    out.append('</body></html>\n')
+    return "".join(out)
+
+
+@fixture("s04-minimal-body.html")
+def s04():
+    return '<div dir="ltr">Thank you. Your payment was received.</div>\n'
+
+
+def cid_grid(names, cols, alt_prefix):
+    cells, rows = [], []
+    for i, n in enumerate(names):
+        cells.append('<td><img src="cid:%s" width="64" height="64" alt="%s %d">'
+                     '</td>' % (n, alt_prefix, i + 1))
+        if len(cells) == cols:
+            rows.append("<tr>" + "".join(cells) + "</tr>")
+            cells = []
+    if cells:
+        rows.append("<tr>" + "".join(cells) + "</tr>")
+    return ('<table border="0" cellpadding="2">'
+            '<tr><td colspan="%d" style="font-weight:bold">%s</td></tr>%s'
+            '</table>\n' % (cols, alt_prefix, "".join(rows)))
+
+
+@fixture("s05-cid-png-colspan.html")
+def s05():
+    names = ["image%03d.png@01DA0000.EXAMPLE" % i for i in range(1, 22)]
+    return (DOCTYPE + '<html><body>\n<p>Welcome to the group. Here are the '
+            'icons from the starter kit:</p>\n'
+            + cid_grid(names, 7, "Icon") + '</body></html>\n')
+
+
+@fixture("s06-cid-webp-font.html")
+def s06():
+    return ('<html><head><meta http-equiv="content-type" content="text/html; '
+            'charset=UTF-8"></head><body>\n'
+            '<p><font face="Verdana" size="2">Can everyone see the picture '
+            'below? I saved it in a newer format.</font></p>\n'
+            '<p><img src="cid:part1.photo.webp@example.org" alt="Harbor at '
+            'dusk" width="300" height="200"></p>\n'
+            '<p><font color="#336699">Thanks, Alex</font></p>\n'
+            + LIST_FOOTER + '</body></html>\n')
+
+
+def table_run(opens, closes, cell):
+    """opens <table>s, closed closes times (a mismatch either way)."""
+    out = []
+    for i in range(opens):
+        out.append('<table border="0" width="100%%"><tr><td>%s %d' % (cell, i + 1))
+    for i in range(closes):
+        out.append('</td></tr></table>')
+    return "\n".join(out) + "\n"
+
+
+@fixture("s07-table-extra-open.html")
+def s07():
+    return (DOCTYPE + '<html><body>\n<p>Ten tables open, nine close.</p>\n'
+            + table_run(10, 9, "Lesson") + '<p>Trailing paragraph.</p>'
+            '</body></html>\n')
+
+
+@fixture("s08-table-extra-close-font.html")
+def s08():
+    body = table_run(35, 35, '<font face="Arial" size="2">Resource</font>')
+    return (DOCTYPE + '<html><body>\n<p><font size="3">Planning resources</font>'
+            '</p>\n' + body + '</td></tr></table>\n'
+            '<p><font size="1">An extra closing table tag precedes this.</font>'
+            '</p></body></html>\n')
+
+
+@fixture("s09-digest-font-colspan.html")
+def s09():
+    post = ('<table border="0" cellpadding="4" width="100%%">'
+            '<tr><td colspan="2"><font face="Helvetica" size="3"><b>Jordan '
+            'Example</b> posted in Retro Computing Club</font></td></tr>'
+            '<tr><td width="48"><img src="https://images.example.com/avatar.jpg" '
+            'width="40" height="40" alt=""></td><td><font size="2">%s</font>'
+            '</td></tr></table>' % prose(2))
+    return (DOCTYPE + '<html><body>\n'
+            + nested_tables(8, post) + '</body></html>\n')
+
+
+@fixture("s10-no-doctype-border0-alt.html")
+def s10():
+    return ('<html><head><title>Your support request</title></head><body>\n'
+            '<table border="0" cellpadding="0" cellspacing="0" width="600">'
+            '<tr><td><img src="https://images.example.com/times-logo.png" '
+            'width="200" height="50" alt="The Example Times"></td></tr>'
+            '<tr><td><table border="0" width="100%"><tr><td>'
+            '<p>Dear reader,</p><p>Thank you for contacting us about audio '
+            'playback in the app. Our team has passed your report on to the '
+            'developers.</p><p>Kind regards,<br>Reader Support</p>'
+            '</td></tr></table></td></tr></table>\n</body></html>\n')
+
+
+@fixture("s11-cid-supported-formats.html")
+def s11():
+    return ('<html><body>\n<p>Weekly update, with two charts attached '
+            'inline.</p>\n'
+            '<p><img src="cid:chart1.gif@example.org" width="400" height="200" '
+            'alt="Chart 1"></p>\n'
+            '<p><img src="cid:chart2.jpg@example.org" width="400" height="200" '
+            'alt="Chart 2"></p>\n<p>%s</p>\n' % prose(3)
+            + LIST_FOOTER + '</body></html>\n')
+
+
+@fixture("s12-colspan-tracking-pixels.html")
+def s12():
+    return (DOCTYPE + '<html><body>\n<table border="0" width="600">'
+            '<tr><td colspan="3"><h2>New post: Plain words</h2></td></tr>'
+            '<tr><td>%s</td><td width="20"></td><td>%s</td></tr></table>\n'
+            '<img src="https://pixel.example.com/b.gif?blog=1&amp;post=2" '
+            'width="1" height="1" alt="">\n'
+            '<img src="https://stats.example.com/t.gif?v=2" width="1" '
+            'height="1" alt="">\n</body></html>\n' % (prose(2), prose(2, 3)))
+
+
+@fixture("s13-mixed-cid-remote-colspan.html")
+def s13():
+    inner = ('<table border="0" width="100%"><tr><td colspan="2">'
+             '<b>New post by Sam Example</b></td></tr>'
+             '<tr><td><img src="cid:poster.jpg@example.org" width="150" '
+             'height="200" alt="Concert poster"></td>'
+             '<td><img src="https://images.example.com/badge.png" width="60" '
+             'height="60" alt="Badge"><p>Rehearsal moves to Thursday.</p>'
+             '</td></tr></table>')
+    return (DOCTYPE + '<html><body>\n' + nested_tables(3, inner)
+            + '</body></html>\n')
+
+
+SYNTH_LINK = ("https://news.example.edu/2023/12/"
+              "researchers-build-a-logical-quantum-processor/")
+
+
+@fixture("s14-plain-prose-links.html")
+def s14():
+    return ('<html><head><meta http-equiv="content-type" content="text/html; '
+            'charset=UTF-8"></head><body>\n'
+            '<p>Interesting result from the university this week:</p>\n'
+            '<p><a href="%s">Researchers build a logical quantum processor</a>'
+            '</p>\n<p>%s</p>\n<p>%s</p>\n<p>Robin</p>\n'
+            % (SYNTH_LINK, prose(3), prose(3, 4))
+            + LIST_FOOTER + '</body></html>\n')
+
+
+@fixture("s15-svg-and-webp.html")
+def s15():
+    return ('<html><body>\n<p>Two diagrams, in formats some readers cannot '
+            'show:</p>\n'
+            '<p><img src="cid:diagram.svg@example.org" width="300" height="150" '
+            'alt="Network diagram"></p>\n'
+            '<p><img src="cid:photo.webp@example.org" width="300" height="150" '
+            'alt="Photo of the lab"></p>\n'
+            '<p><img src="https://images.example.com/figure.svg" width="200" '
+            'height="100" alt="Figure"></p>\n</body></html>\n')
+
+
+@fixture("s16-deep-nesting-23-divs.html")
+def s16():
+    inner = ('<p style="font-size:15px">Show starts at 7:30. Doors open '
+             'at 7.</p>')
+    out = inner
+    for level in range(23, 0, -1):
+        if level % 2:
+            out = ('<table border="0" cellpadding="0" width="100%%"><tr>'
+                   '<td>%s</td></tr></table>' % out)
+        else:
+            out = '<div style="margin:0 auto;max-width:600px">%s</div>' % out
+    return (DOCTYPE + '<html><body>\n' + out + '\n</body></html>\n')
+
+
+def main():
+    for name, fn in FIXTURES.items():
+        with open(os.path.join(HERE, name), "w", newline="\n") as f:
+            f.write(fn())
+    print("wrote %d fixtures" % len(FIXTURES))
+
+
+if __name__ == "__main__":
+    main()

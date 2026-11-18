@@ -243,7 +243,7 @@
 	htmlpart.c's original concern was (a flat run of thousands of
 	unclosed <span>s costs only bytes, not tags-around-a-table). The
 	real fixture corpus's worst case is 28 levels (see
-	revival/tests/html-fixtures/README.md); even three orders of
+	revival/tests/html-synth/README.md); even three orders of
 	magnitude beyond that is a trivial amount of C stack. If this ever
 	proves to be a real adversarial-input concern in practice, it
 	should convert to an explicit stack the same way Stage 1/2 did --
@@ -265,7 +265,7 @@
 	valid and means "never resolve -- always placeholder", which is
 	what every Gate 2-4 standalone test in this module uses, since the
 	real fixture corpus's HTML bodies were harvested without their
-	sibling MIME parts -- see revival/tests/html-fixtures/README.md --
+	sibling MIME parts -- see revival/tests/html-synth/README.md --
 	so there is nothing to resolve cid: references against outside a
 	live message anyway). Per the design doc's remote-image policy,
 	a resolver a real caller (Gate 5's text822.c) supplies is expected
@@ -423,7 +423,7 @@
 	above, which does read the table-level width= attribute (Parse
 	WidthPixels/HTML_TABLE_DEFAULT_WIDTH). Checked against the real
 	fixture corpus before deciding, not assumed: no fixture anywhere in
-	revival/tests/html-fixtures/ uses a per-<td> width= or a <col>/
+	revival/tests/html-synth/ uses a per-<td> width= or a <col>/
 	<colgroup> width hint (grepped for both); the only width attribute
 	seen anywhere is a whole-table width="100%"/width="NNN", which says
 	nothing about relative *column* proportions in the first place --
@@ -746,7 +746,7 @@
 	third correction's fix -- that fix only ever covered non-empty
 	leaves. Real marketing/newsletter email is full of near-invisible
 	spacer/padding rows (confirmed throughout revival/tests/
-	html-fixtures/), so this gap hit constantly and is the actual,
+	html-synth/), so this gap hit constantly and is the actual,
 	dominant source of the reported large blank areas -- not a
 	remaining DesiredSize/WantNewSize propagation issue as the fourth/
 	fifth corrections above assumed (those fixes are still real and
@@ -779,7 +779,7 @@
 	blank spacer rows should coalesce into a single blank line, the
 	way HTML/browsers collapse redundant whitespace -- otherwise N
 	stacked blank spacer <tr>s (a common real-mail padding pattern,
-	confirmed throughout revival/tests/html-fixtures/) become N
+	confirmed throughout revival/tests/html-synth/) become N
 	stacked blank lines. Added RowIsEntirelyBlank() (a row has >=1
 	real <td>/<th> and every one is CellIsEmpty) and coalescing logic
 	in BuildLsetGrid's row loop: a run of 2+ consecutive entirely-blank
@@ -970,7 +970,7 @@
 	both confirmed against a real National Grid message (not the
 	synthetic fixture corpus; the actual message this whole
 	investigation has been chasing, saved at revival/tests/
-	national-grid.html -- kept out of html-fixtures/ since that
+	national-grid.html -- kept out of html-synth/ since that
 	directory's own regression test hardcodes an expectation of
 	exactly 16 files). First: BuildLsetGrid's blank-row coalescing
 	(previous item) only dropped a blank <tr> when the row immediately
