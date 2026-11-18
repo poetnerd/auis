@@ -723,7 +723,7 @@ void dropoff_Reset()
 }
 
 #ifdef TESTINGONLYTESTING
-main () 
+int main (void)
 {
     char Dest[200], FileName[1000], Temp1[1000];
     char *list[2]; int RC, Flags;
@@ -740,5 +740,6 @@ main ()
     printf("Sending file ``%s'' to address ``%s'', with flags %d.\n", FileName, Dest, Flags);
     RC = dropoff(list, FileName, NULL, NULL, Flags);	/* no ret-path or home dir */
     printf("dropoff() returns %d (%s).\n", RC, Dropoff_ErrMsg);
+    return 0;
 }
 #endif /* TESTINGONLYTESTING */
