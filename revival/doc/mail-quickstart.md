@@ -41,8 +41,8 @@ it is group- or world-readable. One stanza per server, same app password
 in both:
 
 ```
-machine smtp.fastmail.com login wdc@fastmail.com password <app-password>
-machine imap.fastmail.com login wdc@fastmail.com password <app-password>
+machine smtp.fastmail.com login you@example.com password <app-password>
+machine imap.fastmail.com login you@example.com password <app-password>
 ```
 
 ```
@@ -90,7 +90,8 @@ AMS_OnlyMail: No
 ```
 
 Your UNIX login name must match the local part of your mail address for
-this to compose correctly (`wdc` + `fastmail.com` → `wdc@fastmail.com`).
+this to compose correctly (e.g. login `you` + `ThisDomain: example.com` →
+`you@example.com`).
 The full name in the From display comes from your account's GECOS field.
 
 `AMS_OnlyMail` matters for mirrored folders specifically — see step 6.

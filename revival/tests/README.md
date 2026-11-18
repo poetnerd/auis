@@ -3,6 +3,59 @@
 Committed, repeatable test scripts for the AUIS revival (as opposed to
 `revival/tools`, which holds one-off developer utilities).
 
+The four live mail suites below (`smtp-protocol-tests`,
+`imap-protocol-tests`, `imap-sync-tests`, `imap-writeback-tests`) send,
+append, flag and delete real test mail, so they hard-code no account,
+server or folder. Everything comes from the environment (no defaults):
+
+```
+export AUIS_TEST_ADDRESS=you@example.com      # your own test mailbox
+export AUIS_TEST_IMAP_HOST=imap.example.com   # IMAP suites
+export AUIS_TEST_SMTP_HOST=smtp.example.com   # smtp-protocol-tests, imap-sync-tests case 3
+export AUIS_TEST_FOLDER=Scratch/AUISTests     # IMAP folder the write cases use
+```
+
+Credentials come from `~/.netrc`, with the machine name equal to the
+host you give (`machine imap.example.com`, `machine smtp.example.com`).
+
+| Suite | Needs |
+|---|---|
+| `smtp-protocol-tests` | `AUIS_TEST_ADDRESS` (or a recipient argument), `AUIS_TEST_SMTP_HOST` |
+| `imap-protocol-tests` | `AUIS_TEST_ADDRESS`, `AUIS_TEST_IMAP_HOST`, `AUIS_TEST_FOLDER` |
+| `imap-sync-tests` | `AUIS_TEST_ADDRESS`, `AUIS_TEST_IMAP_HOST`, `AUIS_TEST_SMTP_HOST`, `AUIS_TEST_FOLDER` |
+| `imap-writeback-tests` | `AUIS_TEST_ADDRESS`, `AUIS_TEST_IMAP_HOST`, `AUIS_TEST_FOLDER` |
+
+If any variable a suite needs is unset, empty, or whitespace-only, the
+suite prints one message at the start listing every missing variable
+and how to set it, skips its live cases without touching any account,
+and still runs its offline cases (if any).
+
+**`AUIS_TEST_FOLDER` must be a dedicated scratch folder that holds no
+real mail.** Before writing anything, the IMAP suites list the folder
+and refuse the live run, changing nothing, if it holds any message
+whose Subject lacks one of the harness markers (the
+`HARNESS_SUBJECT_MARKERS` list, identical in all three IMAP suites).
+An empty folder, or one holding only earlier runs' leftovers, is fine.
+Cleanup deletes only harness-created messages, by exact UID (`UID
+STORE \Deleted` followed by `UID EXPUNGE` of the same explicit UID
+list); no suite ever expunges a whole folder or a UID range. (An
+earlier version's cleanup ran `expunge 1:*` on the whole folder and
+deleted the owner's own mail there.)
+
+Two limits come from C code these suites do not change, and show up
+as skip reasons when your values differ:
+
+- `imapsync` connects only to `imap.fastmail.com`
+  (`src/ams/msclients/imapsync/imap_sync.c:214-216`, `DEFAULT_HOST`/
+  `DEFAULT_NETRC_MACHINE`, no override), so `imap-sync-tests` and
+  `imap-writeback-tests` run only with
+  `AUIS_TEST_IMAP_HOST=imap.fastmail.com`.
+- `imaptest.test`'s write subcommands refuse every mailbox except
+  `Revival/WritebackTest` (`src/overhead/mail/lib/imaptest.c:400`,
+  `WRITE_MAILBOX_GUARD`), so the write cases run only with
+  `AUIS_TEST_FOLDER=Revival/WritebackTest`. Move any real mail out of
+  that folder first, or the preflight will refuse it.
+
 ## smtp-protocol-tests
 
 `smtp-protocol-tests [RECIPIENT]` -- the milestone 1 SMTP dropoff
@@ -14,14 +67,21 @@ and exercises the seven Gate A cases: simple send, dot-stuffing,
 LF-only input, two recipients, a bad recipient, a bad password, and
 the legacy sendmail path when `smtphost` is unset.
 
-Run with a recipient address to exercise the five live-send cases
-against the real `smtp.fastmail.com` (mail goes only to that address);
-run with no argument to run just the two deterministic, offline cases
-(bad password, `smtphost` unset). Never touches `~/preferences` or the
-real `~/.netrc`'s contents; never prints a password.
+Run with `AUIS_TEST_ADDRESS` set (or an explicit recipient argument,
+which overrides it) and `AUIS_TEST_SMTP_HOST` set to exercise the five
+live-send cases against that server (mail goes only to that address).
+The host is written as `smtphost` into scratch `PROFILES` files;
+`smtp_dropoff()` looks up `~/.netrc` machine = `smtphost`. With the
+host but no recipient, it runs the two deterministic cases (bad
+password, `smtphost` unset), which need no real credentials -- though
+the bad-password case still opens a connection to the server and is
+refused there. Without the host, only the `smtphost`-unset case runs.
+Never touches `~/preferences` or the real `~/.netrc`'s contents; never
+prints a password.
 
 ```
-revival/tests/smtp-protocol-tests wdc@fastmail.com
+AUIS_TEST_ADDRESS=you@example.com AUIS_TEST_SMTP_HOST=smtp.example.com revival/tests/smtp-protocol-tests
+AUIS_TEST_SMTP_HOST=smtp.example.com revival/tests/smtp-protocol-tests you@example.com
 ```
 
 For the real end-to-end acceptance counterpart -- driving the actual
@@ -45,36 +105,43 @@ ENVELOPE parses correctly with no live traffic, and a reconnect drill
 (force-close -> `IMAP_DEAD` -> `imap_Reopen` restores a working
 session with a verified matching UIDVALIDITY).
 
-Live cases (all but the canned-response case) run automatically
-whenever `~/.netrc` has a usable `machine imap.fastmail.com` stanza;
-otherwise the suite runs only the offline canned-response case and
-says so cleanly rather than failing. All numeric assertions are
-compared against what the server reports at runtime (e.g. EXAMINE's
-own EXISTS count) -- never a hardcoded mailbox size, since the real
-mailbox's message count drifts with ordinary use. The subject-search
-and fetch cases depend on a message already present in INBOX with a
-subject containing `STAGE-3-CUI-TEST` -- left there by
+Live cases need `AUIS_TEST_ADDRESS` (the From:/To: of case 11's
+appended message), `AUIS_TEST_IMAP_HOST` and `AUIS_TEST_FOLDER`, plus a
+usable `~/.netrc` stanza for that host; otherwise the suite runs only
+its two offline cases (the canned-response case and the guard drill,
+case 14) and says so cleanly rather than failing. All numeric
+assertions are compared against what the server reports at runtime
+(e.g. EXAMINE's own EXISTS count) -- never a hardcoded mailbox size,
+since the real mailbox's message count drifts with ordinary use. The
+subject-search and fetch cases depend on a message already present in
+INBOX with a subject containing `STAGE-3-CUI-TEST` -- left there by
 `smtp-protocol-tests`/`smtp-send-test`'s own live sends -- and skip
 cleanly (rather than failing) if it isn't found.
 
 Cases 1-9 are strictly read-only against the mailbox: only `EXAMINE`
 and `BODY.PEEK[]` ever reach the wire.
 
-Cases 10-14 (added for the writeback milestone's Gate 2) exercise the
+Cases 10-13 (added for the writeback milestone's Gate 2) exercise the
 new write entry points -- `imap_Create`/`imap_UidStoreFlags`/
 `imap_UidExpunge`/`imap_Append` -- via `imaptest.test`'s
 `create`/`storeflags`/`expunge`/`append` subcommands: create (or
-confirm) a dedicated mailbox `Revival/WritebackTest`, append a test
-message into it (verifying the `APPENDUID` response code), a flags
-round-trip (`+FLAGS.SILENT`/`-FLAGS.SILENT`, each verified via a real
-FETCH), and a `UID EXPUNGE` round-trip (verified gone via a real
-FETCH). Case 14 proves the mailbox guard itself: all four write
-subcommands refuse, at the C level (`imaptest.c`'s `guard_mailbox()`),
-to run against `INBOX` -- nonzero exit, no wire traffic, regardless of
-what a caller passes. This suite's own Python driver carries an
-independent copy of that same assertion (`imaptest_write()`), so the
-"only touch the test mailbox" rule has two enforcement points, not
-one. INBOX itself is never written to anywhere in this suite.
+confirm) `AUIS_TEST_FOLDER`, append a test message into it (verifying
+the `APPENDUID` response code), a flags round-trip
+(`+FLAGS.SILENT`/`-FLAGS.SILENT`, each verified via a real FETCH), and
+a `UID EXPUNGE` round-trip on that one appended UID (verified gone via
+a real FETCH). Before case 11, a preflight counts the folder's
+messages per harness subject marker (`UID SEARCH SUBJECT`) against
+`EXAMINE`'s `EXISTS` and refuses cases 11-13 if anything is
+unaccounted for. The only message this suite ever deletes is the one
+case 11 appended. Case 14 proves the mailbox guard itself, offline:
+all four write subcommands refuse, at the C level (`imaptest.c`'s
+`guard_mailbox()`), to run against `INBOX` -- nonzero exit, before any
+connection -- and the drill aims them at `127.0.0.1` port 1 with a
+nonexistent netrc, so even a missing guard could not reach a real
+server. This suite's own Python driver carries an independent copy of
+that rule (`imaptest_write()`), so the "only touch the test mailbox"
+rule has two enforcement points, not one. INBOX itself is never
+written to anywhere in this suite.
 
 ```
 revival/tests/imap-protocol-tests
@@ -107,7 +174,7 @@ mailbox):
    re-run) -- a live mailbox can grow between case 1 and this re-run,
    and that is new mail, not an idempotency violation.
 3. Incremental sync: sends one marker message to self via the committed
-   SMTP path (`smtptest.test`, `wdc@fastmail.com` only), then re-runs
+   SMTP path (`smtptest.test`, to the `AUIS_TEST_ADDRESS` mailbox only), then re-runs
    imapsync with bounded polling (tolerant of delivery delay) until
    exactly one new message appears and it is the marker.
 4. Flags mapping: the newly-arrived marker has `AMS_ATT_UNSEEN` set
@@ -131,8 +198,8 @@ mailbox):
 
 Because case 1 mirrors the *entire* live INBOX and case 5 re-mirrors it
 again from scratch, this suite can take many minutes to run. Skips
-cleanly (rather than failing) when `~/.netrc` has no usable `machine
-imap.fastmail.com` stanza. The real `~/.IMAP/fastmail` mirror root is
+cleanly (rather than failing) when `~/.netrc` has no usable stanza for
+`AUIS_TEST_IMAP_HOST`. The real `~/.IMAP/fastmail` mirror root is
 never touched -- only the scratch root, removed on exit unless
 `IMAPSYNC_KEEP_SCRATCH` is set.
 
@@ -151,7 +218,7 @@ INBOX mirror above (own tempdir, own `imapsync` run, no dependency on
 the long INBOX pass having completed first):
 
 * **W2 flags round-trip**: appends a test message into
-  `Revival/WritebackTest` via `imap_Append`, mirrors it, fabricates a
+  `AUIS_TEST_FOLDER` via `imap_Append`, mirrors it, fabricates a
   `J1 flags` journal line forcing `AMS_ATT_UNSEEN` off (the
   `ASS_AND_ATTRIBUTES` mask shape `CUI_MarkAsRead` itself would
   produce), replays, and verifies `\Seen` landed server-side via a real
@@ -170,8 +237,8 @@ the long INBOX pass having completed first):
   (well past the 25-purge limit) and confirms `imapsync` refuses to
   replay any of it without `-force-purges` (journal left untouched,
   loud log line present, nonzero exit) -- then confirms `-force-purges`
-  overrides the refusal and clears it (all 26 fabricated uids are
-  harmless no-ops server-side, since none of them actually exist).
+  overrides the refusal and clears it (all 26 fabricated uids lie
+  well above the folder's `UIDNEXT`, so none of them can exist).
 * **W7 stale-journal drill**: fabricates a `J1 purge` line whose id
   encodes a UIDVALIDITY one more than the folder's real one, and
   confirms it is skipped with the documented loud log line, the journal
@@ -197,7 +264,7 @@ hand-writing `.MS_MsgDir` binary bytes, so both cases use
 one real fixture message each needs:
 
 * **W5 append round-trip**: composes and saves one native-id draft
-  directly into `Revival/WritebackTest` via `cui` (its real capture
+  directly into `AUIS_TEST_FOLDER` via `cui` (its real capture
   hook produces the `"J1 append"` line for free -- nothing here
   fabricates it), then a plain `imapsync` run (replay+mirror in one
   invocation). Verifies the journal is fully consumed, the native-id
@@ -225,14 +292,27 @@ one real fixture message each needs:
 
 ALL destructive traffic in W2/W3/W4/W5/W6/W7 -- `STORE`/`EXPUNGE`/
 `APPEND`/`CREATE`, and every `imapsync`/`cui` invocation that might
-touch the mailbox -- is confined to `Revival/WritebackTest`, created if
-absent; `INBOX` is never written to. Enforced twice, independently:
-`imaptest.c`'s own `guard_mailbox()` refuses at the C level regardless
-of caller, and this file's own `run_imapsync_wb()`/`imaptest_wb()`/
-`create_local_draft_via_cui()` wrappers refuse, themselves, to be
-pointed at any other folder name. A best-effort cleanup pass at the end
-(`expunge 1:*`) leaves `Revival/WritebackTest` empty again rather than
-accumulating each run's test messages.
+touch the mailbox -- is confined to `AUIS_TEST_FOLDER`, created if
+absent; `INBOX` is never written to. Before the first W-case write,
+a preflight lists the folder (a read-only `imapsync` mirror into a
+throwaway root: with no journal there, `imapsync` only EXAMINEs and
+FETCHes) and refuses all W-cases, changing nothing, if any message
+lacks a harness subject marker; earlier runs' leftovers are removed by
+exact UID so the W-cases start from an empty folder. Cleanup at the
+end (pass or fail) removes only marker-subject messages by exact UID.
+Enforced in layers: `imaptest.c`'s own `guard_mailbox()` refuses at
+the C level regardless of caller, and this file's own
+`run_imapsync_wb()`/`imaptest_wb()`/`create_local_draft_via_cui()`
+wrappers refuse to be pointed at any other folder, or to write before
+the preflight has passed, and refuse any expunge that is not an
+explicit UID list. The `cui` draft sessions answer `yes` to `cui`'s
+"Are you sure the host ... really exists" / "Proceed with mail
+composition anyway" prompts only when those prompts actually appear.
+
+Every case needs all four variables (`AUIS_TEST_ADDRESS` is case 3's
+only recipient and the From:/To: of every appended or drafted
+message; `AUIS_TEST_SMTP_HOST` carries case 3's send); without them the
+whole suite skips (it has no offline case) and makes no connection.
 
 ```
 revival/tests/imap-sync-tests
@@ -248,30 +328,33 @@ into a per-folder `.MS_Journal` file and the `MSJournal_Suppress(1)`
 `imapsync` sets at startup. As of Gate 2, `imapsync`'s own
 `replay_folder()` also *acts on* a pending `.MS_Journal` on every
 ordinary run, so this suite's "suppression" re-run step is now a real
-write path, not read-only. **This suite retargets to the dedicated
-sandbox mailbox `Revival/WritebackTest`** (see the 2026-07-23 incident
-in `imap-writeback-REPORT.md`: an earlier version mirrored a real,
+write path, not read-only. **This suite works only in a dedicated
+scratch folder, `AUIS_TEST_FOLDER`** (see the 2026-07-23 incident in
+`imap-writeback-REPORT.md`: an earlier version mirrored a real,
 pre-existing folder, `INBOX/1-Admin/keys`, and once Gate 2's replay
 code existed, this suite's own case 1 + suppression re-run permanently
 deleted one real message from it via a genuine `UID STORE`/`UID
-EXPUNGE`). Every write this suite performs -- the `cui`-driven local
-mutations, the journal they produce, every `imapsync` run that might
-replay that journal, and this suite's own `APPEND` seeding/`EXPUNGE`
-cleanup -- is confined to `Revival/WritebackTest`, enforced by
-`assert_folder_is_sandbox()` (checked against a hardcoded literal, not
-the mutable `FOLDER` constant, so a future edit can't silently repoint
-this suite at a real folder again) in addition to `imaptest.c`'s own
-`guard_mailbox()` at the C level. The sandbox starts empty, so this
-suite seeds it with two throwaway `\Seen`-flagged messages of its own
-up front (via `imap_Append`/`imaptest.test append`, the same mechanism
-`imap-sync-tests`' W-cases use) and expunges it clean again on exit,
-pass or fail.
+EXPUNGE`; and a later version's cleanup ran `expunge 1:*`, deleting
+every message in the folder). Every write this suite performs -- the
+`cui`-driven local mutations, the journal they produce, every
+`imapsync` run that might replay that journal, and this suite's own
+`APPEND` seeding and cleanup -- is confined to that folder, enforced by
+`assert_folder_is_sandbox()` in addition to `imaptest.c`'s own
+`guard_mailbox()` at the C level. Before any write, a preflight lists
+the folder (read-only `imapsync` mirror into a throwaway root) and
+refuses the run, changing nothing, if any message lacks a harness
+subject marker; earlier runs' leftovers are removed by exact UID. The
+suite then seeds two throwaway `\Seen`-flagged messages of its own (via
+`imap_Append`/`imaptest.test append`, the same mechanism
+`imap-sync-tests`' W-cases use) and, on exit, pass or fail, removes
+only harness-created messages, by exact UID.
 
 Case 1 (the only case at Gate 1):
 
-1. Provision/seed: create `Revival/WritebackTest` if absent, `APPEND`
-   two throwaway messages (pre-marked `\Seen`) so the fresh mirror has
-   the two messages this case needs.
+1. Preflight/seed: create `AUIS_TEST_FOLDER` if absent, verify it holds
+   only harness-created messages (removing leftovers by UID), then
+   `APPEND` two throwaway messages (pre-marked `\Seen`) so the fresh
+   mirror has the two messages this case needs.
 2. Fresh mirror into a `mktemp -d` scratch root (never the real
    `~/.IMAP`), confirming `.MS_Journal` does not exist right after --
    imapsync's own append writes must never journal.
@@ -297,7 +380,7 @@ Case 1 (the only case at Gate 1):
    content).
 5. **Case 5 (Gate 3): append round-trip.** `run_cui_append()` composes
    a fresh message via `cui`'s "mail" command and saves it as a draft
-   directly into `Revival/WritebackTest` (`SEND_SAVEDRAFT` ->
+   directly into `AUIS_TEST_FOLDER` (`SEND_SAVEDRAFT` ->
    `MS_AppendFileToFolder`, no IMAP, no SMTP) -- a genuinely native-id
    local message. A single `imapsync` run (replay+mirror in one
    invocation) is verified to: consume the resulting `"J1 append"`
@@ -308,13 +391,21 @@ Case 1 (the only case at Gate 1):
    "copy" -- see `run_cui_append()`'s own docstring for why (both
    directions of a two-folder copy hit `MS_CloneMessage`'s own
    id-collision guard, `EMSALREADYTHERE`).
-6. Cleanup: expunge everything this run added to `Revival/WritebackTest`
-   (`expunge 1:*`), run in a `finally` block so it happens whether the
-   cases above pass or fail.
+   The scripted `cui` sessions answer `yes` to `cui`'s "Are you sure
+   the host ... really exists" / "Proceed with mail composition anyway"
+   prompts only when they actually appear (expect-style), and stop
+   rather than type ahead if any expected prompt does not show up.
+6. Cleanup: removes only harness-created messages (marker subjects,
+   plus the UIDs this run's own `APPEND`s reported) by exact UID, run in
+   a `finally` block so it happens whether the cases above pass or
+   fail. Never a whole-folder expunge.
 
-Skips cleanly (rather than failing) when `~/.netrc` has no usable
-`machine imap.fastmail.com` stanza. Leaves its scratch root in place on
-exit (path printed) for inspection.
+The acceptance case repeats preflight, seeding and cleanup on its own.
+Skips cleanly (rather than failing) when any of `AUIS_TEST_ADDRESS`,
+`AUIS_TEST_IMAP_HOST` or `AUIS_TEST_FOLDER` is unset (no connection is
+made), when they differ from the C-hard-coded values above, or when
+`~/.netrc` has no usable stanza for the host. Leaves its scratch root
+in place on exit (path printed) for inspection.
 
 ```
 revival/tests/imap-writeback-tests
@@ -333,8 +424,9 @@ prints `KEY: value` lines for this script to parse. Entirely offline.
 
 Two kinds of fixtures: synthetic HTML this suite writes itself into a
 fresh temp directory on each run (allowlist/attribute/style/entity/
-wrapper cases, and the deep-nesting regression case), and the real
-mail corpus committed at `revival/tests/html-fixtures/` (read-only
+wrapper cases, and the deep-nesting regression case), and the
+fixture corpus committed at `revival/tests/html-synth/` (synthetic
+mail bodies reproducing real messages' structure; read-only
 here -- this suite never writes into that directory), used for the
 malformed-markup and full-corpus-smoke cases.
 
@@ -387,13 +479,13 @@ Cases:
    (`&#169;`/`&#xE9;`) all decode correctly; an unrecognized entity
    name passes through verbatim rather than being guessed at or
    dropped.
-9. **Malformed table tags, real fixtures 07/08**: the two real-mail
+9. **Malformed table tags, fixtures s07/s08**: the two
    fixtures with mismatched `<table>`/`</table>` counts (one extra
    open, one extra close -- opposite imbalance directions) parse
    without crashing and produce a non-collapsed tree, not an empty or
    corrupted one.
-10. **Real corpus smoke**: all 16 real fixtures in
-    `revival/tests/html-fixtures` parse cleanly (no crash, no
+10. **Corpus smoke**: all 16 fixtures in
+    `revival/tests/html-synth` parse cleanly (no crash, no
     nonzero exit) in one pass.
 
 ```
@@ -418,14 +510,14 @@ Python's default UTF-8 text mode). Entirely offline.
 
 Two kinds of fixtures, same split as `html-parse-tests`: synthetic
 HTML this suite writes itself into a fresh temp directory on each run
-(table/list/link/image/whitespace/nesting cases), and the real mail
-corpus committed at `revival/tests/html-fixtures/` (read-only here),
+(table/list/link/image/whitespace/nesting cases), and the fixture
+corpus committed at `revival/tests/html-synth/` (synthetic; read-only here),
 used for the full-corpus-smoke case and a couple of fixture-specific
 spot checks.
 
 Cases:
 
-1. **Real corpus smoke**: all 16 real fixtures render to non-empty,
+1. **Corpus smoke**: all 16 fixtures render to non-empty,
    non-crashing plain text in one pass, with no literal `<tag>`
    markup surviving into the output -- deliberately excluding
    `<a href` from that check, since fixtures 06/11/14 share a
@@ -433,7 +525,7 @@ Cases:
    instructional text (entity-escaped in the source HTML, correctly
    entity-decoded back to literal text by this renderer, same as any
    browser would show it) -- real content, not a leftover-tag bug.
-2. **Fixture spot checks**: two real fixtures checked for specific
+2. **Fixture spot checks**: two fixtures checked for specific
    expected substrings in their rendered output -- a link's URL
    appearing in `text (url)` form, a `mailto:` link, an image alt
    placeholder -- not full golden-file comparison, but stronger than

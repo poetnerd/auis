@@ -7,17 +7,33 @@ harnesses exactly as milestone 1's original Gate A review did.
 Usage:
     revival/tests/smtp-protocol-tests [RECIPIENT]
 
-    RECIPIENT is optional.
-      - If given, all 7 cases run, including live sends through the
-        real smtp.fastmail.com using the real ~/.netrc -- mail goes
-        ONLY to RECIPIENT (repeated for the two-recipient case), never
-        anywhere else, never derived or guessed.
-      - If omitted, only cases 6 (bad password) and 7 (smtphost unset)
-        run -- both are deterministic, local, and need no live server
-        or real credentials.
+    RECIPIENT is optional; if omitted, the environment variable
+    AUIS_TEST_ADDRESS (your own test mailbox address) is used instead.
+    An explicit RECIPIENT overrides the variable.
 
-Example:
-    revival/tests/smtp-protocol-tests wdc@fastmail.com
+    AUIS_TEST_SMTP_HOST names the SMTP server (no default). It is
+    written as smtphost into scratch PROFILES files, and smtp_dropoff()
+    looks up ~/.netrc machine = smtphost (smtpsub.c:377), so ~/.netrc
+    needs a "machine <that host>" stanza.
+      - With a recipient and AUIS_TEST_SMTP_HOST, all 7 cases run,
+        including live sends through that server using the real
+        ~/.netrc -- mail goes ONLY to that recipient (repeated for the
+        two-recipient case), never anywhere else, never derived or
+        guessed.
+      - With AUIS_TEST_SMTP_HOST but no recipient, cases 6 (bad
+        password) and 7 (smtphost unset) run; case 6 needs no real
+        credentials but does connect to that server, offering a
+        fabricated password that is refused there.
+      - Without AUIS_TEST_SMTP_HOST, only case 7 runs (it contacts no
+        SMTP server).
+    Whatever is missing is listed once, at the start.
+
+Examples:
+    export AUIS_TEST_ADDRESS=you@example.com
+    export AUIS_TEST_SMTP_HOST=smtp.example.com
+    revival/tests/smtp-protocol-tests
+
+    AUIS_TEST_SMTP_HOST=smtp.example.com revival/tests/smtp-protocol-tests you@example.com
 
 This script builds its own corpus (message files, scratch PROFILES
 files, a scratch netrc with a fabricated bad password) fresh into a
@@ -53,6 +69,39 @@ D_TEMP_FAIL = 6
 
 PASS = []
 FAIL = []
+
+
+
+def _env(name):
+    """Unset, empty, and whitespace-only all mean "not set"."""
+    return os.environ.get(name, "").strip()
+
+
+# The test mailbox address and SMTP server, taken from the environment
+# (no defaults) so that nobody running this suite with their own
+# credentials sends test mail to someone else or through someone else's
+# server.
+TEST_ADDRESS = _env("AUIS_TEST_ADDRESS")
+SMTP_HOST = _env("AUIS_TEST_SMTP_HOST")
+SMTP_PORT = "465"
+
+
+def missing_vars_message(have_recipient):
+    """The one start-of-run message listing every missing variable, or
+    None. AUIS_TEST_ADDRESS is not missing when RECIPIENT was given."""
+    missing = []
+    if not have_recipient:
+        missing.append(("AUIS_TEST_ADDRESS", "you@example.com"))
+    if not SMTP_HOST:
+        missing.append(("AUIS_TEST_SMTP_HOST", "smtp.example.com"))
+    if not missing:
+        return None
+    lines = ["Live-account cases skipped; set these to run them:"]
+    lines += [f"    export {n}={ex}" for n, ex in missing]
+    lines.append("(credentials come from ~/.netrc, machine = the host)")
+    if not have_recipient:
+        lines.append("(or pass the recipient as the first argument instead of AUIS_TEST_ADDRESS)")
+    return "\n".join(lines)
 
 
 def note(msg):
@@ -115,9 +164,14 @@ def rfc822(subject, body, marker):
 
 
 def main():
-    recipient = sys.argv[1] if len(sys.argv) > 1 else None
     if len(sys.argv) > 2:
         sys.exit("usage: smtp-protocol-tests [RECIPIENT]")
+    # An explicit argv[1] overrides AUIS_TEST_ADDRESS; with neither, the
+    # live cases (1-5) are skipped and never reach the network.
+    recipient = (sys.argv[1].strip() if len(sys.argv) > 1 else "") or TEST_ADDRESS or None
+    help_text = missing_vars_message(bool(recipient))
+    if help_text:
+        note(help_text)
 
     build_drivers()
 
@@ -128,8 +182,13 @@ def main():
         shutil.rmtree(tmpdir, ignore_errors=True)
 
     note("")
+    skipped = []
+    if not (recipient and SMTP_HOST):
+        skipped.append("cases 1-5")
+    if not SMTP_HOST:
+        skipped.append("case 6")
     note(f"{len(PASS)} passed, {len(FAIL)} failed"
-         + ("" if recipient else " (cases 1-5 skipped: no recipient given)"))
+         + (f" ({' and '.join(skipped)} skipped: see the message at the start)" if skipped else ""))
     sys.exit(1 if FAIL else 0)
 
 
@@ -168,27 +227,31 @@ def _run_suite(tmpdir, recipient):
     write(msg_legacy, rfc822("smtp-protocol-tests: legacy path", "Exercises the smtphost-unset legacy clause.", marker).format(FROM=from_addr))
 
     # ---- scratch corpus: PROFILES files ----
+    # smtphost = AUIS_TEST_SMTP_HOST; smtp_dropoff() then looks up
+    # ~/.netrc (or smtpnetrc) machine = smtphost (smtpsub.c:377). Only
+    # written when the host is set; cases 1-6 are skipped otherwise.
     profile_live = os.path.join(tmpdir, "profile-live.txt")
-    write(profile_live, "smtphost: smtp.fastmail.com\nsmtpport: 465\n")
-
-    scratch_netrc = os.path.join(tmpdir, "scratch-netrc")
-    write(scratch_netrc,
-          "machine smtp.fastmail.com\n"
-          f"login {from_addr}\n"
-          "password this-is-a-fabricated-wrong-app-password-not-real\n")
-    os.chmod(scratch_netrc, 0o600)
-
     profile_badpw = os.path.join(tmpdir, "profile-badpw.txt")
-    write(profile_badpw, f"smtphost: smtp.fastmail.com\nsmtpport: 465\nsmtpnetrc: {scratch_netrc}\n")
+    if SMTP_HOST:
+        write(profile_live, f"smtphost: {SMTP_HOST}\nsmtpport: {SMTP_PORT}\n")
+
+        scratch_netrc = os.path.join(tmpdir, "scratch-netrc")
+        write(scratch_netrc,
+              f"machine {SMTP_HOST}\n"
+              f"login {from_addr}\n"
+              "password this-is-a-fabricated-wrong-app-password-not-real\n")
+        os.chmod(scratch_netrc, 0o600)
+
+        write(profile_badpw, f"smtphost: {SMTP_HOST}\nsmtpport: {SMTP_PORT}\nsmtpnetrc: {scratch_netrc}\n")
 
     profile_nohost = os.path.join(tmpdir, "no-such-profile.txt")  # deliberately absent
 
     trace_env = dict(os.environ)
     trace_env["AMS_SMTP_TRACE"] = "1"
 
-    # ---- cases 1-5: live, only when a recipient was given ----
-    if recipient:
-        note(f"--- live cases against smtp.fastmail.com, sending only to {recipient} ---")
+    # ---- cases 1-5: live, only when a recipient and the host were given ----
+    if recipient and SMTP_HOST:
+        note(f"--- live cases against {SMTP_HOST}, sending only to {recipient} ---")
 
         env = dict(trace_env); env["PROFILES"] = profile_live
         r = run([SMTPTEST, msg_simple, recipient], env=env)
@@ -228,19 +291,24 @@ def _run_suite(tmpdir, recipient):
                ok and rc == D_BAD_PARMS and no_data_sent,
                f"rc={rc} msg={msg!r} DATA-line-present={not no_data_sent}")
     else:
-        note("--- cases 1-5 skipped: no recipient given (need live server + real netrc) ---")
+        note("--- cases 1-5 skipped: need a recipient (AUIS_TEST_ADDRESS or argument) and "
+             "AUIS_TEST_SMTP_HOST (live server + real netrc) ---")
 
-    # ---- case 6: bad password -- deterministic, always runs ----
-    note("--- case 6: bad password (scratch netrc, fabricated password) ---")
-    env = dict(trace_env); env["PROFILES"] = profile_badpw
-    r = run([SMTPTEST, msg_legacy if not recipient else msg_simple, from_addr], env=env)
-    redacted_ok = "AUTH PLAIN <redacted>" in r.stderr and "this-is-a-fabricated-wrong-app-password-not-real" not in r.stderr
-    note(r.stderr)
-    note(r.stdout)
-    ok, rc, msg = parse_smtptest(r.stdout)
-    result("6 bad password -> D_TEMP_FAIL, AUTH redacted",
-           ok and rc == D_TEMP_FAIL and "check app password / netrc" in msg and redacted_ok,
-           f"rc={rc} msg={msg!r} redacted_ok={redacted_ok}")
+    # ---- case 6: bad password -- deterministic, but connects to
+    # AUIS_TEST_SMTP_HOST, so it runs only when that is set ----
+    if SMTP_HOST:
+        note(f"--- case 6: bad password against {SMTP_HOST} (scratch netrc, fabricated password) ---")
+        env = dict(trace_env); env["PROFILES"] = profile_badpw
+        r = run([SMTPTEST, msg_legacy if not recipient else msg_simple, from_addr], env=env)
+        redacted_ok = "AUTH PLAIN <redacted>" in r.stderr and "this-is-a-fabricated-wrong-app-password-not-real" not in r.stderr
+        note(r.stderr)
+        note(r.stdout)
+        ok, rc, msg = parse_smtptest(r.stdout)
+        result("6 bad password -> D_TEMP_FAIL, AUTH redacted",
+               ok and rc == D_TEMP_FAIL and "check app password / netrc" in msg and redacted_ok,
+               f"rc={rc} msg={msg!r} redacted_ok={redacted_ok}")
+    else:
+        note("--- case 6 skipped: AUIS_TEST_SMTP_HOST not set (it connects to that server) ---")
 
     # ---- case 7: smtphost unset -- deterministic, always runs ----
     note("--- case 7: smtphost unset -- legacy sendmail clause ---")

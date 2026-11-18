@@ -10,7 +10,7 @@ Usage:
 
     RECIPIENT is required -- there is no default/hardcoded address.
     Example:
-        revival/tools/smtp-send-test wdc@fastmail.com
+        revival/tools/smtp-send-test you@example.com
 
 This assumes the real preferences file already has `smtphost` set (the
 smtp-send-prompt.md acceptance test runs against the real ~/preferences,

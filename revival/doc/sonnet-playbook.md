@@ -132,7 +132,7 @@ pointer.
   Do not continue past a gate without new instructions, even if the
   next step seems obvious.
 - **Never** edit `~/preferences` or `~/.netrc`; never print
-  credentials or AUTH lines; test emails go ONLY to wdc@fastmail.com;
+  credentials or AUTH lines; test emails go ONLY to the `AUIS_TEST_ADDRESS` mailbox;
   anything touching IMAP is strictly read-only on the server side.
 - C style: match the surrounding file (K&R definitions, tabs).
   Brand-new standalone code is ANSI C89. The scanf family is banned
@@ -231,7 +231,7 @@ When a value reads as a huge positive number, or lldb shows
 - Suites (Python, all under `revival/tests/`): `imap-sync-tests`,
   `imap-protocol-tests`, `smtp-protocol-tests`. Run them with the
   interpreter directly; they print PASS/FAIL per case.
-- `revival/tools/smtp-send-test wdc@fastmail.com` drives the real cui
+- `revival/tools/smtp-send-test you@example.com` drives the real cui
   binary through a complete SMTP send.
 - `AMS_SMTP_TRACE=1` in the environment makes any AMS client print
   the SMTP dialogue to stderr (AUTH redacted, body omitted).

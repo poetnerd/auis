@@ -6,14 +6,15 @@ IMAP-to-local-store mirror. See revival/doc/claude-history/imap-sync-prompt.md.
 Usage:
     revival/tests/imap-sync-tests
 
-Live against the real Fastmail account via the committed netrc_Lookup
-and ~/.netrc, exactly as imap-protocol-tests and smtp-protocol-tests do.
+Live against the IMAP account named by AUIS_TEST_IMAP_HOST via the
+committed netrc_Lookup and ~/.netrc (machine = that host), exactly as
+imap-protocol-tests and smtp-protocol-tests do.
 Strictly read-only against the mailbox from imapsync's own side: it only
 ever issues EXAMINE/UID SEARCH/UID FETCH (FLAGS INTERNALDATE ENVELOPE)/
 UID FETCH BODY.PEEK[] -- no STORE/APPEND/CREATE/DELETE/EXPUNGE reaches
 the wire from imapsync. Case 3 sends one real message via the committed
-SMTP path (smtptest.test) to wdc@fastmail.com only, as the spec
-prescribes for the incremental-sync case.
+SMTP path (smtptest.test) to the AUIS_TEST_ADDRESS mailbox only, as
+the spec prescribes for the incremental-sync case.
 
 All six cases run against one fresh `mktemp -d` scratch mspath root
 (cases 3-6 build on the mirror cases 1-2 already produced) -- the real
@@ -27,8 +28,35 @@ this writing) and case 5's UIDVALIDITY drill re-mirrors it again from
 scratch, so this suite can take a long time (tens of minutes) to run
 live.
 
-If ~/.netrc has no usable "machine imap.fastmail.com" stanza, this
-suite skips cleanly (like imap-protocol-tests) rather than failing.
+Configuration (no defaults; every case is skipped, with one message
+listing what is missing, unless all four are set to non-blank values;
+with any unset this suite makes no network connection at all):
+
+    AUIS_TEST_ADDRESS    your own test mailbox address: the only
+                         recipient of case 3's real send and the From:/To:
+                         of every message appended or drafted here
+    AUIS_TEST_IMAP_HOST  the IMAP server (~/.netrc machine = this host)
+    AUIS_TEST_SMTP_HOST  the SMTP server for case 3's send (smtphost in a
+                         scratch PROFILES; ~/.netrc machine = this host,
+                         smtpsub.c:377)
+    AUIS_TEST_FOLDER     the IMAP folder the W-cases write to. It MUST be
+                         a dedicated scratch folder holding no real mail.
+
+Limits from C code this suite does not change, reported as skip
+reasons: imapsync connects only to imap.fastmail.com
+(src/ams/msclients/imapsync/imap_sync.c:214-216, no override), so every
+case here needs AUIS_TEST_IMAP_HOST=imap.fastmail.com; and imaptest.test's
+write subcommands accept only "Revival/WritebackTest"
+(src/overhead/mail/lib/imaptest.c:400), so the W-cases need
+AUIS_TEST_FOLDER=Revival/WritebackTest.
+
+The W-cases never empty a folder: before any write, preflight_folder()
+lists AUIS_TEST_FOLDER (a read-only imapsync mirror into a throwaway
+root) and refuses to run the W-cases, touching nothing, if any message's
+Subject lacks one of HARNESS_SUBJECT_MARKERS; harness leftovers from
+earlier runs are removed by exact UID. Cleanup removes only
+marker-subject messages (plus UIDs this run's own APPENDs reported) by
+exact UID set (UID STORE \\Deleted + UID EXPUNGE) -- never a range.
 
 Cases W2/W3/W4/W7 (added for the writeback milestone's Gate 2) exercise
 imap_sync.c's replay_folder() -- flags replay, purge replay, the
@@ -38,8 +66,8 @@ INBOX mirror above (own tempdir, own imapsync run, no dependency on the
 long INBOX pass having completed). ALL destructive traffic in these
 cases -- STORE/EXPUNGE/APPEND/CREATE, and every imapsync invocation
 that might replay a journal -- is confined to one dedicated mailbox,
-WRITE_MAILBOX ("Revival/WritebackTest"), created if absent; INBOX is
-never written to anywhere in this suite. This is enforced twice,
+WRITE_MAILBOX (AUIS_TEST_FOLDER), created if absent; INBOX is never
+written to anywhere in this suite. This is enforced twice,
 independently: imaptest.c's own guard_mailbox() refuses at the C level
 for the create/storeflags/expunge/append subcommands regardless of
 caller, and this file's own run_imapsync_wb()/imaptest_wb() wrappers
@@ -90,12 +118,89 @@ IMAPTEST = os.path.join(MAILLIB, "imaptest.test")
 SMTPTEST = os.path.join(MAILLIB, "smtptest.test")
 CUI = os.path.join(REPO_ROOT, "build", "bin", "cui")
 
-HOST = "imap.fastmail.com"
 PORT = "993"
-MACHINE = "imap.fastmail.com"
 MAILBOX = "INBOX"
 SUBJECT_MARKER = "STAGE-3-CUI-TEST"
-SEND_RECIPIENT = "wdc@fastmail.com"  # case 3 sends only here, per the spec
+
+
+def _env(name):
+    """Unset, empty, and whitespace-only all mean "not set"."""
+    return os.environ.get(name, "").strip()
+
+
+# Live configuration, all from the environment -- no defaults. See the
+# module docstring. HOST doubles as the ~/.netrc machine name; the SMTP
+# path looks up ~/.netrc machine = SMTP_HOST itself.
+TEST_ADDRESS = _env("AUIS_TEST_ADDRESS")
+HOST = _env("AUIS_TEST_IMAP_HOST")
+MACHINE = HOST
+SMTP_HOST = _env("AUIS_TEST_SMTP_HOST")
+SMTP_PORT = "465"
+
+REQUIRED_VARS = (
+    ("AUIS_TEST_ADDRESS", "you@example.com"),
+    ("AUIS_TEST_IMAP_HOST", "imap.example.com"),
+    ("AUIS_TEST_SMTP_HOST", "smtp.example.com"),
+    ("AUIS_TEST_FOLDER", "Scratch/AUISTests"),
+)
+
+# Values hard-coded in C that this suite cannot override.
+IMAPSYNC_ONLY_HOST = "imap.fastmail.com"   # imap_sync.c:214 DEFAULT_HOST / :216 DEFAULT_NETRC_MACHINE
+IMAPTEST_ONLY_WRITE_FOLDER = "Revival/WritebackTest"   # imaptest.c:400 WRITE_MAILBOX_GUARD
+
+# Subject prefixes of every message any of the three IMAP live suites
+# (imap-protocol-tests, imap-sync-tests, imap-writeback-tests) puts in
+# the scratch folder. The same list appears in each suite, since they
+# share the folder and each must recognize the others' leftovers. A
+# message whose Subject starts with none of these was not created by a
+# harness: preflight refuses to run against a folder holding one, and
+# cleanup never deletes one.
+HARNESS_SUBJECT_MARKERS = (
+    "GATE2-WRITEBACK-SEED-",               # imap-writeback-tests seeds
+    "GATE3-CASE5-APPEND-",                 # imap-writeback-tests case 5 draft
+    "GATE3-ACCEPTANCE-COPYIN",             # imap-writeback-tests acceptance draft
+    "GATE2-W2-FLAGS-",                     # imap-sync-tests W2
+    "GATE2-W3-PURGE-",                     # imap-sync-tests W3
+    "GATE2-W7-STALE-",                     # imap-sync-tests W7
+    "GATE3-W5-APPEND-",                    # imap-sync-tests W5 draft
+    "GATE3-W6-FLAGS-",                     # imap-sync-tests W6
+    "GATE3-W6-APPEND-",                    # imap-sync-tests W6 draft (+ its manual re-append)
+    "IMAP-PROTOCOL-TESTS-WRITEBACK-CASE",  # imap-protocol-tests case 11
+)
+
+# Set only by a passing preflight_folder(); every message-level write to
+# WRITE_MAILBOX asserts it first.
+PREFLIGHT_OK = False
+
+# (uidvalidity, uid) of every message this run APPENDed itself.
+RECORDED_APPENDS = []
+
+
+def missing_vars_message():
+    """Returns (missing_names, message) -- message is None when nothing
+    is missing. Printed once, at the start of main()."""
+    missing = [(n, ex) for n, ex in REQUIRED_VARS if not _env(n)]
+    if not missing:
+        return [], None
+    lines = ["Live-account cases skipped; set these to run them:"]
+    lines += [f"    export {n}={ex}" for n, ex in missing]
+    lines.append("(credentials come from ~/.netrc, machine = the host)")
+    names = [n for n, _ in missing]
+    if "AUIS_TEST_FOLDER" in names:
+        lines.append("AUIS_TEST_FOLDER must be a dedicated scratch folder holding no real mail; "
+                     "live runs refuse a folder containing any message a harness did not create.")
+        lines.append(f"Note: imaptest.c:400 only permits writes to {IMAPTEST_ONLY_WRITE_FOLDER!r}, "
+                     "so that is currently the only folder the W-cases can use.")
+    if "AUIS_TEST_IMAP_HOST" in names:
+        lines.append(f"Note: imapsync is hard-wired to {IMAPSYNC_ONLY_HOST} (imap_sync.c:214-216), "
+                     "so this suite can currently run only against that host.")
+    return names, "\n".join(lines)
+
+
+def is_harness_subject(subject):
+    s = (subject or "").strip()
+    return any(s.startswith(m) for m in HARNESS_SUBJECT_MARKERS)
+
 
 NETRC = os.path.expanduser("~/.netrc")
 
@@ -106,9 +211,10 @@ ID_RE = re.compile(r"^IMAP[0-9A-V]{14}$")
 
 RUN_TIMEOUT = 1800  # a full INBOX mirror/re-mirror can take many minutes live
 
-# The one mailbox the writeback (Gate 2) cases below are allowed to
-# touch with anything destructive. See run_imapsync_wb()/imaptest_wb().
-WRITE_MAILBOX = "Revival/WritebackTest"
+# The one mailbox the writeback (Gate 2/3) cases below are allowed to
+# touch with anything destructive (AUIS_TEST_FOLDER). See
+# assert_write_mailbox().
+WRITE_MAILBOX = _env("AUIS_TEST_FOLDER")
 
 PASS = []
 FAIL = []
@@ -279,30 +385,42 @@ def read_snapshots(root):
 # ---- writeback (Gate 2) cases W2/W3/W4/W7: folder-parametrized path
 # helpers, journal fabrication, and the write-mailbox guard ----
 
-def assert_write_mailbox(folder):
-    """The one enforcement point every writeback helper below funnels
-    through -- refuses, at the Python level, to run anything destructive
-    against any folder but WRITE_MAILBOX. Independent of imaptest.c's
-    own guard_mailbox(), which enforces the identical rule at the C
-    level for create/storeflags/expunge/append -- a safety rule this
-    important should not have exactly one enforcement point."""
-    if folder != WRITE_MAILBOX:
+def assert_write_mailbox(folder, need_preflight=True):
+    """The one Python-level enforcement point every writeback helper below
+    funnels through. Refuses unless `folder` is exactly AUIS_TEST_FOLDER
+    (never INBOX), and -- for anything that can change messages, i.e.
+    everything except CREATE of the folder itself -- unless
+    preflight_folder() has verified the folder holds nothing but
+    harness-created messages. Independent of imaptest.c's own
+    guard_mailbox() (imaptest.c:400), which separately limits
+    create/storeflags/expunge/append to one mailbox name at the C level."""
+    if not WRITE_MAILBOX or folder != WRITE_MAILBOX or folder.upper() == "INBOX":
         sys.exit(f"imap-sync-tests: REFUSING a writeback-case call against folder {folder!r} "
-                 f"-- only {WRITE_MAILBOX!r} is allowed for writeback (Gate 2) cases")
+                 f"-- only AUIS_TEST_FOLDER ({WRITE_MAILBOX!r}, never INBOX) is allowed")
+    if need_preflight and not PREFLIGHT_OK:
+        sys.exit(f"imap-sync-tests: REFUSING a write to {folder!r} before preflight_folder() "
+                 "has verified it holds only harness-created messages")
 
 
 def run_imapsync_wb(root, folder, extra_args=(), timeout=120):
+    """An imapsync run against WRITE_MAILBOX that may replay a journal
+    (a real write path) -- requires a passed preflight."""
     assert_write_mailbox(folder)
     return subprocess.run([IMAPSYNC, "-root", root, "-folders", folder, "-v", *extra_args],
                           capture_output=True, text=True, timeout=timeout)
 
 
 def imaptest_wb(subcmd, folder, *rest, timeout=60):
-    """Runs a destructive (create/storeflags/expunge/append)
-    imaptest.test subcommand, guarded the same way run_imapsync_wb()
-    is. Returns (CompletedProcess, kv dict) like imap-protocol-tests'
-    own imaptest()/parse_kv() helpers."""
-    assert_write_mailbox(folder)
+    """Runs a writing (create/storeflags/expunge/append) imaptest.test
+    subcommand, guarded by assert_write_mailbox() (CREATE alone is allowed
+    before the preflight: it only ever makes an empty folder). "expunge"
+    must go through expunge_uids(), which validates the UID set. Returns
+    (CompletedProcess, kv dict) like imap-protocol-tests' own
+    imaptest()/parse_kv() helpers."""
+    assert_write_mailbox(folder, need_preflight=(subcmd != "create"))
+    if subcmd == "expunge" and not re.fullmatch(r"[1-9]\d*(,[1-9]\d*)*", str(rest[0]) if rest else ""):
+        sys.exit(f"imap-sync-tests: REFUSING expunge with UID set {rest!r} -- only an explicit "
+                 "list of single UIDs is ever allowed (never a range or 1:*)")
     r = subprocess.run([IMAPTEST, subcmd, HOST, PORT, NETRC, MACHINE, folder] + [str(a) for a in rest],
                         capture_output=True, text=True, timeout=timeout)
     kv = {}
@@ -383,6 +501,199 @@ def synth_id_py(uidvalidity, uid):
     return "IMAP" + encode_base32hex7(uidvalidity) + encode_base32hex7(uid)
 
 
+# ---- folder safety for the W-cases: listing, preflight, UID-exact
+# cleanup (same logic as imap-writeback-tests') ----
+
+_SYNTH_ID_RE = re.compile(r"^IMAP([0-9A-V]{7})([0-9A-V]{7})$")
+
+
+def decode_synth_id(ident):
+    """Inverse of imap_sync.c's synth_id(): "IMAP" + base32hex7(uidvalidity)
+    + base32hex7(uid). Returns (uidvalidity, uid), or None if ident is not
+    a deterministic imapsync id."""
+    m = _SYNTH_ID_RE.match(ident)
+    if not m:
+        return None
+
+    def dec(chars):
+        v = 0
+        for c in chars:
+            v = (v << 5) | _BASE32HEX.index(c)
+        return v
+    return dec(m.group(1)), dec(m.group(2))
+
+
+def read_subject(path):
+    """Decoded Subject header of a mirrored body file, or "" if absent or
+    unparseable (which counts as a non-harness message -- the safe way to
+    be wrong)."""
+    import email.parser
+    import email.policy
+    try:
+        with open(path, "rb") as f:
+            msg = email.parser.BytesParser(policy=email.policy.default).parse(f, headersonly=True)
+        subj = msg.get("Subject")
+        return str(subj) if subj is not None else ""
+    except Exception:
+        return ""
+
+
+def examine_folder():
+    """(exists, uidvalidity, uidnext) for WRITE_MAILBOX via a read-only EXAMINE,
+    or None if EXAMINE failed (e.g. the folder does not exist yet)."""
+    _, kv = imaptest_readonly("examine", WRITE_MAILBOX)
+    if kv.get("EXAMINE-RC") != "0":
+        return None
+    try:
+        return int(kv["EXISTS"]), int(kv["UIDVALIDITY"]), int(kv.get("UIDNEXT", "0") or 0)
+    except (KeyError, ValueError):
+        return None
+
+
+def list_folder_messages():
+    """Every message in WRITE_MAILBOX as [(uidvalidity, uid, subject), ...], via
+    an imapsync mirror into a brand-new throwaway root. A fresh root has
+    no .MS_Journal, so replay_folder() has nothing to act on and imapsync
+    only EXAMINEs/FETCHes (read-only). Returns (list, None) or
+    (None, reason)."""
+    root = tempfile.mkdtemp(prefix="imap-sync-tests-listing-")
+    try:
+        r = subprocess.run([IMAPSYNC, "-root", root, "-folders", WRITE_MAILBOX],
+                            capture_output=True, text=True, timeout=300)
+        if r.returncode != 0:
+            return None, f"read-only imapsync listing failed (exit {r.returncode}): {r.stderr.strip()[-300:]}"
+        d = folder_dir_for(root, WRITE_MAILBOX)
+        msgs = []
+        if os.path.isdir(d):
+            for name in sorted(os.listdir(d)):
+                if not name.startswith("+"):
+                    continue
+                dec = decode_synth_id(name[1:])
+                if dec is None:
+                    return None, f"unexpected non-imapsync id {name!r} in listing mirror"
+                msgs.append((dec[0], dec[1], read_subject(os.path.join(d, name))))
+        return msgs, None
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def expunge_uids(uids, uidvalidity):
+    """Deletes exactly these UIDs (UID STORE +FLAGS \\Deleted then UID
+    EXPUNGE of the same explicit set -- imaptest.c cmd_expunge; UID
+    EXPUNGE needs UIDPLUS and imap_prot.c refuses rather than falling
+    back to a plain EXPUNGE). Re-checks UIDVALIDITY first so a UID can
+    never name a different message. Returns (ok, detail)."""
+    uids = sorted({int(u) for u in uids})
+    if not uids:
+        return True, "nothing to remove"
+    if any(u <= 0 for u in uids):
+        return False, f"refusing non-positive UID in {uids}"
+    now = examine_folder()
+    if now is None or now[1] != uidvalidity:
+        return False, (f"UIDVALIDITY changed or EXAMINE failed (expected {uidvalidity}, got "
+                       f"{None if now is None else now[1]}) -- not removing UIDs {uids}")
+    uidset = ",".join(str(u) for u in uids)
+    r, kv = imaptest_wb("expunge", WRITE_MAILBOX, uidset)
+    ok = (r.returncode == 0 and kv.get("EXPUNGE-RC") == "0"
+          and kv.get("POSTEXPUNGE-STILL-PRESENT") == "no")
+    return ok, f"UID set {uidset}: exit={r.returncode} kv={kv}"
+
+
+def preflight_folder(label):
+    """Before any write: verify WRITE_MAILBOX holds nothing but harness-created
+    messages (Subject starts with one of HARNESS_SUBJECT_MARKERS). Creates
+    the folder if it does not exist. Any other message => refuse, touching
+    nothing. Leftover harness messages from earlier runs are removed by
+    exact UID so the run starts from an empty folder. Sets PREFLIGHT_OK.
+    Returns (ok, reason)."""
+    global PREFLIGHT_OK
+    PREFLIGHT_OK = False
+    info = examine_folder()
+    if info is None:
+        cr, ckv = imaptest_wb("create", WRITE_MAILBOX)
+        note(f"preflight ({label}): {WRITE_MAILBOX!r} not examinable; CREATE -> exit={cr.returncode} kv={ckv}")
+        info = examine_folder()
+        if info is None:
+            return False, f"could not EXAMINE (or create) {WRITE_MAILBOX!r}"
+    exists, uidvalidity, _ = info
+    if exists == 0:
+        PREFLIGHT_OK = True
+        note(f"preflight ({label}): {WRITE_MAILBOX!r} is empty -- OK")
+        return True, ""
+    msgs, err = list_folder_messages()
+    if msgs is None:
+        return False, f"could not list {WRITE_MAILBOX!r} to verify its contents ({err}); refusing to touch it"
+    if len(msgs) != exists:
+        return False, (f"listing of {WRITE_MAILBOX!r} saw {len(msgs)} message(s) but EXAMINE reports "
+                       f"{exists}; cannot verify its contents, refusing to touch it")
+    if any(uv != uidvalidity for uv, _, _ in msgs):
+        return False, f"UIDVALIDITY of {WRITE_MAILBOX!r} changed during preflight; refusing to touch it"
+    foreign = [uid for _, uid, subj in msgs if not is_harness_subject(subj)]
+    if foreign:
+        return False, (f"{WRITE_MAILBOX!r} contains {len(foreign)} message(s) not created by a test "
+                       f"harness (UIDs {foreign}). AUIS_TEST_FOLDER must be a dedicated scratch "
+                       "folder holding no real mail -- refusing the live run; nothing was changed")
+    leftovers = [uid for _, uid, _ in msgs]
+    PREFLIGHT_OK = True   # verified: everything present is harness-created
+    ok, detail = expunge_uids(leftovers, uidvalidity)
+    note(f"preflight ({label}): removed {len(leftovers)} leftover harness message(s) "
+         f"from earlier runs -> {'ok' if ok else 'FAILED'}: {detail}")
+    info = examine_folder()
+    if not ok or info is None or info[0] != 0:
+        PREFLIGHT_OK = False
+        return False, (f"{WRITE_MAILBOX!r} not empty after removing harness leftovers "
+                       f"(EXISTS={None if info is None else info[0]}); refusing to continue")
+    return True, ""
+
+
+def cleanup_folder(label):
+    """Removes only harness-created messages: every message whose Subject
+    carries a harness marker (this covers this run's APPENDs and the
+    drafts imapsync's replay APPENDed for it), found via a fresh
+    read-only listing. If listing fails, falls back to just the
+    (uidvalidity, uid) pairs this run's own APPENDs reported. Never
+    touches any other message, never uses a range."""
+    if not PREFLIGHT_OK:
+        note(f"cleanup ({label}): skipped -- preflight did not pass, {WRITE_MAILBOX!r} left untouched")
+        return
+    info = examine_folder()
+    if info is None:
+        note(f"cleanup ({label}): WARNING -- could not EXAMINE {WRITE_MAILBOX!r}; left in place: "
+             f"this run's appended (uidvalidity, uid) = {RECORDED_APPENDS}")
+        return
+    exists, uidvalidity, _ = info
+    if exists == 0:
+        note(f"cleanup ({label}): {WRITE_MAILBOX!r} already empty, nothing to remove")
+        return
+    msgs, err = list_folder_messages()
+    if msgs is None:
+        uids = [uid for uv, uid in RECORDED_APPENDS if uv == uidvalidity]
+        note(f"cleanup ({label}): listing failed ({err}); falling back to this run's own "
+             f"recorded APPEND UIDs only: {uids} (other harness messages, e.g. replayed drafts, "
+             "are left for the next run's preflight)")
+    else:
+        present = {uid: subj for uv, uid, subj in msgs if uv == uidvalidity}
+        uids = [uid for uid, subj in present.items() if is_harness_subject(subj)]
+        others = [uid for uid, subj in present.items() if not is_harness_subject(subj)]
+        if others:
+            note(f"cleanup ({label}): WARNING -- {len(others)} non-harness message(s) appeared in "
+                 f"{WRITE_MAILBOX!r} during the run (UIDs {others}); left untouched")
+        odd = [uid for uv, uid in RECORDED_APPENDS
+               if uv == uidvalidity and uid in present and uid not in uids]
+        if odd:
+            note(f"cleanup ({label}): WARNING -- recorded APPEND UIDs {odd} no longer carry a "
+                 "harness marker subject; left untouched")
+    if not uids:
+        note(f"cleanup ({label}): no harness-created messages to remove")
+        return
+    ok, detail = expunge_uids(uids, uidvalidity)
+    if ok:
+        note(f"cleanup ({label}): removed {len(uids)} harness-created message(s): {detail}")
+    else:
+        note(f"cleanup ({label}): WARNING -- removal failed, UIDs {sorted(uids)} left in "
+             f"{WRITE_MAILBOX!r}: {detail}")
+
+
 ATTRSIZE = 21
 
 
@@ -423,13 +734,17 @@ def append_test_message(folder, subject, tmpdir, tag):
     """APPENDs a small message with the given subject into folder via
     imap_Append (imaptest.test's append subcommand), returning
     (uidvalidity, uid) from the APPENDUID response code, or (None,
-    None) on failure."""
+    None) on failure. Records the APPENDUID in RECORDED_APPENDS
+    for cleanup. `subject` must start with a HARNESS_SUBJECT_MARKERS
+    entry."""
+    if not is_harness_subject(subject):
+        sys.exit(f"imap-sync-tests: internal error -- subject {subject!r} carries no harness marker")
     bodyfile = os.path.join(tmpdir, f"append-{tag}.eml")
     with open(bodyfile, "wb") as f:
         f.write(
             f"Date: {time.strftime('%a, %d %b %Y %H:%M:%S %z')}\r\n"
-            f"From: wdc@fastmail.com\r\n"
-            f"To: wdc@fastmail.com\r\n"
+            f"From: {TEST_ADDRESS}\r\n"
+            f"To: {TEST_ADDRESS}\r\n"
             f"Subject: {subject}\r\n"
             f"\r\n"
             f"imap-sync-tests writeback-case probe message ({tag}).\r\n"
@@ -439,8 +754,9 @@ def append_test_message(folder, subject, tmpdir, tag):
         return None, None
     uv = kv.get("APPEND-UIDVALIDITY")
     uid = kv.get("APPEND-UID")
-    if uv is None or uid is None:
+    if uv is None or uid is None or not uv.isdigit() or not uid.isdigit():
         return None, None
+    RECORDED_APPENDS.append((int(uv), int(uid)))
     return int(uv), int(uid)
 
 
@@ -475,36 +791,30 @@ def create_local_draft_via_cui(root, folder, subject, body):
     directly... rather than driving a real cui session" -- that
     principle applies to REPLAY testing; there is no substitute for a
     real store call to CREATE the one native-id fixture message replay
-    then acts on). Returns the transcript text."""
+    then acts on). cui's address verification may ask "Are you sure the
+    host '...' really exists" and "Proceed with mail composition anyway"
+    for AUIS_TEST_ADDRESS; cui_compose_draft() answers "yes" to those
+    only when they appear. Returns (ok, reason, transcript text)."""
     assert_write_mailbox(folder)
     profiles_path = os.path.join(root, "PROFILES")
     with open(profiles_path, "w", newline="\n") as f:
         f.write(f"mspath: {os.path.join(root, '.MESSAGES')}\n")
 
     transcript = []
+    ok, why = False, "cui session did not start"
     sess = CuiSession(profiles_path)
     try:
-        transcript.append(sess.collect(2).decode(errors="replace"))
-        sess.send("mail\n")
-        transcript.append(sess.collect(1.5).decode(errors="replace"))
-        sess.send("wdc@fastmail.com\n")
-        transcript.append(sess.collect(1.5).decode(errors="replace"))
-        sess.send(f"{subject}\n")
-        transcript.append(sess.collect(1.5).decode(errors="replace"))
-        sess.send("\n")  # CC: blank
-        transcript.append(sess.collect(1.5).decode(errors="replace"))
-        sess.send(f"{body}\n")
-        sess.send("\x04")  # a real Ctrl-D -- EOF_STRING is "press control-d"
-        transcript.append(sess.collect(2).decode(errors="replace"))
-        sess.send("draft\n")
-        transcript.append(sess.collect(1.5).decode(errors="replace"))
-        sess.send(f"{folder}\n")
-        transcript.append(sess.collect(2).decode(errors="replace"))
-        sess.send("quit\n")
-        transcript.append(sess.collect(2).decode(errors="replace"))
+        p, text = sess.expect((b"CUI> ",), timeout=30)
+        transcript.append(text)
+        if p is None:
+            return False, "cui did not print its CUI> prompt", "".join(transcript)
+        ok, why = cui_compose_draft(sess, TEST_ADDRESS, subject, body, folder, transcript)
+        if ok:
+            sess.send("quit\n")
+            transcript.append(sess.collect(2).decode(errors="replace"))
     finally:
         sess.close()
-    return "\n".join(t for t in transcript if isinstance(t, str))
+    return ok, why, "".join(transcript)
 
 
 # ---- case 3: send a marker via the committed SMTP path, poll-sync ----
@@ -514,10 +824,11 @@ def build_smtptest():
 
 
 def send_marker(tmpdir, tag):
-    """Sends a plaintext marker message to SEND_RECIPIENT via the
-    committed SMTP dropoff path, using a scratch PROFILES (smtphost
-    only -- smtpnetrc left unset so it falls through to the real
-    ~/.netrc, exactly as smtp-protocol-tests' live cases do). Returns
+    """Sends a plaintext marker message to TEST_ADDRESS via the
+    committed SMTP dropoff path, using a scratch PROFILES (smtphost =
+    AUIS_TEST_SMTP_HOST only -- smtpnetrc left unset so it falls through
+    to the real ~/.netrc, looked up as machine = smtphost by
+    smtpsub.c:377, exactly as smtp-protocol-tests' live cases do). Returns
     the exact subject line sent, for later matching."""
     subject = f"{SUBJECT_MARKER} incremental probe {tag}"
     msgfile = os.path.join(tmpdir, "marker.txt")
@@ -525,8 +836,8 @@ def send_marker(tmpdir, tag):
     date = time.strftime("%a, %d %b %Y %H:%M:%S %z")
     with open(msgfile, "w", newline="\n") as f:
         f.write(
-            f"From: {SEND_RECIPIENT}\n"
-            f"To: {SEND_RECIPIENT}\n"
+            f"From: {TEST_ADDRESS}\n"
+            f"To: {TEST_ADDRESS}\n"
             f"Subject: {subject}\n"
             f"Date: {date}\n"
             f"\n"
@@ -535,11 +846,11 @@ def send_marker(tmpdir, tag):
             f"Tag: {tag}\n"
         )
     with open(profile, "w", newline="\n") as f:
-        f.write("smtphost: smtp.fastmail.com\nsmtpport: 465\n")
+        f.write(f"smtphost: {SMTP_HOST}\nsmtpport: {SMTP_PORT}\n")
 
     env = dict(os.environ)
     env["PROFILES"] = profile
-    r = subprocess.run([SMTPTEST, msgfile, SEND_RECIPIENT], capture_output=True, text=True,
+    r = subprocess.run([SMTPTEST, msgfile, TEST_ADDRESS], capture_output=True, text=True,
                         env=env, timeout=60)
     ok = r.returncode == 0 and "D_OK" in r.stdout
     return ok, subject, r.stdout + r.stderr
@@ -600,6 +911,28 @@ class CuiSession:
                 return None
         return None
 
+    def expect(self, patterns, timeout=None):
+        """Reads until the earliest of `patterns` (bytes) appears; consumes
+        output through the end of that match (unlike expect_any, which
+        discards the whole buffer). Returns (pattern, text) on a match, or
+        (None, text) on timeout/EOF. Used so a scripted answer is only
+        ever sent once the prompt it answers has actually appeared."""
+        timeout = self.timeout if timeout is None else timeout
+        deadline = time.time() + timeout
+        while True:
+            best = None
+            for p in patterns:
+                i = self.buf.find(p)
+                if i >= 0 and (best is None or i < best[0]):
+                    best = (i, p)
+            if best is not None:
+                end = best[0] + len(best[1])
+                text, self.buf = self.buf[:end], self.buf[end:]
+                return best[1], text.decode(errors="replace")
+            if time.time() >= deadline or not self._fill():
+                text, self.buf = self.buf, b""
+                return None, text.decode(errors="replace")
+
     def send(self, text):
         os.write(self.master, text.encode())
 
@@ -622,6 +955,70 @@ class CuiSession:
                 self.proc.wait(timeout=3)
             except Exception:
                 self.proc.kill()
+
+
+# cui's yes/no prompts during composition (GetBooleanFromUser in
+# src/ams/msclients/cui/cuifns.c prints "<prompt> [No] ? "; the first two
+# come from RealWhoIs()/cuilib.c:1766 and cui.c's SendSomeLines when an
+# address cannot be verified, e.g. no white pages for an external
+# domain). Answered "yes" only when actually seen. An unrecognized
+# answer re-prints "Please answer yes or no." and then the prompt
+# again, which this loop simply sees as the prompt again.
+CUI_CONFIRM_PROMPTS = (
+    b"really exists [No] ? ",
+    b"Proceed with mail composition anyway [No] ? ",
+    b"try sending anyway [No] ? ",
+)
+CUI_MAX_CONFIRMS = 6
+CUI_SEND_PROMPT = b"(Type '?' for help) [type]: "   # MoreSelect's "CUI SEND>" prompt
+
+
+def cui_compose_draft(sess, to, subject, body, folder, transcript):
+    """Expect-style "mail" -> To/Subject/CC/body -> "draft" -> folder
+    sequence, answering cui's address-verification confirmations only
+    when they appear. Must be called at a "CUI> " prompt (already
+    consumed). Appends everything seen to `transcript`. Returns
+    (ok, reason); on any unexpected output it stops sending (the caller
+    closes the session) rather than typing ahead into the wrong
+    prompt."""
+    def step(patterns, what, timeout=None):
+        p, text = sess.expect(patterns, timeout)
+        transcript.append(text)
+        if p is None:
+            raise RuntimeError(f"timed out waiting for {what}")
+        return p
+
+    def answer_confirmations(until, what):
+        for _ in range(CUI_MAX_CONFIRMS + 1):
+            p = step(CUI_CONFIRM_PROMPTS + (until,), what)
+            if p == until:
+                return
+            sess.send("yes\n")
+        raise RuntimeError(f"more than {CUI_MAX_CONFIRMS} confirmation prompts before {what}")
+
+    try:
+        sess.send("mail\n")
+        step((b"To: ",), '"To: "')
+        sess.send(f"{to}\n")
+        answer_confirmations(b"Subject: ", '"Subject: "')
+        sess.send(f"{subject}\n")
+        step((b"CC: ",), '"CC: "')
+        sess.send("\n")
+        answer_confirmations(b"press control-d", "the message-body prompt")
+        sess.send(f"{body}\n")
+        sess.send("\x04")  # a real Ctrl-D -- EOF_STRING is "press control-d", not a typed sentinel
+        step((CUI_SEND_PROMPT,), "the CUI SEND> prompt", timeout=30)
+        sess.send("draft\n")
+        step((b"save the draft message ? ",), "the draft-folder prompt")
+        sess.send(f"{folder}\n")
+        p = step((b"Draft saved in folder", b"Could not save draft", CUI_SEND_PROMPT),
+                 "the draft-save result", timeout=30)
+        if p != b"Draft saved in folder":
+            return False, "cui did not save the draft (see transcript)"
+        step((b"CUI> ",), "the CUI> prompt after saving the draft")
+        return True, ""
+    except (RuntimeError, OSError) as e:   # OSError: cui exited under us
+        return False, str(e)
 
 
 def since_cutoff_for_marker(raw_body_text, fallback_days=30):
@@ -742,27 +1139,57 @@ def cui_browse_check(root, marker_subject, since_date, timeout=30.0):
         sess.close()
 
 
+class _WBlockRefused(Exception):
+    """Raised inside the W-case block when preflight refuses the folder."""
+
+
 def main():
     if len(sys.argv) > 1:
         sys.exit("usage: imap-sync-tests")
 
+    INBOX_CASES = ("1 fresh mirror of INBOX", "2 idempotent re-run", "3 incremental sync",
+                   "4 flags mapping", "5 UIDVALIDITY change drill", "6 cui browse")
+    W_CASES = ("W2 flags round-trip", "W3 purge round-trip", "W4 safety valve",
+               "W7 stale-journal drill", "W5 append round-trip", "W6 crash resume")
+
+    def skip_all(why, banner):
+        note(banner)
+        for n in INBOX_CASES + W_CASES:
+            skip(n, why)
+        note("")
+        note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped")
+        sys.exit(0)
+
+    # The variable gate comes first, before any build or live call: with
+    # any of them unset, nothing here touches the network.
+    missing, help_text = missing_vars_message()
+    if missing:
+        note(help_text)
+        skip_all("not set: " + ", ".join(missing),
+                 "--- skipping all cases (this suite has no offline case) ---")
+
+    if HOST != IMAPSYNC_ONLY_HOST:
+        note(f"Live-account cases skipped: AUIS_TEST_IMAP_HOST={HOST!r}, but imapsync connects "
+             f"only to {IMAPSYNC_ONLY_HOST!r} (src/ams/msclients/imapsync/imap_sync.c:214-216, "
+             "no override)")
+        skip_all("imapsync's host is hard-coded (see above)",
+                 "--- skipping all cases (this suite has no offline case) ---")
+
+    # The W-cases additionally need imaptest.c's hard-coded write mailbox.
+    w_block_reason = None
+    if WRITE_MAILBOX != IMAPTEST_ONLY_WRITE_FOLDER:
+        w_block_reason = (f"AUIS_TEST_FOLDER={WRITE_MAILBOX!r}, but imaptest.test's write "
+                          f"subcommands refuse every mailbox except {IMAPTEST_ONLY_WRITE_FOLDER!r} "
+                          "(src/overhead/mail/lib/imaptest.c:400 WRITE_MAILBOX_GUARD)")
+        note(f"W-cases will be skipped: {w_block_reason}")
+
     build_imaptest()
     build_imapsync()
     build_smtptest()
-
-    live = have_live_credentials()
-    if not live:
-        note(f'--- no usable netrc stanza for "{MACHINE}" in "{NETRC}" (or file absent); '
-             "skipping all cases (this suite has no offline case) ---")
-        for n in ("1 fresh mirror of INBOX", "2 idempotent re-run", "3 incremental sync",
-                  "4 flags mapping", "5 UIDVALIDITY change drill", "6 cui browse",
-                  "W2 flags round-trip", "W3 purge round-trip", "W4 safety valve",
-                  "W7 stale-journal drill", "W5 append round-trip", "W6 crash resume"):
-            skip(n, "no live credentials")
-        note("")
-        note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped "
-             f"(live cases skipped: no usable netrc credentials for {MACHINE})")
-        sys.exit(0)
+    if not have_live_credentials():
+        skip_all("no live credentials",
+                 f'--- no usable netrc stanza for "{MACHINE}" in "{NETRC}" (or file absent, or '
+                 "login failed); skipping all cases (this suite has no offline case) ---")
 
     note(f"--- live cases against {HOST}:{PORT}, mailbox {MAILBOX} (strictly read-only from imapsync) ---")
 
@@ -960,12 +1387,25 @@ def main():
     # mailbox (WRITE_MAILBOX), entirely independent of the INBOX mirror
     # above; see the module docstring for the fabricated-journal
     # testing rationale and the guard rule. ----
+    if w_block_reason is not None:
+        for n in W_CASES:
+            skip(n, w_block_reason)
+        note("")
+        note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped")
+        sys.exit(1 if FAIL else 0)
+
     wb_scratch = tempfile.mkdtemp(prefix="imap-sync-tests-wb-")
     note(f"writeback scratch root: {wb_scratch}")
     try:
-        cr, ckv = imaptest_wb("create", WRITE_MAILBOX)
-        if cr.returncode not in (0, 1) or ckv.get("CREATE-RC") not in ("0", "1"):
-            sys.exit(f"imap-sync-tests: could not create/confirm {WRITE_MAILBOX!r}: kv={ckv}")
+        # preflight_folder() creates WRITE_MAILBOX if absent, refuses
+        # (touching nothing) if it holds any message a harness did not
+        # create, and removes harness leftovers by UID.
+        ok, why = preflight_folder("W-cases")
+        if not ok:
+            result(f"W preflight: {WRITE_MAILBOX!r} holds only harness-created messages", False, why)
+            for n in W_CASES:
+                skip(n, "preflight refused the folder")
+            raise _WBlockRefused()
 
         wtag = str(int(time.time()))
 
@@ -1061,7 +1501,12 @@ def main():
         # ---- case W4: safety valve ----
         _, ekv4 = imaptest_readonly("examine", WRITE_MAILBOX)
         uidvalidity4 = int(ekv4["UIDVALIDITY"]) if ekv4.get("UIDVALIDITY", "").isdigit() else 0
-        fake_lines = [f"J1 purge {synth_id_py(uidvalidity4, 900000 + i)}" for i in range(26)]
+        # Fabricated UIDs well above UIDNEXT, so they cannot name any
+        # message that exists (UIDs only grow) -- -force-purges below
+        # really does UID EXPUNGE them.
+        uidnext4 = int(ekv4["UIDNEXT"]) if ekv4.get("UIDNEXT", "").isdigit() else 0
+        fake_base4 = max(uidnext4, 900000) + 100000
+        fake_lines = [f"J1 purge {synth_id_py(uidvalidity4, fake_base4 + i)}" for i in range(26)]
         write_journal_lines(wb_scratch, WRITE_MAILBOX, fake_lines)
 
         r_refuse = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
@@ -1144,13 +1589,15 @@ def main():
         # free, so nothing here fabricates the journal line itself.
         before_w5 = body_files_for(wb_scratch, WRITE_MAILBOX)
         subject_w5 = f"GATE3-W5-APPEND-{wtag}"
-        transcript_w5 = create_local_draft_via_cui(
+        cui_ok_w5, cui_why_w5, transcript_w5 = create_local_draft_via_cui(
             wb_scratch, WRITE_MAILBOX, subject_w5,
             f"imap-sync-tests W5 append-round-trip probe body ({wtag}).")
         note(transcript_w5[-1500:])
 
         native_hits_w5 = find_marker_files_for(wb_scratch, WRITE_MAILBOX, subject_w5)
-        if len(native_hits_w5) != 1:
+        if not cui_ok_w5:
+            result("W5 append round-trip", False, f"scripted cui draft session failed: {cui_why_w5}")
+        elif len(native_hits_w5) != 1:
             result("W5 append round-trip", False,
                    f"expected exactly one local native-id file after the draft save, found {len(native_hits_w5)}")
         else:
@@ -1234,14 +1681,18 @@ def main():
                 write_journal_lines(wb_scratch, WRITE_MAILBOX, [line1_w6])
 
                 subject_w6 = f"GATE3-W6-APPEND-{wtag}"
-                transcript_w6 = create_local_draft_via_cui(
+                cui_ok_w6, cui_why_w6, transcript_w6 = create_local_draft_via_cui(
                     wb_scratch, WRITE_MAILBOX, subject_w6,
                     f"imap-sync-tests W6 crash-resume probe body ({wtag}).")
                 note(transcript_w6[-1500:])
+                if not cui_ok_w6:
+                    note(f"W6: scripted cui draft session failed: {cui_why_w6}")
 
                 jpath_w6 = journalpath_for(wb_scratch, WRITE_MAILBOX)
-                with open(jpath_w6) as f:
-                    jlines_w6 = [l.rstrip("\n") for l in f if l.strip()]
+                jlines_w6 = []
+                if os.path.isfile(jpath_w6):
+                    with open(jpath_w6) as f:
+                        jlines_w6 = [l.rstrip("\n") for l in f if l.strip()]
                 two_lines = (len(jlines_w6) == 2 and jlines_w6[0] == line1_w6
                              and jlines_w6[1].startswith("J1 append "))
                 if not two_lines:
@@ -1265,6 +1716,10 @@ def main():
                         f.write(crlf_normalize(raw))
                     r_precrash, kv_precrash = imaptest_wb("append", WRITE_MAILBOX, tmp_eml)
                     precrash_ok = r_precrash.returncode == 0 and kv_precrash.get("APPEND-RC") == "0"
+                    if (kv_precrash.get("APPEND-UIDVALIDITY", "").isdigit()
+                            and kv_precrash.get("APPEND-UID", "").isdigit()):
+                        RECORDED_APPENDS.append((int(kv_precrash["APPEND-UIDVALIDITY"]),
+                                                 int(kv_precrash["APPEND-UID"])))
 
                     sp_w6 = statepath_for(wb_scratch, WRITE_MAILBOX)
                     with open(sp_w6) as f:
@@ -1311,16 +1766,16 @@ def main():
                                f"cursor_zero_w6={cursor_zero_w6} no_flags_damage={no_flags_damage} "
                                f"fkvA={fkvA} dup_hits={len(dup_hits)}")
 
-        # Best-effort tidiness, not a test case: leave WRITE_MAILBOX
-        # empty afterward rather than accumulating this run's test
-        # messages (W2's own \Seen message in particular is never
-        # purged by any case above) across repeated suite runs.
-        _, ekv_clean = imaptest_readonly("examine", WRITE_MAILBOX)
-        if ekv_clean.get("EXISTS", "0").isdigit() and int(ekv_clean["EXISTS"]) > 0:
-            r_clean, ckv_clean = imaptest_wb("expunge", WRITE_MAILBOX, "1:*")
-            note(f"writeback cleanup: expunge 1:* in {WRITE_MAILBOX!r} -> "
-                 f"exit={r_clean.returncode} kv={ckv_clean}")
+    except _WBlockRefused:
+        pass
     finally:
+        # Cleanup, pass or fail: removes only harness-created messages,
+        # by exact UID (see cleanup_folder()) -- never the whole folder.
+        try:
+            cleanup_folder("W-cases")
+        except Exception as e:
+            note(f"writeback cleanup: WARNING -- {e}; harness messages may remain in "
+                 f"{WRITE_MAILBOX!r} (this run's appended (uidvalidity, uid) = {RECORDED_APPENDS})")
         if os.environ.get("IMAPSYNC_KEEP_SCRATCH"):
             note(f"IMAPSYNC_KEEP_SCRATCH set; leaving writeback scratch root at {wb_scratch}")
         else:
